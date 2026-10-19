@@ -1,0 +1,73 @@
+@page
+@model TracNghiemWeb.Pages.History.IndexModel
+@{
+    ViewData["Title"] = "Lịch sử làm bài";
+    ViewData["Active"] = "history";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Lịch sử làm bài</h1>
+        <p>Các bài đã nộp, mới nhất ở trên cùng.</p>
+    </div>
+    @if (Model.Attempts.Count > 0)
+    {
+        <div class="actions">
+            <form method="post" asp-page-handler="Clear" class="inline-form"
+                  onsubmit="return confirm('Xóa toàn bộ lịch sử làm bài? Hành động này không thể hoàn tác.');">
+                <button type="submit" class="btn btn-danger">Xóa toàn bộ lịch sử</button>
+            </form>
+        </div>
+    }
+</div>
+
+@if (Model.Attempts.Count == 0)
+{
+    <div class="empty">
+        <strong>Chưa có bài làm nào.</strong>
+        <p class="mt-sm">Hãy <a asp-page="/Index">bắt đầu một bài luyện tập</a>.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Môn học</th>
+                    <th scope="col">Thời điểm</th>
+                    <th scope="col" class="num">Điểm</th>
+                    <th scope="col" class="num">Tỷ lệ</th>
+                    <th scope="col" class="num">Thời gian</th>
+                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var attempt in Model.Attempts)
+                {
+                    <tr>
+                        <td>@attempt.Subject?.Name</td>
+                        <td class="nowrap">@attempt.StartedAt.ToString("HH:mm dd/MM/yyyy")</td>
+                        <td class="num">@attempt.CorrectCount/@attempt.TotalQuestions</td>
+                        <td class="num">
+                            <span class="badge @(attempt.Percentage >= 80 ? "badge-success" : attempt.Percentage >= 50 ? "badge-accent" : "badge-danger")">
+                                @Display.Percentage(attempt.Percentage)
+                            </span>
+                        </td>
+                        <td class="num nowrap">@Display.Duration(attempt.Duration)</td>
+                        <td class="num">
+                            <div class="table-actions">
+                                <a class="btn btn-secondary btn-sm" asp-page="/Test/Result" asp-route-id="@attempt.Id">Xem lại</a>
+                                <form method="post" asp-page-handler="Delete" class="inline-form"
+                                      onsubmit="return confirm('Xóa bài làm này?');">
+                                    <input type="hidden" name="id" value="@attempt.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

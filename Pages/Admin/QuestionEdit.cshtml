@@ -1,0 +1,89 @@
+@page
+@model TracNghiemWeb.Pages.Admin.QuestionEditModel
+@{
+    ViewData["Title"] = Model.IsNew ? "Thêm câu hỏi" : "Sửa câu hỏi";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "questions";
+}
+
+<div class="page-head">
+    <div>
+        <h1>@(Model.IsNew ? "Thêm câu hỏi" : "Sửa câu hỏi")</h1>
+        <p>Đáp án đúng được chấm điểm ở phía máy chủ.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-ghost" asp-page="/Admin/Questions" asp-route-subjectId="@Model.Input.SubjectId">Về danh sách</a>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<form method="post" class="card">
+    <div asp-validation-summary="All"></div>
+    <input type="hidden" asp-for="Input.Id" />
+
+    <div class="form-grid">
+        <div class="field">
+            <label asp-for="Input.SubjectId">Môn học</label>
+            <select asp-for="Input.SubjectId" class="input">
+                @foreach (var subject in Model.Subjects)
+                {
+                    <option value="@subject.Id">@subject.Name</option>
+                }
+            </select>
+            <span asp-validation-for="Input.SubjectId" class="field-error"></span>
+        </div>
+
+        <div class="field">
+            <label asp-for="Input.Content">Nội dung câu hỏi</label>
+            <textarea asp-for="Input.Content" class="input" rows="3" maxlength="2000"></textarea>
+            <span asp-validation-for="Input.Content" class="field-error"></span>
+        </div>
+
+        <div class="form-row-2">
+            <div class="field">
+                <label asp-for="Input.OptionA">Đáp án A</label>
+                <input asp-for="Input.OptionA" class="input" maxlength="500" />
+                <span asp-validation-for="Input.OptionA" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.OptionB">Đáp án B</label>
+                <input asp-for="Input.OptionB" class="input" maxlength="500" />
+                <span asp-validation-for="Input.OptionB" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.OptionC">Đáp án C</label>
+                <input asp-for="Input.OptionC" class="input" maxlength="500" />
+                <span asp-validation-for="Input.OptionC" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.OptionD">Đáp án D</label>
+                <input asp-for="Input.OptionD" class="input" maxlength="500" />
+                <span asp-validation-for="Input.OptionD" class="field-error"></span>
+            </div>
+        </div>
+
+        <div class="form-row-2">
+            <div class="field">
+                <label asp-for="Input.CorrectOption">Đáp án đúng</label>
+                <select asp-for="Input.CorrectOption" class="input">
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+                <span asp-validation-for="Input.CorrectOption" class="field-error"></span>
+            </div>
+            <div class="field">
+                <label asp-for="Input.Explanation">Giải thích (không bắt buộc)</label>
+                <input asp-for="Input.Explanation" class="input" maxlength="2000" />
+                <span asp-validation-for="Input.Explanation" class="field-error"></span>
+            </div>
+        </div>
+
+        <div class="page-head actions mt-0">
+            <button type="submit" class="btn btn-primary">@(Model.IsNew ? "Thêm câu hỏi" : "Lưu thay đổi")</button>
+            <a class="btn btn-ghost" asp-page="/Admin/Questions" asp-route-subjectId="@Model.Input.SubjectId">Hủy</a>
+        </div>
+    </div>
+</form>

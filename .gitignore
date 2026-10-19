@@ -1,0 +1,40 @@
+## Build results
+bin/
+obj/
+
+## Visual Studio / Rider / VS Code
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Test / coverage
+[Tt]est[Rr]esult*/
+coverage*.json
+coverage*.xml
+
+## Publish
+publish/
+*.publishsettings
+pubs/
+PublishScripts/
+
+## NuGet
+*.nupkg
+*.snupkg
+
+## Logs
+*.log
+logs/
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Secrets - never commit
+appsettings.*.local.json
+*.pfx

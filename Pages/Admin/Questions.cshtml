@@ -1,0 +1,115 @@
+@page
+@model TracNghiemWeb.Pages.Admin.QuestionsModel
+@{
+    ViewData["Title"] = "Quản trị câu hỏi";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "questions";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Câu hỏi</h1>
+        <p>Tổng @Model.TotalCount câu hỏi.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-primary" asp-page="/Admin/QuestionEdit" asp-route-subjectId="@Model.SubjectId">Thêm 1 câu</a>
+        <a class="btn btn-secondary" asp-page="/Admin/AddMany">Thêm nhiều câu</a>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<form method="get" class="toolbar">
+    <div class="field">
+        <label for="subject-filter">Môn học</label>
+        <select id="subject-filter" name="subjectId" class="input">
+            <option value="">Tất cả môn</option>
+            @foreach (var subject in Model.Subjects)
+            {
+                <option value="@subject.Id" selected="@(subject.Id == Model.SubjectId)">@subject.Name</option>
+            }
+        </select>
+    </div>
+    <div class="field">
+        <label for="search">Tìm theo nội dung</label>
+        <input id="search" type="search" name="search" value="@Model.Search" class="input" placeholder="Nhập từ khóa..." />
+    </div>
+    <button type="submit" class="btn btn-secondary">Lọc</button>
+    @if (Model.SubjectId.HasValue || !string.IsNullOrEmpty(Model.Search))
+    {
+        <a class="btn btn-ghost" asp-page="/Admin/Questions">Xóa bộ lọc</a>
+    }
+</form>
+
+@if (Model.Questions.Count == 0)
+{
+    <div class="empty">
+        <strong>Không có câu hỏi nào phù hợp.</strong>
+        <p class="mt-sm">Thử đổi bộ lọc hoặc <a asp-page="/Admin/QuestionEdit">thêm câu hỏi mới</a>.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col" class="num">ID</th>
+                    <th scope="col">Môn</th>
+                    <th scope="col">Nội dung</th>
+                    <th scope="col">Đáp án</th>
+                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var question in Model.Questions)
+                {
+                    <tr>
+                        <td class="num">@question.Id</td>
+                        <td>@question.Subject?.Name</td>
+                        <td>
+                            @(question.Content.Length > 130 ? question.Content[..130] + "…" : question.Content)
+                        </td>
+                        <td><span class="badge badge-primary">@question.CorrectOption</span></td>
+                        <td class="num">
+                            <div class="table-actions">
+                                <a class="btn btn-secondary btn-sm" asp-page="/Admin/QuestionEdit" asp-route-id="@question.Id">Sửa</a>
+                                <form method="post" asp-page-handler="Delete" class="inline-form"
+                                      onsubmit="return confirm('Xóa câu hỏi này?');">
+                                    <input type="hidden" name="id" value="@question.Id" />
+                                    <input type="hidden" name="subjectId" value="@Model.SubjectId" />
+                                    <input type="hidden" name="search" value="@Model.Search" />
+                                    <input type="hidden" name="page" value="@Model.PageNumber" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="pagination" aria-label="Phân trang">
+            @if (Model.PageNumber > 1)
+            {
+                <a class="btn btn-secondary btn-sm"
+                   asp-page="/Admin/Questions"
+                   asp-route-subjectId="@Model.SubjectId"
+                   asp-route-search="@Model.Search"
+                   asp-route-page="@(Model.PageNumber - 1)">Trang trước</a>
+            }
+            <span class="current">Trang @Model.PageNumber / @Model.TotalPages</span>
+            @if (Model.PageNumber < Model.TotalPages)
+            {
+                <a class="btn btn-secondary btn-sm"
+                   asp-page="/Admin/Questions"
+                   asp-route-subjectId="@Model.SubjectId"
+                   asp-route-search="@Model.Search"
+                   asp-route-page="@(Model.PageNumber + 1)">Trang sau</a>
+            }
+        </nav>
+    }
+}

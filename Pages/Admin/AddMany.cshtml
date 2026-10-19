@@ -1,0 +1,202 @@
+@page
+@model TracNghiemWeb.Pages.Admin.AddManyModel
+@{
+    ViewData["Title"] = "Thêm nhiều câu hỏi";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "addmany";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Thêm nhiều câu hỏi</h1>
+        <p>Điền nhiều câu hỏi trong cùng một form rồi lưu một lần. Câu trùng nội dung sẽ được bỏ qua.</p>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+@if (Model.RowErrors.Count > 0)
+{
+    <div class="alert alert-danger" role="alert">
+        <p><strong>Chưa lưu được, hãy sửa các lỗi sau:</strong></p>
+        <ul>
+            @foreach (var error in Model.RowErrors)
+            {
+                <li>@error</li>
+            }
+        </ul>
+    </div>
+}
+
+<form method="post" id="add-many-form">
+    <div class="card mb-md">
+        <div class="form-row-2">
+            <div class="field">
+                <label asp-for="SubjectId">Môn học (áp dụng cho tất cả các dòng)</label>
+                <select asp-for="SubjectId" class="input">
+                    @foreach (var subject in Model.Subjects)
+                    {
+                        <option value="@subject.Id">@subject.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="field">
+                <span class="field-label">Số dòng tối đa</span>
+                <p class="muted mt-sm mb-0">Tối đa @AddManyModel.MaxRows dòng mỗi lần lưu.</p>
+            </div>
+        </div>
+    </div>
+
+    <div id="rows">
+        @for (var i = 0; i < Model.Rows.Count; i++)
+        {
+            var row = Model.Rows[i];
+            <div class="card mb-md question-row" data-row>
+                <div class="card-title">
+                    <h3 class="row-title">Câu @(i + 1)</h3>
+                    <button type="button" class="btn btn-danger btn-sm remove-row">Xóa dòng</button>
+                </div>
+                <div class="form-grid">
+                    <label class="field">
+                        <span class="field-label">Nội dung câu hỏi</span>
+                        <textarea data-field="Content" name="Rows[@i].Content" class="input" rows="2" maxlength="2000">@row.Content</textarea>
+                    </label>
+                    <div class="form-row-2">
+                        <label class="field">
+                            <span class="field-label">Đáp án A</span>
+                            <input data-field="OptionA" name="Rows[@i].OptionA" class="input" maxlength="500" value="@row.OptionA" />
+                        </label>
+                        <label class="field">
+                            <span class="field-label">Đáp án B</span>
+                            <input data-field="OptionB" name="Rows[@i].OptionB" class="input" maxlength="500" value="@row.OptionB" />
+                        </label>
+                        <label class="field">
+                            <span class="field-label">Đáp án C</span>
+                            <input data-field="OptionC" name="Rows[@i].OptionC" class="input" maxlength="500" value="@row.OptionC" />
+                        </label>
+                        <label class="field">
+                            <span class="field-label">Đáp án D</span>
+                            <input data-field="OptionD" name="Rows[@i].OptionD" class="input" maxlength="500" value="@row.OptionD" />
+                        </label>
+                    </div>
+                    <div class="form-row-2">
+                        <label class="field">
+                            <span class="field-label">Đáp án đúng</span>
+                            <select data-field="CorrectOption" name="Rows[@i].CorrectOption" class="input">
+                                <option value="A" selected="@(row.CorrectOption == "A")">A</option>
+                                <option value="B" selected="@(row.CorrectOption == "B")">B</option>
+                                <option value="C" selected="@(row.CorrectOption == "C")">C</option>
+                                <option value="D" selected="@(row.CorrectOption == "D")">D</option>
+                            </select>
+                        </label>
+                        <label class="field">
+                            <span class="field-label">Giải thích (không bắt buộc)</span>
+                            <input data-field="Explanation" name="Rows[@i].Explanation" class="input" maxlength="2000" value="@row.Explanation" />
+                        </label>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="page-head actions">
+        <button type="button" id="add-row" class="btn btn-secondary">+ Thêm câu hỏi</button>
+        <button type="submit" class="btn btn-primary">Lưu tất cả</button>
+    </div>
+</form>
+
+<template id="row-template">
+    <div class="card mb-md question-row" data-row>
+        <div class="card-title">
+            <h3 class="row-title">Câu</h3>
+            <button type="button" class="btn btn-danger btn-sm remove-row">Xóa dòng</button>
+        </div>
+        <div class="form-grid">
+            <label class="field">
+                <span class="field-label">Nội dung câu hỏi</span>
+                <textarea data-field="Content" class="input" rows="2" maxlength="2000"></textarea>
+            </label>
+            <div class="form-row-2">
+                <label class="field">
+                    <span class="field-label">Đáp án A</span>
+                    <input data-field="OptionA" class="input" maxlength="500" />
+                </label>
+                <label class="field">
+                    <span class="field-label">Đáp án B</span>
+                    <input data-field="OptionB" class="input" maxlength="500" />
+                </label>
+                <label class="field">
+                    <span class="field-label">Đáp án C</span>
+                    <input data-field="OptionC" class="input" maxlength="500" />
+                </label>
+                <label class="field">
+                    <span class="field-label">Đáp án D</span>
+                    <input data-field="OptionD" class="input" maxlength="500" />
+                </label>
+            </div>
+            <div class="form-row-2">
+                <label class="field">
+                    <span class="field-label">Đáp án đúng</span>
+                    <select data-field="CorrectOption" class="input">
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                </label>
+                <label class="field">
+                    <span class="field-label">Giải thích (không bắt buộc)</span>
+                    <input data-field="Explanation" class="input" maxlength="2000" />
+                </label>
+            </div>
+        </div>
+    </div>
+</template>
+
+@section Scripts {
+    <script>
+        (function () {
+            var rows = document.getElementById('rows');
+            var template = document.getElementById('row-template');
+            var maxRows = @AddManyModel.MaxRows;
+
+            function renumber() {
+                var all = rows.querySelectorAll('[data-row]');
+                all.forEach(function (row, i) {
+                    row.querySelector('.row-title').textContent = 'Câu ' + (i + 1);
+                    row.querySelectorAll('[data-field]').forEach(function (field) {
+                        field.name = 'Rows[' + i + '].' + field.getAttribute('data-field');
+                    });
+                });
+            }
+
+            function canAdd() {
+                return rows.querySelectorAll('[data-row]').length < maxRows;
+            }
+
+            document.getElementById('add-row').addEventListener('click', function () {
+                if (!canAdd()) { return; }
+                var clone = template.content.cloneNode(true);
+                rows.appendChild(clone);
+                renumber();
+                var all = rows.querySelectorAll('[data-row]');
+                var last = all[all.length - 1];
+                last.querySelector('textarea').focus();
+            });
+
+            rows.addEventListener('click', function (event) {
+                var button = event.target.closest('.remove-row');
+                if (!button) { return; }
+                var row = button.closest('[data-row]');
+                if (rows.querySelectorAll('[data-row]').length <= 1) {
+                    alert('Cần giữ lại ít nhất một dòng.');
+                    return;
+                }
+                row.remove();
+                renumber();
+            });
+
+            renumber();
+        })();
+    </script>
+}

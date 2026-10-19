@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] is null ? "Trắc nghiệm" : $"{ViewData["Title"]} – Trắc nghiệm")</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body>
+    <a class="skip-link" href="#main">Bỏ qua điều hướng, đến nội dung chính</a>
+
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" asp-page="/Index">
+                <svg class="icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9 11l3 3L22 4" />
+                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+                <span>Trắc nghiệm</span>
+            </a>
+            <nav class="site-nav" aria-label="Điều hướng chính">
+                <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Môn học</a>
+                <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Câu còn sai</a>
+                <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
+                <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản trị</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="main" class="container main">
+        @if (TempData["Error"] is string errorMessage)
+        {
+            <div class="alert alert-danger" role="alert">@errorMessage</div>
+        }
+        @if (TempData["Success"] is string successMessage)
+        {
+            <div class="alert alert-success" role="status">@successMessage</div>
+        }
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <p>Trắc nghiệm – luyện tập để nhớ lâu hơn.</p>
+        </div>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

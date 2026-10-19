@@ -1,0 +1,15 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = "Có lỗi xảy ra";
+}
+
+<div class="card">
+    <h1>@(Model.Code == 404 ? "Không tìm thấy trang" : "Có lỗi xảy ra")</h1>
+    <p class="muted">
+        @(Model.Code == 404
+            ? "Đường dẫn bạn truy cập không tồn tại."
+            : "Vui lòng thử lại. Nếu lỗi tiếp tục xảy ra, kiểm tra kết nối cơ sở dữ liệu.")
+    </p>
+    <a class="btn btn-primary" asp-page="/Index">Về trang chủ</a>
+</div>

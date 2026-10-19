@@ -1,0 +1,11 @@
+@{
+    var active = ViewData["AdminTab"] as string ?? "subjects";
+    var isAdmin = ViewData["Active"] as string == "admin";
+}
+<nav class="subnav" aria-label="Quản trị">
+    <a asp-page="/Admin/Index" class="@(active == "subjects" ? "active" : null)">Môn học</a>
+    <a asp-page="/Admin/Questions" class="@(active == "questions" ? "active" : null)">Câu hỏi</a>
+    <a asp-page="/Admin/AddMany" class="@(active == "addmany" ? "active" : null)">Thêm nhiều câu</a>
+    <a asp-page="/Admin/Paste" class="@(active == "paste" ? "active" : null)">Dán câu hỏi</a>
+    <a asp-page="/Admin/Import" class="@(active == "import" ? "active" : null)">Nhập từ file</a>
+</nav>

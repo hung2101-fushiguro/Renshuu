@@ -1,0 +1,91 @@
+@page
+@model TracNghiemWeb.Pages.Wrong.IndexModel
+@{
+    ViewData["Title"] = "Câu còn sai";
+    ViewData["Active"] = "wrong";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Câu còn sai</h1>
+        <p>Những câu bạn trả lời sai ở lần làm gần nhất. Trả lời đúng trong lần làm sau, câu đó sẽ được gỡ khỏi danh sách.</p>
+    </div>
+</div>
+
+@if (Model.Subjects.Count == 0)
+{
+    <div class="empty">
+        <strong>Chưa có môn học nào.</strong>
+        <p class="mt-sm">Vào <a asp-page="/Admin/Index">Quản trị</a> để thêm môn học và câu hỏi.</p>
+    </div>
+}
+else
+{
+    <form method="get" class="toolbar">
+        <div class="field">
+            <label for="subjectId">Môn học</label>
+            <select id="subjectId" name="subjectId" class="input" onchange="this.form.submit()">
+                @foreach (var subject in Model.Subjects)
+                {
+                    <option value="@subject.Id" selected="@(subject.Id == Model.SubjectId)">
+                        @subject.Name (@subject.WrongCount câu sai)
+                    </option>
+                }
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-secondary">Xem</button></noscript>
+    </form>
+
+    @if (Model.Questions.Count == 0)
+    {
+        <div class="empty">
+            <strong>Không còn câu sai nào ở môn "@Model.Selected?.Name".</strong>
+            <p class="mt-sm">Làm một bài mới để kiểm tra lại nhé.</p>
+            <a class="btn btn-primary mt-md" asp-page="/Index" asp-route-subjectId="@Model.SubjectId">Làm bài mới</a>
+        </div>
+    }
+    else
+    {
+        <div class="card mb-lg">
+            <h2 class="mt-0">Làm lại các câu sai</h2>
+            <p class="muted">Bài làm sẽ gồm đúng @Model.Questions.Count câu sai này, thứ tự câu và đáp án được xáo trộn.</p>
+            <form method="post" class="toolbar mb-0">
+                <input type="hidden" asp-for="SubjectId" />
+                <div class="field">
+                    <label asp-for="TimeLimitMinutes">Thời gian (phút, để trống nếu không giới hạn)</label>
+                    <input asp-for="TimeLimitMinutes" type="number" min="1" max="240" class="input" placeholder="Ví dụ: 10" />
+                    <span asp-validation-for="TimeLimitMinutes" class="field-error"></span>
+                </div>
+                <button type="submit" class="btn btn-accent">
+                    <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M1 4v6h6" />
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+                    </svg>
+                    Làm lại các câu sai (@Model.Questions.Count câu)
+                </button>
+            </form>
+        </div>
+
+        <h2>Danh sách câu sai</h2>
+        @foreach (var (question, index) in Model.Questions.Select((q, i) => (q, i)))
+        {
+            <section class="question">
+                <div class="question-head">
+                    <span class="question-number">@(index + 1)</span>
+                    <div>
+                        <p class="question-content">@question.Content</p>
+                        <p class="mt-sm mb-0">
+                            <span class="badge badge-primary">Đáp án đúng: @question.CorrectOption. @question.GetOption(question.CorrectOption)</span>
+                        </p>
+                    </div>
+                </div>
+                @if (!string.IsNullOrWhiteSpace(question.Explanation))
+                {
+                    <div class="explanation mb-0">
+                        <strong>Giải thích:</strong> @question.Explanation
+                    </div>
+                }
+            </section>
+        }
+    }
+}

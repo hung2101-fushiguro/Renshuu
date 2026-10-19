@@ -1,0 +1,55 @@
+@page
+@model TracNghiemWeb.Pages.Admin.PasteModel
+@{
+    ViewData["Title"] = "Dán câu hỏi";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "paste";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Dán câu hỏi</h1>
+        <p>Dán nhiều câu hỏi theo định dạng bên dưới, xem trước rồi mới lưu.</p>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<form method="post" asp-page-handler="Preview">
+    <div asp-validation-summary="All"></div>
+
+    <div class="card">
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="SubjectId">Môn học (áp dụng cho tất cả câu dán vào)</label>
+                <select asp-for="SubjectId" class="input">
+                    @foreach (var subject in Model.Subjects)
+                    {
+                        <option value="@subject.Id">@subject.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label asp-for="Text">Nội dung câu hỏi</label>
+                <textarea asp-for="Text" class="input" rows="14" spellcheck="false"
+                          placeholder="Ví dụ:&#10;Câu hỏi đầu tiên?&#10;A. Đáp án A&#10;B. Đáp án B&#10;C. Đáp án C&#10;D. Đáp án D&#10;Đáp án: B&#10;Giải thích: Vì...&#10;&#10;Câu hỏi thứ hai?&#10;..."></textarea>
+                <span class="hint">Mỗi câu gồm: dòng câu hỏi, 4 dòng đáp án (A. B. C. D.), dòng "Đáp án: X" và dòng "Giải thích: ..." (không bắt buộc). Cách nhau bằng dòng trống.</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-head actions">
+        <button type="submit" class="btn btn-primary">Xem trước</button>
+    </div>
+</form>
+
+@if (Model.Preview is not null)
+{
+    <h2>Kết quả xem trước</h2>
+    <partial name="_ImportPreview" model="Model.Preview" />
+
+    <form method="post" asp-page-handler="Save">
+        <button type="submit" class="btn btn-accent">Lưu các câu hợp lệ</button>
+    </form>
+}

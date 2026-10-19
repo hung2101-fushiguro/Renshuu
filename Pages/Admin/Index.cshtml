@@ -1,0 +1,81 @@
+@page
+@model TracNghiemWeb.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Quản trị môn học";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "subjects";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Quản trị</h1>
+        <p>Quản lý môn học, câu hỏi và nhập câu hỏi hàng loạt.</p>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<div class="card mb-lg">
+    <h2 class="mt-0">Thêm môn học</h2>
+    <form method="post" asp-page-handler="Create" class="toolbar mb-0">
+        <div class="field">
+            <label asp-for="NewSubjectName">Tên môn học</label>
+            <input asp-for="NewSubjectName" class="input" maxlength="200"/>
+            <span asp-validation-for="NewSubjectName" class="field-error"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Thêm môn</button>
+    </form>
+</div>
+
+<h2>Danh sách môn học</h2>
+
+@if (Model.Subjects.Count == 0)
+{
+    <div class="empty">
+        <strong>Chưa có môn học nào.</strong>
+        <p class="mt-sm">Thêm môn học ở khung phía trên để bắt đầu.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Môn học</th>
+                    <th scope="col" class="num">Số câu</th>
+                    <th scope="col" class="num">Lượt làm</th>
+                    <th scope="col">Đổi tên</th>
+                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var subject in Model.Subjects)
+                {
+                    <tr>
+                        <td>@subject.Name</td>
+                        <td class="num">
+                            <a asp-page="/Admin/Questions" asp-route-subjectId="@subject.Id">@subject.QuestionCount</a>
+                        </td>
+                        <td class="num">@subject.AttemptCount</td>
+                        <td>
+                            <form method="post" asp-page-handler="Rename" class="toolbar mb-0">
+                                <input type="hidden" name="EditId" value="@subject.Id" />
+                                <input type="text" name="EditName" value="@subject.Name" class="input" maxlength="200"
+                                       aria-label="Tên mới cho môn @subject.Name" />
+                                <button type="submit" class="btn btn-secondary btn-sm">Lưu</button>
+                            </form>
+                        </td>
+                        <td class="num">
+                            <form method="post" asp-page-handler="Delete" class="inline-form"
+                                  onsubmit="return confirm('Xóa môn &quot;@subject.Name&quot; và toàn bộ câu hỏi của môn này?');">
+                                <input type="hidden" name="id" value="@subject.Id" />
+                                <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

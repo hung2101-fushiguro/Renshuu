@@ -1,0 +1,32 @@
+[
+  {
+    "subject": "Lập trình C# cơ bản",
+    "content": "Kiểu dữ liệu nào chỉ nhận giá trị true hoặc false?",
+    "a": "bool",
+    "b": "bit",
+    "c": "int",
+    "d": "char",
+    "correct": "A",
+    "explanation": "bool là kiểu logic, chỉ nhận true hoặc false."
+  },
+  {
+    "subject": "ASP.NET Core",
+    "content": "Lệnh nào áp dụng migration vào cơ sở dữ liệu?",
+    "a": "dotnet ef database update",
+    "b": "dotnet ef migrations add",
+    "c": "dotnet build",
+    "d": "dotnet run --migrate",
+    "correct": "A",
+    "explanation": "dotnet ef database update áp dụng các migration chưa chạy vào database."
+  },
+  {
+    "subject": "Lập trình C# cơ bản",
+    "content": "Từ khóa nào dùng để định nghĩa lớp trừu tượng?",
+    "a": "abstract",
+    "b": "virtual",
+    "c": "sealed",
+    "d": "static",
+    "correct": "A",
+    "explanation": "abstract cho phép khai báo thành viên trừu tượng, không thể khởi tạo trực tiếp."
+  }
+]

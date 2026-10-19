@@ -1,0 +1,127 @@
+@page "{id:int}"
+@model TracNghiemWeb.Pages.Test.ResultModel
+@{
+    ViewData["Title"] = "Kết quả";
+    var attempt = Model.Attempt;
+    var total = attempt.TotalQuestions;
+    var correct = attempt.CorrectCount;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Kết quả: @attempt.Subject?.Name</h1>
+        <p>Làm lúc @attempt.StartedAt.ToString("HH:mm dd/MM/yyyy")</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-primary" asp-page="/Index" asp-route-subjectId="@attempt.SubjectId">Làm bài mới</a>
+        @if (Model.WrongCount > 0)
+        {
+            <a class="btn btn-accent" asp-page="/Wrong/Index" asp-route-subjectId="@attempt.SubjectId">Luyện câu sai</a>
+        }
+        <a class="btn btn-secondary" asp-page="/History/Index">Lịch sử</a>
+    </div>
+</div>
+
+<div class="grid grid-stats mb-lg">
+    <div class="stat is-success">
+        <div class="stat-value">@correct/@total</div>
+        <div class="stat-label">Câu đúng</div>
+    </div>
+    <div class="stat is-accent">
+        <div class="stat-value">@Display.Percentage(attempt.Percentage)</div>
+        <div class="stat-label">Tỷ lệ đúng</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">@Display.Duration(attempt.Duration)</div>
+        <div class="stat-label">Thời gian làm bài</div>
+    </div>
+    <div class="stat is-danger">
+        <div class="stat-value">@Model.WrongCount</div>
+        <div class="stat-label">Câu sai (@Model.BlankCount bỏ trống)</div>
+    </div>
+</div>
+
+<div class="page-head">
+    <h2 class="mt-0 mb-0">Xem lại từng câu</h2>
+    <div class="actions">
+        <div class="checkbox-row">
+            <input type="checkbox" id="only-wrong" />
+            <label for="only-wrong">Chỉ hiển thị câu sai</label>
+        </div>
+    </div>
+</div>
+
+<div id="review-list">
+    @for (var i = 0; i < attempt.Answers.Count; i++)
+    {
+        var answer = attempt.Answers.ElementAt(i);
+        var question = answer.Question!;
+        var isCorrect = answer.IsCorrect;
+        <section class="question @(isCorrect ? "is-correct" : "is-wrong")">
+            <div class="question-head">
+                <span class="question-number">@(i + 1)</span>
+                <div>
+                    <p class="question-content">@question.Content</p>
+                    <p class="mt-sm mb-0">
+                        @if (isCorrect)
+                        {
+                            <span class="badge badge-success">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+                                Đúng
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-danger">
+                                <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                Sai
+                            </span>
+                        }
+                        <span class="badge badge-muted">Bạn chọn: @(answer.SelectedOption ?? "—")</span>
+                        <span class="badge badge-primary">Đáp án: @question.CorrectOption</span>
+                    </p>
+                </div>
+            </div>
+
+            <div class="option-list">
+                @foreach (var key in new[] { "A", "B", "C", "D" })
+                {
+                    var isCorrectOption = key == question.CorrectOption;
+                    var isUserWrong = answer.SelectedOption == key && !isCorrect;
+                    <div class="option option-static @(isCorrectOption ? "option-correct" : isUserWrong ? "option-wrong" : "")">
+                        <span class="option-key">@key.</span>
+                        <span>@question.GetOption(key)</span>
+                        @if (isCorrectOption)
+                        {
+                            <span class="badge badge-success nowrap">Đáp án đúng</span>
+                        }
+                        else if (isUserWrong)
+                        {
+                            <span class="badge badge-danger nowrap">Bạn chọn</span>
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrWhiteSpace(question.Explanation))
+            {
+                <div class="explanation">
+                    <strong>Giải thích:</strong> @question.Explanation
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var toggle = document.getElementById('only-wrong');
+            var list = document.getElementById('review-list');
+            if (!toggle || !list) { return; }
+            toggle.addEventListener('change', function () {
+                list.classList.toggle('filter-wrong', toggle.checked);
+            });
+        })();
+    </script>
+}

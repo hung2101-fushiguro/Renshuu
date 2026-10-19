@@ -1,0 +1,57 @@
+@model TracNghiemWeb.Services.ImportPreview
+
+<div class="table-wrap mb-lg">
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Môn</th>
+                <th scope="col">Nội dung</th>
+                <th scope="col">Đáp án</th>
+                <th scope="col">Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                var isDuplicate = item.IsValid && Model.Duplicates.Contains(item.Index);
+                <tr class="@(item.IsValid ? null : "row-invalid")">
+                    <td class="nowrap">@item.Index</td>
+                    <td>@item.Subject</td>
+                    <td>
+                        @(item.Content is null
+                            ? ""
+                            : item.Content.Length > 140 ? item.Content[..140] + "…" : item.Content)
+                    </td>
+                    <td class="nowrap">@item.Correct</td>
+                    <td>
+                        @if (!item.IsValid)
+                        {
+                            <span class="badge badge-danger">Lỗi</span>
+                            <ul class="preview-errors">
+                                @foreach (var error in item.Errors)
+                                {
+                                    <li>@error</li>
+                                }
+                            </ul>
+                        }
+                        else if (isDuplicate)
+                        {
+                            <span class="badge badge-accent">Trùng – sẽ bỏ qua</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-success">Hợp lệ</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<p class="muted">
+    Hợp lệ: <strong>@Model.ValidCount</strong> ·
+    Trùng (bỏ qua): <strong>@Model.DuplicateCount</strong> ·
+    Lỗi (bỏ qua): <strong>@Model.InvalidCount</strong>
+</p>

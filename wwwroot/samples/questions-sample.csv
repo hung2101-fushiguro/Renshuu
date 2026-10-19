@@ -1,0 +1,5 @@
+Subject,Content,A,B,C,D,Correct,Explanation
+Lập trình C# cơ bản,"Từ khóa nào dùng để khai báo lớp trong C#?",class,struct,interface,enum,A,"class là từ khóa khai báo lớp."
+ASP.NET Core,"Trong .NET 6+, middleware được cấu hình ở file nào?",Program.cs,Startup.cs,web.config,appsettings.json,A,"Pipeline middleware nằm trong Program.cs."
+Lập trình C# cơ bản,"Kết quả của 10 % 3 là bao nhiêu?",3,1,0,3.33,B,"10 chia 3 dư 1, toán tử % trả về số dư."
+ASP.NET Core,"Thuộc tính nào tự động bind dữ liệu form vào PageModel?",[BindProperty],[HttpGet],[Route],[Table],A,"[BindProperty] giúp model binding từ request vào thuộc tính."

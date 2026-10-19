@@ -1,0 +1,132 @@
+@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Môn học";
+    ViewData["Active"] = "subjects";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Môn học</h1>
+        <p>Chọn môn, đặt số câu và bắt đầu làm bài.</p>
+    </div>
+</div>
+
+@if (Model.Subjects.Count == 0)
+{
+    <div class="empty">
+        <strong>Chưa có môn học nào.</strong>
+        <p class="mt-sm">Vào <a asp-page="/Admin/Index">Quản trị</a> để thêm môn học và câu hỏi.</p>
+    </div>
+}
+else
+{
+    <form method="post" class="card mb-lg">
+        <h2 class="mt-0">Bắt đầu làm bài</h2>
+
+        <div asp-validation-summary="ModelOnly"></div>
+
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="Input.SubjectId">Môn học</label>
+                <select asp-for="Input.SubjectId" class="input" id="subject-select">
+                    @foreach (var subject in Model.Subjects)
+                    {
+                        <option value="@subject.Id" data-count="@subject.QuestionCount">@subject.Name (@subject.QuestionCount câu)</option>
+                    }
+                </select>
+                <span asp-validation-for="Input.SubjectId" class="field-error"></span>
+            </div>
+
+            <div class="form-row-2">
+                <div class="field">
+                    <label asp-for="Input.QuestionCount">Số câu hỏi</label>
+                    <div class="preset-row" role="group" aria-label="Chọn nhanh số câu hỏi">
+                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="10">10</button>
+                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="20">20</button>
+                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="30">30</button>
+                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="50">50</button>
+                    </div>
+                    <input asp-for="Input.QuestionCount" type="number" min="1" max="200" class="input mt-sm" />
+                    <span class="hint" id="count-hint"></span>
+                    <span asp-validation-for="Input.QuestionCount" class="field-error"></span>
+                </div>
+
+                <div class="field">
+                    <label asp-for="Input.TimeLimitMinutes">Thời gian (phút)</label>
+                    <input asp-for="Input.TimeLimitMinutes" type="number" min="1" max="240" class="input" placeholder="Để trống nếu không giới hạn" />
+                    <span asp-validation-for="Input.TimeLimitMinutes" class="field-error"></span>
+                </div>
+            </div>
+
+            <div>
+                <button type="submit" class="btn btn-accent btn-lg">Bắt đầu làm bài</button>
+            </div>
+        </div>
+    </form>
+
+    <h2>Danh sách môn</h2>
+    <div class="grid grid-subjects">
+        @foreach (var subject in Model.Subjects)
+        {
+            <div class="card">
+                <div class="card-title">
+                    <h3>@subject.Name</h3>
+                    <span class="badge badge-primary">@subject.QuestionCount câu</span>
+                </div>
+                @if (subject.WrongCount > 0)
+                {
+                    <p class="small mb-md"><span class="badge badge-danger">@subject.WrongCount câu còn sai</span></p>
+                }
+                else
+                {
+                    <p class="small muted mb-md">Chưa có câu sai nào.</p>
+                }
+                <div class="page-head actions mt-0">
+                    <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@subject.Id">Chọn môn này</a>
+                    @if (subject.WrongCount > 0)
+                    {
+                        <a class="btn btn-ghost btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@subject.Id">Xem câu sai</a>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var select = document.getElementById('subject-select');
+            var count = document.getElementById('@Html.IdFor(m => m.Input.QuestionCount)');
+            var hint = document.getElementById('count-hint');
+            if (!select || !count) { return; }
+
+            function available() {
+                var option = select.options[select.selectedIndex];
+                return parseInt(option.getAttribute('data-count') || '0', 10);
+            }
+
+            function refreshHint() {
+                var max = available();
+                var value = parseInt(count.value || '0', 10);
+                if (value > max) { count.value = max; value = max; }
+                hint.textContent = max > 0
+                    ? 'Môn này có ' + max + ' câu hỏi.'
+                    : 'Môn này chưa có câu hỏi nào.';
+            }
+
+            select.addEventListener('change', refreshHint);
+            document.querySelectorAll('.preset').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    var max = available();
+                    var value = parseInt(button.getAttribute('data-value'), 10);
+                    count.value = Math.max(1, Math.min(value, max));
+                    refreshHint();
+                });
+            });
+
+            refreshHint();
+        })();
+    </script>
+}

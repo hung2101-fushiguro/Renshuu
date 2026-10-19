@@ -1,0 +1,51 @@
+@page
+@model TracNghiemWeb.Pages.Admin.ImportModel
+@{
+    ViewData["Title"] = "Nhập câu hỏi từ file";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "import";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Nhập từ file</h1>
+        <p>Tải file CSV hoặc JSON, xem trước rồi mới lưu. Câu trùng sẽ được bỏ qua.</p>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<div class="card mb-lg">
+    <form method="post" asp-page-handler="Preview" enctype="multipart/form-data">
+        <div asp-validation-summary="All"></div>
+
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="Upload">File câu hỏi (.csv hoặc .json, tối đa 1 MB)</label>
+                <input asp-for="Upload" type="file" accept=".csv,.json" class="input" />
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">Xem trước</button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div class="card mb-lg">
+    <h2 class="mt-0">Định dạng file</h2>
+    <p class="mb-md">Cả hai định dạng dùng tên cột/thuộc tính: <code>Subject, Content, A, B, C, D, Correct, Explanation</code>. File CSV nên lưu dạng UTF-8. File mẫu:</p>
+    <div class="actions">
+        <a class="btn btn-secondary btn-sm" href="~/samples/questions-sample.csv" download>Tải mẫu CSV</a>
+        <a class="btn btn-secondary btn-sm" href="~/samples/questions-sample.json" download>Tải mẫu JSON</a>
+    </div>
+</div>
+
+@if (Model.Preview is not null)
+{
+    <h2>Kết quả xem trước</h2>
+    <partial name="_ImportPreview" model="Model.Preview" />
+
+    <form method="post" asp-page-handler="Save">
+        <button type="submit" class="btn btn-accent">Lưu các câu hợp lệ</button>
+    </form>
+}
