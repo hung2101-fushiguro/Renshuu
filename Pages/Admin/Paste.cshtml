@@ -34,7 +34,12 @@
                 <label asp-for="Text">Nội dung câu hỏi</label>
                 <textarea asp-for="Text" class="input" rows="14" spellcheck="false"
                           placeholder="Ví dụ:&#10;Câu hỏi đầu tiên?&#10;A. Đáp án A&#10;B. Đáp án B&#10;C. Đáp án C&#10;D. Đáp án D&#10;Đáp án: B&#10;Giải thích: Vì...&#10;&#10;Câu hỏi thứ hai?&#10;..."></textarea>
-                <span class="hint">Mỗi câu gồm: dòng câu hỏi, 4 dòng đáp án (A. B. C. D.), dòng "Đáp án: X" và dòng "Giải thích: ..." (không bắt buộc). Cách nhau bằng dòng trống.</span>
+                <span class="hint">
+                    Mỗi câu gồm: dòng câu hỏi, 4 dòng đáp án (A. B. C. D. hoặc 1. 2. 3. 4.),
+                    dòng "Đáp án: X" và dòng "Giải thích: ..." (không bắt buộc). Các câu cách nhau bằng dòng trống.
+                    Có thể dùng &lt;u&gt;...&lt;/u&gt; để gạch chân, &lt;star&gt;&lt;/star&gt; cho ngôi sao,
+                    &lt;blank&gt;&lt;/blank&gt; cho chỗ trống.
+                </span>
             </div>
         </div>
     </div>

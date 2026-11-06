@@ -1,0 +1,1002 @@
+[
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a Port?",
+    "a": "A 4-byte address that identifies a computer",
+    "b": "An unsigned 2-byte integer that lets the OS distinguish network-communicating processes",
+    "c": "The domain name (hostname) of the server",
+    "d": "A data encapsulation protocol",
+    "correct": "B",
+    "explanation": "A port is an unsigned 2-byte integer that helps the OS distinguish network-communicating processes."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are the lengths of the IPv4 and IPv6 addresses, respectively?",
+    "a": "2 bytes and 8 bytes",
+    "b": "8 bytes and 16 bytes",
+    "c": "4 bytes and 16 bytes",
+    "d": "4 bytes and 32 bytes",
+    "correct": "C",
+    "explanation": "IPv4 = 4 bytes (e.g. 192.143.5.1), IPv6 = 16 bytes."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a characteristic of TCP (Transmission Control Protocol)?",
+    "a": "Connectionless, with no acknowledgment mechanism",
+    "b": "Sends independent datagrams with no delivery guarantee",
+    "c": "No connection needs to be established before sending",
+    "d": "Connection-based; guarantees a reliable data stream thanks to the acknowledgment mechanism",
+    "correct": "D",
+    "explanation": "TCP is connection-based and reliable thanks to acknowledgments."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which statement about UDP (User Datagram Protocol) is correct?",
+    "a": "Sends independent datagrams with no guarantee of delivery or correct ordering",
+    "b": "Always guarantees packet ordering",
+    "c": "Uses an acknowledgment mechanism",
+    "d": "Uses only a single connection",
+    "correct": "A",
+    "explanation": "UDP sends independent datagrams with no delivery/ordering guarantee; the app must handle lost, duplicated and out-of-order packets itself."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a URI (Uniform Resource Identifier)?",
+    "a": "Just the IP address of the server",
+    "b": "The physical path of a file on disk",
+    "c": "A specially formatted string describing a resource on the internet or LAN (URL and URN are subsets of URI)",
+    "d": "A file transfer protocol",
+    "correct": "C",
+    "explanation": "A URI is a string describing a resource; URL and URN are subsets of it."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a characteristic of URN (e.g. `urn:isbn:0451450523`)?",
+    "a": "It tells the network location where the resource resides",
+    "b": "It is a URI using the \"urn\" scheme; it identifies independently of location and does not imply the resource is available for access",
+    "c": "It always starts with `http`",
+    "d": "It guarantees the resource is always accessible",
+    "correct": "B",
+    "explanation": "URN uses the \"urn\" scheme, is location-independent and does not imply the resource is available. URL is the one that indicates location."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which class is the abstract base class of the request/response model (HTTP, FTP, `file:`) in a protocol-agnostic way?",
+    "a": "WebRequest",
+    "b": "HttpClient",
+    "c": "TcpClient",
+    "d": "Dns",
+    "correct": "A",
+    "explanation": "WebRequest is the abstract base class for HTTP, FTP and `file:`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How does a client obtain a `WebResponse` object?",
+    "a": "`new WebResponse()`",
+    "b": "`WebRequest.Create(Uri)`",
+    "c": "`WebRequest.Abort()`",
+    "d": "By calling `GetResponse()` on a `WebRequest`",
+    "correct": "D",
+    "explanation": "The client does not create a WebResponse itself; it gets one via `GetResponse()`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How does HttpClient differ from WebRequest/WebClient?",
+    "a": "It is only used for the FTP protocol",
+    "b": "It is designed for web APIs/REST, allows plugging in custom message handlers (mockable during unit tests), and each instance has its own connection pool",
+    "c": "It does not support asynchronous programming",
+    "d": "It is required to be based on WebRequest in every version of .NET",
+    "correct": "B",
+    "explanation": "HttpClient fits web APIs/REST, has custom message handlers (mockable during unit tests), and each instance has its own connection pool."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which method sends a GET and asynchronously returns the response body as a `string`?",
+    "a": "`PostAsync`",
+    "b": "`DeleteAsync`",
+    "c": "`GetStringAsync`",
+    "d": "`PutAsync`",
+    "correct": "C",
+    "explanation": "`GetStringAsync` sends a GET and returns the body as a string."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What task does the Domain Name System (DNS) perform?",
+    "a": "Translates human-readable internet addresses (domain names) into the corresponding IP addresses",
+    "b": "Encrypts the transmitted data",
+    "c": "Allocates port numbers to processes",
+    "d": "Sends email via SMTP",
+    "correct": "A",
+    "explanation": "DNS maps domain names to IP addresses."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are the three components of DNS?",
+    "a": "IP, Port, Protocol",
+    "b": "Client, Server, Router",
+    "c": "Socket, Stream, Listener",
+    "d": "Name Space, Globally Distributed Database (Name Servers), Resolver",
+    "correct": "D",
+    "explanation": "Name Space, Globally Distributed Database (Name Servers), Resolver."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which class does the server side use to listen for and accept incoming TCP connections?",
+    "a": "TcpClient",
+    "b": "TcpListener",
+    "c": "UdpClient",
+    "d": "NetworkStream",
+    "correct": "B",
+    "explanation": "TcpListener listens for and accepts connections; TcpClient is the side that connects."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which method of `TcpClient` returns a `NetworkStream` for sending/receiving data?",
+    "a": "`Accept()`",
+    "b": "`Listen()`",
+    "c": "`GetStream()`",
+    "d": "`Abort()`",
+    "correct": "C",
+    "explanation": "`GetStream()` returns the `NetworkStream` used to send/receive data."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which method of the `Socket` class puts a socket into the listening state?",
+    "a": "`Listen()`",
+    "b": "`Connect(IPAddress, Int32)`",
+    "c": "`Send(Byte[])`",
+    "d": "`Close()`",
+    "correct": "A",
+    "explanation": "`Listen()` puts the Socket into the listening state; `Accept()` creates a new Socket for an incoming connection."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "A mono-processor von Neumann system (input-processing-output) is also known as which model in Flynn's Taxonomy?",
+    "a": "MIMD",
+    "b": "SIMD",
+    "c": "MISD",
+    "d": "SISD",
+    "correct": "D",
+    "explanation": "SISD (single instruction, single data); it hits the von Neumann bottleneck."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does symmetrical multiprocessing (SMP) mean?",
+    "a": "A master processor acts as a manager distributing tasks to the other processors",
+    "b": "Any free processor/core can execute a task",
+    "c": "Only one core can be used",
+    "d": "Only software optimized for multiprocessing can run",
+    "correct": "B",
+    "explanation": "SMP: any free processor/core can run the task. Option A describes AMP (asymmetrical multiprocessing)."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the maximum number of tasks a quad-core processor with Hyper-Threading (HT) can run at the same time?",
+    "a": "4",
+    "b": "2",
+    "c": "8",
+    "d": "16",
+    "correct": "C",
+    "explanation": "Quad-core x HT (2 logical cores per core) = 8 tasks at once."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which company developed Hyper-Threading (launched on Xeon in 2002)?",
+    "a": "Intel",
+    "b": "AMD",
+    "c": "ARM",
+    "d": "IBM",
+    "correct": "A",
+    "explanation": "Intel developed HT, launching it on Xeon in 2002."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which architecture enables true parallelism and is used by most systems today?",
+    "a": "SISD",
+    "b": "MIMD",
+    "c": "SIMD",
+    "d": "MISD",
+    "correct": "B",
+    "explanation": "MIMD provides true parallelism and is used by most modern systems."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which architecture is commonly used for fault tolerance, e.g. the computer controlling a space shuttle?",
+    "a": "SISD",
+    "b": "SIMD",
+    "c": "MISD",
+    "d": "MIMD",
+    "correct": "C",
+    "explanation": "MISD is used for fault tolerance, e.g. the computer controlling a space shuttle."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the characteristic of Serial Computing?",
+    "a": "Instructions run one after another on a single processor; only one instruction is executed at a time",
+    "b": "The problem is split into parts that run concurrently",
+    "c": "Multiple processors are used at once",
+    "d": "A central coordination mechanism is required",
+    "correct": "A",
+    "explanation": "Serial: instructions run sequentially on a single processor."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the limitation of Parallel Computing?",
+    "a": "It always costs more than serial",
+    "b": "It cannot be used for real-time simulation",
+    "c": "It can only run on one CPU",
+    "d": "Communication and synchronization between sub-tasks is difficult to implement",
+    "correct": "D",
+    "explanation": "Communication and synchronization between sub-tasks is hard."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which namespaces contain the TPL (Task Parallel Library)?",
+    "a": "`System.Net`",
+    "b": "`System.Threading` and `System.Threading.Tasks`",
+    "c": "`System.Linq`",
+    "d": "`System.IO`",
+    "correct": "B",
+    "explanation": "TPL lives in `System.Threading` and `System.Threading.Tasks`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which class do you use when you want a task to return a value?",
+    "a": "`Task`",
+    "b": "`TaskFactory`",
+    "c": "`Task<TResult>`",
+    "d": "`TaskScheduler`",
+    "correct": "C",
+    "explanation": "`Task` returns no result; you need `Task<TResult>`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does `Task.WhenAll(Task[])` do?",
+    "a": "Creates a task that completes when all the tasks in the array have completed",
+    "b": "Completes as soon as the first task finishes",
+    "c": "Cancels all of the tasks",
+    "d": "Runs the tasks one by one sequentially",
+    "correct": "A",
+    "explanation": "`WhenAll` completes when all the child tasks are done."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which method do you use to turn a LINQ query into PLINQ?",
+    "a": "`AsSequential()`",
+    "b": "`AsOrdered()`",
+    "c": "`ForAll()`",
+    "d": "`AsParallel()`",
+    "correct": "D",
+    "explanation": "`AsParallel()` is the entry point of PLINQ."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the PLINQ `AsOrdered` operator do?",
+    "a": "Ignores the order of the source data",
+    "b": "Asks PLINQ to preserve the order of the source sequence",
+    "c": "Limits the maximum number of processors",
+    "d": "Forces the query to run sequentially",
+    "correct": "B",
+    "explanation": "`AsOrdered` preserves the source sequence order; `AsUnordered` does not need to."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which is a correct note when using PLINQ?",
+    "a": "PLINQ is always faster than LINQ",
+    "b": "You should write to a file/database directly inside a PLINQ query",
+    "c": "Parallelism has overhead so performance must be measured; `AsParallel()` does not guarantee that the query definitely runs in parallel",
+    "d": "PLINQ always runs in parallel when `AsParallel()` is present",
+    "correct": "C",
+    "explanation": "Parallelism has overhead and must be measured; avoid non-thread-safe I/O; `AsParallel` does not guarantee parallel execution."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What do `async` and `await` give you?",
+    "a": "Writing an async method is almost as easy as a synchronous one, and the calling thread is not blocked waiting",
+    "b": "They force you to create a new thread for every statement",
+    "c": "They only run on Windows",
+    "d": "They completely replace the `Task` class",
+    "correct": "A",
+    "explanation": "`async/await` lets you write asynchronous code that looks nearly synchronous; the calling thread is not blocked."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Who developed the SOLID principles?",
+    "a": "Bill Gates",
+    "b": "Anders Hejlsberg",
+    "c": "Robert C. Martin (essay in 2000); the SOLID acronym was coined by Michael Feathers",
+    "d": "Martin Fowler",
+    "correct": "C",
+    "explanation": "Robert C. Martin (2000); Michael Feathers coined the SOLID acronym."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the S (Single Responsibility Principle) say?",
+    "a": "A class should have only one responsibility (one reason to change)",
+    "b": "Open for extension, closed for modification",
+    "c": "A subtype can replace its base type",
+    "d": "Many specialized interfaces are better than one general interface",
+    "correct": "A",
+    "explanation": "S: one class, one responsibility."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the O (Open/Closed Principle) say?",
+    "a": "A class has only one responsibility",
+    "b": "A subtype can replace its base type",
+    "c": "High-level modules depend on abstractions",
+    "d": "A software entity is open for extension and closed for modification",
+    "correct": "D",
+    "explanation": "O: open for extension, closed for modification."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the L (Liskov Substitution Principle) say?",
+    "a": "Many small interfaces are better than one large interface",
+    "b": "An object can be replaced by an instance of a subtype without making the program incorrect",
+    "c": "A class has only one responsibility",
+    "d": "Details must depend on abstractions",
+    "correct": "B",
+    "explanation": "L: a subtype can substitute without breaking the program."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the I (Interface Segregation Principle) say?",
+    "a": "Use one very large general interface for every client",
+    "b": "Interfaces should not be used",
+    "c": "Many specialized interfaces for each client are better than one general-purpose interface",
+    "d": "High-level modules depend on low-level modules",
+    "correct": "C",
+    "explanation": "I: many specialized interfaces beat one general interface."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the D (Dependency Inversion Principle) say?",
+    "a": "High-level modules should not depend on low-level modules; both should depend on abstractions",
+    "b": "Low-level modules must depend on high-level modules",
+    "c": "Abstractions depend on details",
+    "d": "Do not use interfaces in the design",
+    "correct": "A",
+    "explanation": "D: both high-level and low-level depend on abstractions."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Class `Notification` directly creates `new Email()` in its constructor. What is this?",
+    "a": "Loosely coupled",
+    "b": "Following the Dependency Inversion Principle",
+    "c": "Following the Open/Closed Principle",
+    "d": "Tightly coupled: to send another kind of notification you have to modify `Notification`",
+    "correct": "D",
+    "explanation": "`new Email()` in the constructor is tightly coupled, violating DIP and OCP."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the relationship between DIP and IoC (Inversion of Control)?",
+    "a": "The two concepts are identical",
+    "b": "DIP is a principle (theory); IoC is a pattern with concrete steps to make code DIP-friendly",
+    "c": "IoC is a Microsoft framework",
+    "d": "DIP is a pattern, IoC is a principle",
+    "correct": "B",
+    "explanation": "DIP is a principle/theory; IoC is a pattern with concrete steps to make code DIP-friendly."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is Dependency Injection (DI)?",
+    "a": "Creating an object with `new` inside the class that uses it",
+    "b": "Using a static class for every dependency",
+    "c": "A way of implementing IoC by injecting a concrete implementation into the class that is using an abstraction (interface)",
+    "d": "A special kind of interface",
+    "correct": "C",
+    "explanation": "DI is a way to implement IoC: inject an implementation into the class that uses an interface."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are the three basic capabilities of a DI Container?",
+    "a": "Registration, Resolution, Disposition",
+    "b": "Compile, Link, Run",
+    "c": "Create, Read, Update",
+    "d": "Connect, Send, Receive",
+    "correct": "A",
+    "explanation": "Registration, Resolution (create and inject), Disposition (lifetime management)."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which service lifetime creates a new instance every time it is requested?",
+    "a": "Singleton",
+    "b": "Scoped",
+    "c": "Static",
+    "d": "Transient",
+    "correct": "D",
+    "explanation": "Transient creates a new instance per request; Singleton uses a single instance; Scoped is limited to one context."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How does Ambient Context provide a dependency?",
+    "a": "Passing it through the constructor",
+    "b": "Through a static accessor, avoiding cluttering the API with cross-cutting concerns",
+    "c": "Passing it as a method parameter",
+    "d": "Through a writable property",
+    "correct": "B",
+    "explanation": "Ambient Context provides the dependency through a static accessor."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which DI pattern ensures the dependency is always available because every caller is required to provide it through the constructor?",
+    "a": "Property Injection",
+    "b": "Method Injection",
+    "c": "Constructor Injection",
+    "d": "Ambient Context",
+    "correct": "C",
+    "explanation": "Constructor Injection: the most common one; it ensures the dependency exists when the object is created."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the drawback of Property Injection?",
+    "a": "It hides the dependency and the property can be null, so null checks are needed everywhere it is used",
+    "b": "It ensures the dependency is always present at construction",
+    "c": "It forces you to change the constructor",
+    "d": "It can only be used with static classes",
+    "correct": "A",
+    "explanation": "Property Injection hides the dependency and it can be null, easily causing a `NullReferenceException`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "When the dependency changes on every call (a different dependency per operation), which pattern should you use?",
+    "a": "A dependency fixed for the whole lifetime of the object",
+    "b": "A global variable",
+    "c": "An optional property",
+    "d": "Method Injection (pass the dependency as a method parameter)",
+    "correct": "D",
+    "explanation": "Method Injection: the dependency differs per call and is passed as a parameter."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a characteristic of ASP.NET Core?",
+    "a": "It only runs on Windows and requires `System.Web.dll`",
+    "b": "Free, open-source, cross-platform, lightweight modular architecture and no dependency on `System.Web.dll`",
+    "c": "It completely replaces C#",
+    "d": "It can only run on IIS",
+    "correct": "B",
+    "explanation": "Free, open-source, cross-platform, modular, and no longer dependent on `System.Web.dll`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are the limitations of ASP.NET Web Forms that led to needing a new framework?",
+    "a": "Easy to test and complete control over HTML",
+    "b": "A simple stateless model",
+    "c": "It only runs on Linux",
+    "d": "Lack of testability, a complex stateful model and little control over the generated HTML",
+    "correct": "D",
+    "explanation": "Web Forms: lack of testability, complex stateful model, little control over HTML."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are the two main tasks of Routing?",
+    "a": "Map an incoming request to a Controller Action; generate the corresponding outgoing URLs for the action",
+    "b": "Render the view and save to the database",
+    "c": "Encrypt the URL and compress the response",
+    "d": "Manage sessions and cookies",
+    "correct": "A",
+    "explanation": "Routing maps request to action and generates outgoing URLs."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "In the pattern `{controller=Home}/{action=Index}/{id?}`, what does the `?` in `id?` mean?",
+    "a": "The id parameter is required",
+    "b": "Id is always null",
+    "c": "The id parameter is optional",
+    "d": "Id is the controller name",
+    "correct": "C",
+    "explanation": "`?` means the parameter is optional."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the role of the Controller in MVC?",
+    "a": "It only renders the HTML interface",
+    "b": "Handles user interactions/requests, runs the necessary logic and returns a response (orchestrating the logic flow)",
+    "c": "It only stores data into the database",
+    "d": "It only contains CSS and JavaScript",
+    "correct": "B",
+    "explanation": "The Controller orchestrates the logic flow and returns the response."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the responsibility of the View in MVC?",
+    "a": "Holding business logic",
+    "b": "Accessing the database",
+    "c": "Handling incoming requests",
+    "d": "Only rendering the model to the user; it should not contain processing logic",
+    "correct": "D",
+    "explanation": "The View only renders; it does not process logic."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a ViewModel?",
+    "a": "A class containing only the properties the view needs; it is optional and helps expose only the necessary data",
+    "b": "A class that must be present in every view",
+    "c": "It is the DbContext",
+    "d": "It is the Controller",
+    "correct": "A",
+    "explanation": "A ViewModel holds the data specific to the view; it is optional."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the condition for an Action method?",
+    "a": "It can be private",
+    "b": "It can be protected",
+    "c": "It must be public and must not be static",
+    "d": "It can be static",
+    "correct": "C",
+    "explanation": "An action method must be `public` and must not be `static`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "If a view is not found in the `Views/<ControllerName>` folder, where does the framework look next?",
+    "a": "It throws an error immediately",
+    "b": "The `Views/Shared` folder",
+    "c": "The `wwwroot` folder",
+    "d": "The `Models` folder",
+    "correct": "B",
+    "explanation": "A view not found in `Views/<Controller>` is searched for next in `Views/Shared`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is Model Binding?",
+    "a": "Encrypting the form data",
+    "b": "Checking access permissions",
+    "c": "Creating a table in the database",
+    "d": "Mapping data from the HTTP request (form, route, query string, body) into the parameters of an action method",
+    "correct": "D",
+    "explanation": "Model binding maps request data into the action parameters."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "When does Model Validation take place?",
+    "a": "After model binding and before the action executes; errors are stored in `ModelState`",
+    "b": "After the action has already finished running",
+    "c": "Before model binding",
+    "d": "It only takes place on the client",
+    "correct": "A",
+    "explanation": "Validation runs after binding and before the action; the result lives in `ModelState`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the `[Compare]` attribute used for?",
+    "a": "Checking the email format",
+    "b": "Checking a value within a range",
+    "c": "Checking that two properties in the model match (e.g. Password and ConfirmPassword)",
+    "d": "Checking the URL format",
+    "correct": "C",
+    "explanation": "`[Compare]` matches two properties against each other."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Compare ViewData and ViewBag?",
+    "a": "ViewBag is a key/value dictionary, ViewData is dynamic",
+    "b": "ViewData is a key/value dictionary; ViewBag is similar but accessed through dynamic properties",
+    "c": "The two are completely unrelated",
+    "d": "Only ViewBag can pass data from the controller to the view",
+    "correct": "B",
+    "explanation": "ViewData is a dictionary; ViewBag is a wrapper accessed using dynamic properties."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is TempData used for?",
+    "a": "It only exists within a single view",
+    "b": "Storing permanently into the database",
+    "c": "It only exists on the client side",
+    "d": "Temporary storage, usually for one-time messages/passing data between actions; `TempData.Keep()` keeps the data after the view is rendered",
+    "correct": "D",
+    "explanation": "TempData holds temporary/one-time data; `Keep()` retains it after rendering."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the storage scope of `HttpContext.Items`?",
+    "a": "Only within a single request; it is discarded after the request has been processed",
+    "b": "Across many requests of the same user",
+    "c": "Stored in the browser's cookie",
+    "d": "Stored in the Session",
+    "correct": "A",
+    "explanation": "`HttpContext.Items` lives only for a single request."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is Razor Pages?",
+    "a": "A framework that runs entirely client-side",
+    "b": "A framework that can only be used on Windows",
+    "c": "A server-side, page-focused framework for building dynamic websites, based on MVC and available since .NET Core 2.0",
+    "d": "A library that replaces the C# language",
+    "correct": "C",
+    "explanation": "Server-side, page-focused, available since .NET Core 2.0."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which two files make up a Razor Page together with its PageModel?",
+    "a": "`Demo2.cshtml` and `Demo2.cshtml.cs` (same name, mapped 1-1)",
+    "b": "`Demo2.razor` and `Demo2.cs`",
+    "c": "`Demo2.html` and `Demo2.js`",
+    "d": "`Demo2.cshtml` and `Demo2.json`",
+    "correct": "A",
+    "explanation": "`.cshtml` + `.cshtml.cs`, mapped 1-1."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the naming convention for handler methods in Razor Pages?",
+    "a": "`Get()`, `Post()`",
+    "b": "`HandleGet()`, `HandlePost()`",
+    "c": "`get()`, `post()`",
+    "d": "The \"On\" prefix: `OnGet()`, `OnPost()`; `OnGet` and `OnGetAsync` are considered the same handler",
+    "correct": "D",
+    "explanation": "The \"On\" + verb convention: `OnGet`, `OnPost`; the async version is the same handler."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is `_Layout.cshtml` used for?",
+    "a": "Declaring global directives",
+    "b": "Serving as the template for the content pages that reference it (the consistent UI of the site)",
+    "c": "Running code after every content page",
+    "d": "Rendering partial pages",
+    "correct": "B",
+    "explanation": "`_Layout` is the shared template for the pages."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the role of `_ViewStart.cshtml`?",
+    "a": "Declaring global namespaces",
+    "b": "Participating in routing like a normal page",
+    "c": "Holding code that runs after the code of the content page in the same folder/subfolder; a convenient place to specify the layout",
+    "d": "Storing the connection string",
+    "correct": "C",
+    "explanation": "`_ViewStart` runs after the content page code, making it convenient for specifying the layout."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is `_ViewImports.cshtml` used for?",
+    "a": "Gathering the shared directives (`@using`, `@addTagHelper`, `@inject`, `@model`...) for the Razor pages",
+    "b": "Serving as the layout template",
+    "c": "Managing the Session",
+    "d": "Connecting to the database",
+    "correct": "A",
+    "explanation": "`_ViewImports` gathers the shared directives."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is a characteristic of Partial Pages?",
+    "a": "They participate in routing",
+    "b": "They must have a PageModel",
+    "c": "They completely replace the layout",
+    "d": "They do not participate in routing; rendered with `<partial name=\"_MenuPartial\" />`",
+    "correct": "D",
+    "explanation": "A partial page does not participate in routing; it is rendered with `<partial />`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the PageModel in Razor Pages?",
+    "a": "An implementation of the MVVM pattern",
+    "b": "An implementation of the Page Controller pattern (one page to one controller), acting as both controller and view model",
+    "c": "An implementation of a Front Controller handling every request of the site",
+    "d": "Just a pure-data ViewModel",
+    "correct": "B",
+    "explanation": "PageModel = the Page Controller pattern; not MVVM, not a Front Controller."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "When should you use a View Component instead of a partial page or a tag helper?",
+    "a": "When you only need static HTML",
+    "b": "When you do not need unit tests",
+    "c": "When you need logic to fetch data (file, database, web service); the class inherits `ViewComponent` and has an `Invoke` method",
+    "d": "When you want to replace routing",
+    "correct": "C",
+    "explanation": "A View Component is used when you need logic to fetch data; the class inherits `ViewComponent` and has `Invoke`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "In Razor Pages routing, at which URL(s) can the `Index.cshtml` file in the root `Pages` folder be accessed?",
+    "a": "Both `/` and `/Index`",
+    "b": "Only `/Index`",
+    "c": "Only `/Home`",
+    "d": "It cannot be accessed",
+    "correct": "A",
+    "explanation": "`Index.cshtml` is accessible via both `/` and `/Index`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Why is server-side validation still needed when client-side validation already exists?",
+    "a": "Client-side validation does not exist",
+    "b": "Server-side is faster so it replaces the client",
+    "c": "Server-side does not need DataAnnotations",
+    "d": "Client-side is very easy to bypass; the server runs the validation attributes and `ModelState.IsValid` returns `false` if there are errors",
+    "correct": "D",
+    "explanation": "Client-side validation is easy to bypass, so the server must check again. Tester tip: try disabling JavaScript and then submitting invalid data."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the `[BindProperty]` attribute on a public property of a PageModel do?",
+    "a": "Attaches the property to a handler method",
+    "b": "Binds the posted form value into the property (convenient for using values outside the handler and for binding with tag helpers)",
+    "c": "Automatically validates all data",
+    "d": "Defines the route for the page",
+    "correct": "B",
+    "explanation": "`[BindProperty]` binds the form value into the PageModel property."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are Tag Helpers in Razor Pages?",
+    "a": "A JavaScript library for manipulating the DOM",
+    "b": "A tool for generating database code",
+    "c": "Reusable components that automatically generate HTML for specific tags; enabled with `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`",
+    "d": "A type of layout file",
+    "correct": "C",
+    "explanation": "A Tag Helper automatically generates HTML for specific tags and is enabled with `@addTagHelper`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which statement about Session state in Razor Pages is correct?",
+    "a": "It is not enabled by default; it must be enabled in the Startup/app configuration file, and a cookie is used to tie the requests together into one session",
+    "b": "It is enabled by default",
+    "c": "No cookie is needed",
+    "d": "It is only stored on the client side",
+    "correct": "A",
+    "explanation": "Session is not enabled by default and uses a cookie to link the requests together."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What happens to a request that does not go through HTTPS when the `RequireHttps` attribute is used?",
+    "a": "It is accepted normally",
+    "b": "It always returns 404 Not Found",
+    "c": "It is always redirected to HTTPS regardless of which verb is used",
+    "d": "A GET request is redirected to the HTTPS version; other verbs (e.g. POST) receive 403 Forbidden",
+    "correct": "D",
+    "explanation": "GET is redirected to HTTPS; other verbs such as POST get 403 Forbidden."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which two words is the name \"Blazor\" built from?",
+    "a": "Block + Razor",
+    "b": "Browser + Razor",
+    "c": "Binary + Lazor",
+    "d": "Backend + Azure",
+    "correct": "B",
+    "explanation": "Blazor = Browser + Razor."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "In Blazor Server, through what are the UI interactions handled?",
+    "a": "SignalR connection",
+    "b": "FTP",
+    "c": "SMTP",
+    "d": "Remote Desktop",
+    "correct": "A",
+    "explanation": "Blazor Server handles UI through a SignalR connection."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which kind of application is Blazor WebAssembly best suited for?",
+    "a": "An internal application that needs a constant connection to the server",
+    "b": "An application that only runs on the server",
+    "c": "An offline-capable or public application (the first download is large, but afterwards no server interaction is needed)",
+    "d": "An application that does not use C#",
+    "correct": "C",
+    "explanation": "WASM suits offline-capable or public apps; the first-time download is heavy."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "In which file is a Blazor component usually defined, and how is it used?",
+    "a": "A `.cshtml` file, used with `@Component(\"MyComponent\")`",
+    "b": "A `.cs` file, used with `new MyComponent()`",
+    "c": "An `.html` file, used with `<include MyComponent>`",
+    "d": "A `.razor` file, used like an element: `<MyComponent />`",
+    "correct": "D",
+    "explanation": "The component lives in a `.razor` file and is used like `<MyComponent />`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which directive declares the route `/todo` for a component?",
+    "a": "`@route \"/todo\"`",
+    "b": "`@page \"/todo\"`",
+    "c": "`@url \"/todo\"`",
+    "d": "`@path \"/todo\"`",
+    "correct": "B",
+    "explanation": "`@page \"/todo\"` declares the route."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What kind of binding does `<input @bind=\"newTodo\" />` perform?",
+    "a": "Two-way binding between the input box and the `newTodo` variable",
+    "b": "Only one-way (displaying the value)",
+    "c": "No binding at all",
+    "d": "Only importing a namespace",
+    "correct": "A",
+    "explanation": "`@bind` is two-way binding."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which attribute attaches a C# method to the click event of a button?",
+    "a": "`@click`",
+    "b": "`onpress`",
+    "c": "`@onclick`",
+    "d": "`@submit`",
+    "correct": "C",
+    "explanation": "`@onclick` attaches a C# method to the click event."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the role of the `Routes.razor` file in a Blazor Web App project?",
+    "a": "It holds the connection string",
+    "b": "It declares the shared namespaces",
+    "c": "It is the entry point that starts the server",
+    "d": "It configures the Blazor router (`App.razor` is the root component)",
+    "correct": "D",
+    "explanation": "`Routes.razor` configures the router; `App.razor` is the root component."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the `_Imports.razor` file used for?",
+    "a": "Configuring the router",
+    "b": "Declaring the namespaces commonly shared by the components",
+    "c": "Holding the static files",
+    "d": "Being the entry point of the application",
+    "correct": "B",
+    "explanation": "`_Imports.razor` declares the shared namespaces."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What are Cascading Values (cascading parameters) used for in Blazor?",
+    "a": "Sharing data between nested components",
+    "b": "Removing data from a component",
+    "c": "Navigating to another page",
+    "d": "Compiling C# code",
+    "correct": "A",
+    "explanation": "Cascading parameters share data between nested components."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the line `@rendermode InteractiveServer` at the top of a component do?",
+    "a": "Turns interactivity completely off",
+    "b": "Forces the component to run on WebAssembly",
+    "c": "Turns on interactivity for the component in Interactive Server mode",
+    "d": "Only renders static HTML",
+    "correct": "C",
+    "explanation": "`@rendermode InteractiveServer` turns on Server-style interactivity."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which command applies the migrations to the database in the Movie demo (EF Core)?",
+    "a": "`dotnet ef migrations add \"InitialDB\"` (this command only creates the migration file)",
+    "b": "`dotnet new blazor`",
+    "c": "`dotnet run`",
+    "d": "`dotnet ef database update`",
+    "correct": "D",
+    "explanation": "`database update` applies the migrations; `migrations add` only creates the migration file."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the `[Column(TypeName = \"decimal(18, 2)\")]` attribute on the `Price` property do?",
+    "a": "Formats the display on the UI",
+    "b": "Specifies the column type in the database",
+    "c": "Forces the user to enter a price",
+    "d": "Renames the table",
+    "correct": "B",
+    "explanation": "`[Column(TypeName=...)]` specifies the column type in the DB."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How does \"Pushing\" differ from \"Pulling\"?",
+    "a": "Push means being notified of what is new, instead of having to go ask what is new (Pull)",
+    "b": "Push means the client constantly asks the server",
+    "c": "Pull means the server sends data down to the client by itself",
+    "d": "The two concepts are the same",
+    "correct": "A",
+    "explanation": "Push = being told what is new; Pull = going to ask."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What is the transport fallback order in SignalR?",
+    "a": "Long Polling → Server-Sent Events → WebSockets",
+    "b": "Server-Sent Events → WebSockets → Long Polling",
+    "c": "WebSockets → Server-Sent Events → Long Polling",
+    "d": "Long Polling → WebSockets → Server-Sent Events",
+    "correct": "C",
+    "explanation": "WebSockets to Server-Sent Events to Long Polling."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How do you create a Hub in SignalR?",
+    "a": "Create a class implementing `IDisposable`",
+    "b": "Create a static class",
+    "c": "Create an `IHub` interface",
+    "d": "Declare a class that inherits from `Hub` and add public methods",
+    "correct": "D",
+    "explanation": "A Hub is a class inheriting from `Hub`; its public methods are what clients can call."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What do you need in order to configure SignalR in `Program.cs`?",
+    "a": "Only `MapHub`",
+    "b": "`AddSignalR()` registers the services; `MapHub<ChatHub>(\"/chatHub\")` maps the hub to a URL endpoint",
+    "c": "Only installing the JavaScript library on the client",
+    "d": "No configuration is needed",
+    "correct": "B",
+    "explanation": "`AddSignalR()` + `MapHub<T>(url)`."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "On which objects does `Clients.Others` invoke the method?",
+    "a": "All connected clients except the client that called the hub method",
+    "b": "Only the client that called the hub method",
+    "c": "Every connected client",
+    "d": "Only one group",
+    "correct": "A",
+    "explanation": "`Others` = every client except the caller."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does `Context.ConnectionId` return?",
+    "a": "The user name",
+    "b": "The IP address",
+    "c": "A unique ID assigned by SignalR to each connection",
+    "d": "The group name",
+    "correct": "C",
+    "explanation": "`ConnectionId` is the unique ID of each connection."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How do you fix the \"magic string\" drawback of `SendAsync(\"ReceiveMessage\", ...)`?",
+    "a": "Use JSON instead of MessagePack",
+    "b": "Use a hub filter",
+    "c": "Use `Context.Items`",
+    "d": "A strongly typed hub with `Hub<T>` to avoid runtime errors caused by a wrong method name",
+    "correct": "D",
+    "explanation": "`Hub<T>` catches a wrong name at compile time instead of causing a runtime error."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "What does the `[HubMethodName(\"SendMessageToUser\")]` attribute do?",
+    "a": "Renames the hub class",
+    "b": "Specifies the name the client uses to call the method, instead of the default .NET method name",
+    "c": "Hides the method from the client",
+    "d": "Configures a group",
+    "correct": "B",
+    "explanation": "`[HubMethodName]` renames the method that the client calls."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "In `OnDisconnectedAsync(Exception exception)`, when is the `exception` parameter `null`?",
+    "a": "When the client disconnects intentionally (e.g. calls `connection.stop()`)",
+    "b": "When there is a network failure",
+    "c": "When the server crashes",
+    "d": "When the connection times out",
+    "correct": "A",
+    "explanation": "`null` on an intentional disconnect; there is an exception when the disconnect is caused by an error such as a network fault."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "Which statement about Hub filters is correct?",
+    "a": "They only existed before ASP.NET Core 3.1",
+    "b": "They only run on the client side",
+    "c": "They exist since ASP.NET Core 5.0, implement `IHubFilter` with `InvokeMethodAsync`; global filters run before local filters",
+    "d": "They completely replace the `Hub` class",
+    "correct": "C",
+    "explanation": "Hub filters exist since ASP.NET Core 5.0, implement `IHubFilter`; global runs before local."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "How does MessagePack compare to JSON in SignalR?",
+    "a": "It is larger and slower than JSON",
+    "b": "It is easier to read with the naked eye",
+    "c": "They are exactly the same",
+    "d": "It is a compact binary serialization and is faster (e.g. in the slide: JSON 27 bytes, MessagePack 18 bytes)",
+    "correct": "D",
+    "explanation": "MessagePack is smaller and faster than JSON (18 bytes versus 27 bytes in the example)."
+  },
+  {
+    "subject": "PRN222-EN",
+    "content": "In the Entity Framework + SignalR lab, why do we call `Clients.All.SendAsync(\"LoadProducts\")` after `SaveChangesAsync()`?",
+    "a": "To save the data into the database",
+    "b": "To tell every client to reload the product list (the client calls `LoadProdData()` and redraws the table), keeping the data synchronized in real time",
+    "c": "To create a new migration",
+    "d": "To clear the server cache",
+    "correct": "B",
+    "explanation": "It tells every client to reload the list so the data stays synchronized in real time."
+  }
+]

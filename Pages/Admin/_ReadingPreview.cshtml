@@ -1,0 +1,89 @@
+@model TracNghiemWeb.Services.ReadingImportPreview
+
+@foreach (var passage in Model.Passages)
+{
+    var content = passage.Content ?? string.Empty;
+
+    <section class="passage-card">
+        <div class="card-title">
+            <h3>@(string.IsNullOrWhiteSpace(passage.Title) ? $"Bài đọc {passage.Index}" : passage.Title)</h3>
+            <span class="badge badge-primary">@passage.Questions.Count câu</span>
+        </div>
+
+        @if (passage.Errors.Count > 0)
+        {
+            <div class="alert alert-danger mb-md">
+                <ul class="preview-errors mb-0">
+                    @foreach (var error in passage.Errors)
+                    {
+                        <li>@error</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(content))
+        {
+            <div class="passage-content mb-md">@Display.RichText(content)</div>
+        }
+
+        @if (passage.Questions.Count > 0)
+        {
+            <div class="table-wrap mb-0">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Câu hỏi</th>
+                            <th scope="col">Đáp án</th>
+                            <th scope="col">Trạng thái</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var question in passage.Questions)
+                        {
+                            var isDuplicate = question.IsValid && Model.Duplicates.Contains(question.Index);
+                            var isBlocked = passage.Errors.Count > 0;
+                            <tr class="@(question.IsValid && !isBlocked ? null : "row-invalid")">
+                                <td class="nowrap">@question.Index</td>
+                                <td>@Display.RichText(question.Content)</td>
+                                <td class="nowrap">@Display.OptionLabel(question.OptionStyle, question.Correct ?? "")</td>
+                                <td>
+                                    @if (!question.IsValid)
+                                    {
+                                        <span class="badge badge-danger">Lỗi</span>
+                                        <ul class="preview-errors">
+                                            @foreach (var error in question.Errors)
+                                            {
+                                                <li>@error</li>
+                                            }
+                                        </ul>
+                                    }
+                                    else if (isBlocked)
+                                    {
+                                        <span class="badge badge-danger">Bài đọc lỗi – sẽ bỏ qua</span>
+                                    }
+                                    else if (isDuplicate)
+                                    {
+                                        <span class="badge badge-accent">Trùng – sẽ bỏ qua</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-success">Hợp lệ</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </section>
+}
+
+<p class="muted">
+    Bài đọc: <strong>@Model.Passages.Count</strong> ·
+    Câu hợp lệ: <strong>@Model.ValidCount</strong> ·
+    Trùng (bỏ qua): <strong>@Model.DuplicateCount</strong> ·
+    Lỗi (bỏ qua): <strong>@Model.InvalidCount</strong>
+</p>

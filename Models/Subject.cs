@@ -12,5 +12,6 @@ public class Subject
     public string Name { get; set; } = string.Empty;
 
     public ICollection<Question> Questions { get; set; } = new List<Question>();
+    public ICollection<ReadingPassage> ReadingPassages { get; set; } = new List<ReadingPassage>();
     public ICollection<Attempt> Attempts { get; set; } = new List<Attempt>();
 }

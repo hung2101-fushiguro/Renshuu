@@ -75,10 +75,20 @@
                 <span asp-validation-for="Input.CorrectOption" class="field-error"></span>
             </div>
             <div class="field">
-                <label asp-for="Input.Explanation">Giải thích (không bắt buộc)</label>
-                <input asp-for="Input.Explanation" class="input" maxlength="2000" />
-                <span asp-validation-for="Input.Explanation" class="field-error"></span>
+                <label asp-for="Input.OptionStyle">Kiểu đánh số đáp án</label>
+                <select asp-for="Input.OptionStyle" class="input">
+                    <option value="ABCD">A, B, C, D</option>
+                    <option value="1234">1, 2, 3, 4</option>
+                </select>
+                <span class="hint">Với kiểu 1–4: A = 1, B = 2, C = 3, D = 4.</span>
+                <span asp-validation-for="Input.OptionStyle" class="field-error"></span>
             </div>
+        </div>
+
+        <div class="field">
+            <label asp-for="Input.Explanation">Giải thích (không bắt buộc)</label>
+            <input asp-for="Input.Explanation" class="input" maxlength="2000" />
+            <span asp-validation-for="Input.Explanation" class="field-error"></span>
         </div>
 
         <div class="page-head actions mt-0">

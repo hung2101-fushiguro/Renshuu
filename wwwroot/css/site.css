@@ -1,6 +1,6 @@
 /* ==========================================================================
    Trắc nghiệm — design tokens (từ design-system/tracnghiemweb/MASTER.md)
-   Blue primary + gold accent, minimalism. Font: Be Vietnam Pro (override).
+   Blue primary + gold accent, minimalism. Font: Be Vietnam Pro; Noto Sans JP cho chữ Nhật.
    ========================================================================== */
 
 :root {
@@ -63,7 +63,7 @@ html {
 
 body {
     margin: 0;
-    font-family: "Be Vietnam Pro", "Segoe UI", system-ui, -apple-system, sans-serif;
+    font-family: "Be Vietnam Pro", "Noto Sans JP", "Segoe UI", system-ui, -apple-system, sans-serif;
     font-size: 16px;
     line-height: 1.6;
     color: var(--color-foreground);
@@ -601,7 +601,44 @@ textarea.input {
 .question-content {
     margin: 0;
     font-weight: 600;
+    font-size: 1.05rem;
     white-space: pre-wrap;
+}
+
+.blank {
+    display: inline-block;
+    min-width: 4.5em;
+    height: 1em;
+    border-bottom: 2px solid currentColor;
+    margin: 0 0.2em;
+    vertical-align: baseline;
+    white-space: nowrap;
+    text-align: center;
+    line-height: 1;
+}
+
+.star {
+    display: inline;
+    font-weight: 700;
+}
+
+.passage-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-primary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-md);
+}
+
+.passage-title {
+    margin: 0 0 var(--space-sm);
+    font-size: 1.1rem;
+}
+
+.passage-content {
+    white-space: pre-wrap;
+    line-height: 1.9;
 }
 
 .explanation {

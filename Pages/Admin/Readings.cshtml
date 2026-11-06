@@ -1,0 +1,61 @@
+@page
+@model TracNghiemWeb.Pages.Admin.ReadingsModel
+@{
+    ViewData["Title"] = "Nhập bài đọc";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "readings";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Nhập bài đọc</h1>
+        <p>Dán bài đọc kèm bộ câu hỏi riêng, xem trước rồi mới lưu.</p>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<form method="post" asp-page-handler="Preview">
+    <div asp-validation-summary="All"></div>
+
+    <div class="card">
+        <div class="form-grid">
+            <div class="field">
+                <label asp-for="SubjectId">Môn học (áp dụng cho tất cả bài đọc dán vào)</label>
+                <select asp-for="SubjectId" class="input">
+                    @foreach (var subject in Model.Subjects)
+                    {
+                        <option value="@subject.Id">@subject.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label asp-for="Text">Nội dung bài đọc và câu hỏi</label>
+                <textarea asp-for="Text" class="input" rows="22" spellcheck="false"
+                          placeholder="[BÀI ĐỌC] Bài 1: Tiêu đề&#10;Nội dung bài đọc...&#10;&#10;[CÂU HỎI]&#10;28. Câu hỏi...&#10;1. Đáp án 1&#10;2. Đáp án 2&#10;3. Đáp án 3&#10;4. Đáp án 4&#10;Đáp án: 3&#10;&#10;29. Câu hỏi tiếp theo...&#10;...&#10;[HẾT BÀI]"></textarea>
+                <span class="hint">
+                    Mỗi bài bắt đầu bằng <code>[BÀI ĐỌC]</code>, phần câu hỏi bắt đầu bằng <code>[CÂU HỎI]</code>.
+                    Các câu cách nhau bằng dòng trống; đáp án có thể là <code>1–4</code> hoặc <code>A–D</code>.
+                    Dùng <code>&lt;star&gt;&lt;/star&gt;</code> cho ngôi sao và
+                    <code>&lt;blank&gt;&lt;/blank&gt;</code> cho chỗ trống.
+                    Bài đọc chỉ có 1 câu thì dùng mục <a asp-page="/Admin/Paste">Dán câu hỏi</a>.
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="page-head actions">
+        <button type="submit" class="btn btn-primary">Xem trước</button>
+    </div>
+</form>
+
+@if (Model.Preview is not null)
+{
+    <h2>Kết quả xem trước</h2>
+    <partial name="_ReadingPreview" model="Model.Preview" />
+
+    <form method="post" asp-page-handler="Save">
+        <button type="submit" class="btn btn-accent">Lưu các bài đọc hợp lệ</button>
+    </form>
+}

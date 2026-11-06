@@ -22,12 +22,12 @@ public class QuestionsModel : PageModel
     public int TotalPages { get; private set; } = 1;
     public int TotalCount { get; private set; }
 
-    public async Task OnGetAsync(int? subjectId, string? search, int page = 1)
+    public async Task OnGetAsync(int? subjectId, string? search, int pageNumber = 1)
     {
         Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
         SubjectId = subjectId;
         Search = search?.Trim();
-        PageNumber = Math.Max(1, page);
+        PageNumber = Math.Max(1, pageNumber);
 
         var query = _db.Questions.AsNoTracking();
         if (subjectId is int id)
@@ -53,7 +53,7 @@ public class QuestionsModel : PageModel
             .ToListAsync();
     }
 
-    public async Task<IActionResult> OnPostDeleteAsync(int id, int? subjectId, string? search, int page = 1)
+    public async Task<IActionResult> OnPostDeleteAsync(int id, int? subjectId, string? search, int pageNumber = 1)
     {
         var question = await _db.Questions.FindAsync(id);
         if (question is null)
@@ -74,6 +74,6 @@ public class QuestionsModel : PageModel
             }
         }
 
-        return RedirectToPage(new { subjectId, search, page });
+        return RedirectToPage(new { subjectId, search, pageNumber });
     }
 }

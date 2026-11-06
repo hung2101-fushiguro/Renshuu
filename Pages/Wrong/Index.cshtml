@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Câu còn sai";
     ViewData["Active"] = "wrong";
+    var shownPassages = new HashSet<int>();
 }
 
 <div class="page-head">
@@ -48,7 +49,7 @@ else
     {
         <div class="card mb-lg">
             <h2 class="mt-0">Làm lại các câu sai</h2>
-            <p class="muted">Bài làm sẽ gồm đúng @Model.Questions.Count câu sai này, thứ tự câu và đáp án được xáo trộn.</p>
+            <p class="muted">Bài làm sẽ gồm đúng @Model.Questions.Count câu sai này, thứ tự câu được xáo trộn.</p>
             <form method="post" class="toolbar mb-0">
                 <input type="hidden" asp-for="SubjectId" />
                 <div class="field">
@@ -69,20 +70,34 @@ else
         <h2>Danh sách câu sai</h2>
         @foreach (var (question, index) in Model.Questions.Select((q, i) => (q, i)))
         {
+            if (question.Passage is not null && shownPassages.Add(question.Passage.Id))
+            {
+                <section class="passage-card">
+                    @if (!string.IsNullOrWhiteSpace(question.Passage.Title))
+                    {
+                        <h2 class="passage-title">@question.Passage.Title</h2>
+                    }
+                    <div class="passage-content">@Display.RichText(question.Passage.Content)</div>
+                </section>
+            }
+
             <section class="question">
                 <div class="question-head">
                     <span class="question-number">@(index + 1)</span>
                     <div>
-                        <p class="question-content">@question.Content</p>
+                        <p class="question-content">@Display.RichText(question.Content)</p>
                         <p class="mt-sm mb-0">
-                            <span class="badge badge-primary">Đáp án đúng: @question.CorrectOption. @question.GetOption(question.CorrectOption)</span>
+                            <span class="badge badge-primary">
+                                Đáp án đúng: @(Display.OptionLabel(question.OptionStyle, question.CorrectOption)).
+                                @Display.RichText(question.GetOption(question.CorrectOption))
+                            </span>
                         </p>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(question.Explanation))
                 {
                     <div class="explanation mb-0">
-                        <strong>Giải thích:</strong> @question.Explanation
+                        <strong>Giải thích:</strong> @Display.RichText(question.Explanation)
                     </div>
                 }
             </section>

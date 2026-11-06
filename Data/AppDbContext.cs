@@ -11,6 +11,7 @@ public class AppDbContext : DbContext
 
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<Question> Questions => Set<Question>();
+    public DbSet<ReadingPassage> ReadingPassages => Set<ReadingPassage>();
     public DbSet<Attempt> Attempts => Set<Attempt>();
     public DbSet<AttemptAnswer> AttemptAnswers => Set<AttemptAnswer>();
 
@@ -21,6 +22,19 @@ public class AppDbContext : DbContext
             entity.Property(s => s.Name).IsRequired().HasMaxLength(200);
         });
 
+        modelBuilder.Entity<ReadingPassage>(entity =>
+        {
+            entity.Property(p => p.Title).HasMaxLength(300);
+            entity.Property(p => p.Content).IsRequired().HasMaxLength(20000);
+
+            entity.HasIndex(p => p.SubjectId);
+
+            entity.HasOne(p => p.Subject)
+                .WithMany(s => s.ReadingPassages)
+                .HasForeignKey(p => p.SubjectId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         modelBuilder.Entity<Question>(entity =>
         {
             entity.Property(q => q.Content).IsRequired().HasMaxLength(2000);
@@ -29,14 +43,21 @@ public class AppDbContext : DbContext
             entity.Property(q => q.OptionC).IsRequired().HasMaxLength(500);
             entity.Property(q => q.OptionD).IsRequired().HasMaxLength(500);
             entity.Property(q => q.CorrectOption).IsRequired().HasMaxLength(1);
+            entity.Property(q => q.OptionStyle).IsRequired().HasMaxLength(4).HasDefaultValue("ABCD");
             entity.Property(q => q.Explanation).HasMaxLength(2000);
 
             entity.HasIndex(q => q.SubjectId);
+            entity.HasIndex(q => q.PassageId);
 
             entity.HasOne(q => q.Subject)
                 .WithMany(s => s.Questions)
                 .HasForeignKey(q => q.SubjectId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(q => q.Passage)
+                .WithMany(p => p.Questions)
+                .HasForeignKey(q => q.PassageId)
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
         modelBuilder.Entity<Attempt>(entity =>

@@ -127,14 +127,53 @@ namespace TracNghiemWeb.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("OptionStyle")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(4)
+                        .HasColumnType("nvarchar(4)")
+                        .HasDefaultValue("ABCD");
+
+                    b.Property<int?>("PassageId")
+                        .HasColumnType("int");
+
                     b.Property<int>("SubjectId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("PassageId");
+
                     b.HasIndex("SubjectId");
 
                     b.ToTable("Questions");
+                });
+
+            modelBuilder.Entity("TracNghiemWeb.Models.ReadingPassage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasMaxLength(20000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SubjectId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SubjectId");
+
+                    b.ToTable("ReadingPassages");
                 });
 
             modelBuilder.Entity("TracNghiemWeb.Models.Subject", b =>
@@ -187,8 +226,26 @@ namespace TracNghiemWeb.Data.Migrations
 
             modelBuilder.Entity("TracNghiemWeb.Models.Question", b =>
                 {
+                    b.HasOne("TracNghiemWeb.Models.ReadingPassage", "Passage")
+                        .WithMany("Questions")
+                        .HasForeignKey("PassageId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("TracNghiemWeb.Models.Subject", "Subject")
                         .WithMany("Questions")
+                        .HasForeignKey("SubjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Passage");
+
+                    b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("TracNghiemWeb.Models.ReadingPassage", b =>
+                {
+                    b.HasOne("TracNghiemWeb.Models.Subject", "Subject")
+                        .WithMany("ReadingPassages")
                         .HasForeignKey("SubjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -206,11 +263,18 @@ namespace TracNghiemWeb.Data.Migrations
                     b.Navigation("AttemptAnswers");
                 });
 
+            modelBuilder.Entity("TracNghiemWeb.Models.ReadingPassage", b =>
+                {
+                    b.Navigation("Questions");
+                });
+
             modelBuilder.Entity("TracNghiemWeb.Models.Subject", b =>
                 {
                     b.Navigation("Attempts");
 
                     b.Navigation("Questions");
+
+                    b.Navigation("ReadingPassages");
                 });
 #pragma warning restore 612, 618
         }

@@ -52,19 +52,42 @@ public class QuizService
             return StartResult.Fail("Môn học không tồn tại.");
         }
 
-        var available = await _db.Questions.CountAsync(q => q.SubjectId == subjectId);
-        if (available == 0)
+        var rows = await _db.Questions
+            .Where(q => q.SubjectId == subjectId)
+            .Select(q => new { q.Id, q.PassageId })
+            .ToListAsync();
+        if (rows.Count == 0)
         {
             return StartResult.Fail($"Môn \"{subject.Name}\" chưa có câu hỏi nào.");
         }
 
-        var count = Math.Min(questionCount, available);
-        var questionIds = await _db.Questions
-            .Where(q => q.SubjectId == subjectId)
-            .OrderBy(q => Guid.NewGuid())
-            .Select(q => q.Id)
-            .Take(count)
-            .ToListAsync();
+        var count = Math.Min(questionCount, rows.Count);
+        var groups = rows
+            .GroupBy(q => q.PassageId.HasValue ? $"P{q.PassageId}" : $"Q{q.Id}")
+            .Select(g => g.OrderBy(q => q.Id).Select(q => q.Id).ToList())
+            .OrderBy(_ => Guid.NewGuid())
+            .ToList();
+
+        var questionIds = new List<int>();
+        foreach (var group in groups)
+        {
+            if (questionIds.Count >= count)
+            {
+                break;
+            }
+
+            if (questionIds.Count > 0 && questionIds.Count + group.Count > MaxQuestionsPerAttempt)
+            {
+                continue;
+            }
+
+            questionIds.AddRange(group);
+        }
+
+        if (questionIds.Count > MaxQuestionsPerAttempt)
+        {
+            questionIds = questionIds.Take(MaxQuestionsPerAttempt).ToList();
+        }
 
         return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes);
     }
@@ -136,6 +159,7 @@ public class QuizService
             .Include(a => a.Subject)
             .Include(a => a.Answers.OrderBy(ans => ans.Id))
                 .ThenInclude(ans => ans.Question)
+                .ThenInclude(q => q!.Passage)
             .FirstOrDefaultAsync(a => a.Id == attemptId);
 
     public async Task<List<Attempt>> GetHistoryAsync(int take = 100) =>
@@ -148,9 +172,10 @@ public class QuizService
             .ToListAsync();
 
     public async Task<List<Question>> GetWrongQuestionsAsync(int subjectId) =>
-        await LatestAnswers()
-            .Where(a => !a.IsCorrect && a.Question!.SubjectId == subjectId)
-            .Select(a => a.Question!)
+        await _db.Questions
+            .Where(q => q.SubjectId == subjectId
+                && LatestAnswers().Any(a => a.QuestionId == q.Id && !a.IsCorrect))
+            .Include(q => q.Passage)
             .AsNoTracking()
             .OrderBy(q => q.Id)
             .ToListAsync();

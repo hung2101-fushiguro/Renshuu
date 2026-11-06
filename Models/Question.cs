@@ -5,11 +5,15 @@ namespace TracNghiemWeb.Models;
 public class Question
 {
     public const string CorrectOptionPattern = "^[ABCD]$";
+    public const string OptionStylePattern = "^(ABCD|1234)$";
 
     public int Id { get; set; }
 
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
+
+    public int? PassageId { get; set; }
+    public ReadingPassage? Passage { get; set; }
 
     [Required(ErrorMessage = "Vui lòng nhập nội dung câu hỏi.")]
     [StringLength(2000, ErrorMessage = "Nội dung câu hỏi tối đa 2000 ký tự.")]
@@ -40,6 +44,10 @@ public class Question
     [RegularExpression(CorrectOptionPattern, ErrorMessage = "Đáp án đúng phải là A, B, C hoặc D.")]
     [Display(Name = "Đáp án đúng")]
     public string CorrectOption { get; set; } = "A";
+
+    [RegularExpression(OptionStylePattern, ErrorMessage = "Kiểu đáp án phải là ABCD hoặc 1234.")]
+    [Display(Name = "Kiểu đánh số đáp án")]
+    public string OptionStyle { get; set; } = "ABCD";
 
     [StringLength(2000, ErrorMessage = "Giải thích tối đa 2000 ký tự.")]
     [Display(Name = "Giải thích")]

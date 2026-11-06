@@ -22,6 +22,7 @@ public class TakeModel : PageModel
     public int? TimeLimitMinutes { get; private set; }
     public DateTime StartedAt { get; private set; }
     public List<TakeQuestion> Questions { get; private set; } = new();
+    public List<TakeGroup> Groups { get; private set; } = new();
 
     [BindProperty]
     public Dictionary<int, string?> Answers { get; set; } = new();
@@ -52,6 +53,8 @@ public class TakeModel : PageModel
             from answer in _db.AttemptAnswers
             where answer.AttemptId == id
             join question in _db.Questions on answer.QuestionId equals question.Id
+            join passage in _db.ReadingPassages on question.PassageId equals passage.Id into passageJoin
+            from passage in passageJoin.DefaultIfEmpty()
             orderby answer.Id
             select new
             {
@@ -61,13 +64,30 @@ public class TakeModel : PageModel
                 question.OptionB,
                 question.OptionC,
                 question.OptionD,
+                question.OptionStyle,
+                PassageId = passage == null ? (int?)null : passage.Id,
+                PassageTitle = passage == null ? null : passage.Title,
+                PassageContent = passage == null ? null : passage.Content,
             })
             .AsNoTracking()
             .ToListAsync();
 
         Questions = rows
-            .Select(r => new TakeQuestion(r.Id, r.Content, ShuffleOptions(r.OptionA, r.OptionB, r.OptionC, r.OptionD)))
+            .Select(r =>
+            {
+                var passage = r.PassageId is int passageId
+                    ? new TakePassage(passageId, r.PassageTitle, r.PassageContent ?? string.Empty)
+                    : null;
+                return new TakeQuestion(
+                    r.Id,
+                    r.Content,
+                    r.OptionStyle,
+                    passage,
+                    BuildOptions(r.OptionA, r.OptionB, r.OptionC, r.OptionD, r.OptionStyle));
+            })
             .ToList();
+
+        Groups = BuildGroups(Questions);
 
         return Page();
     }
@@ -85,16 +105,52 @@ public class TakeModel : PageModel
         return RedirectToPage("/Test/Result", new { id });
     }
 
-    private static List<TakeOption> ShuffleOptions(params string[] options)
+    private static List<TakeGroup> BuildGroups(IReadOnlyList<TakeQuestion> questions)
     {
-        string[] keys = { "A", "B", "C", "D" };
-        return keys
-            .Zip(options, (key, text) => new TakeOption(key, text))
-            .OrderBy(_ => Random.Shared.Next())
-            .ToList();
+        var groups = new List<TakeGroup>();
+        var passageGroups = new Dictionary<int, TakeGroup>();
+
+        foreach (var question in questions)
+        {
+            if (question.Passage is null)
+            {
+                groups.Add(new TakeGroup(null, new List<TakeQuestion> { question }));
+                continue;
+            }
+
+            if (!passageGroups.TryGetValue(question.Passage.Id, out var group))
+            {
+                group = new TakeGroup(question.Passage, new List<TakeQuestion>());
+                passageGroups[question.Passage.Id] = group;
+                groups.Add(group);
+            }
+
+            group.Questions.Add(question);
+        }
+
+        return groups;
     }
+
+    private static List<TakeOption> BuildOptions(
+        string a, string b, string c, string d, string? optionStyle) =>
+        new()
+        {
+            new TakeOption("A", a, Display.OptionLabel(optionStyle, "A")),
+            new TakeOption("B", b, Display.OptionLabel(optionStyle, "B")),
+            new TakeOption("C", c, Display.OptionLabel(optionStyle, "C")),
+            new TakeOption("D", d, Display.OptionLabel(optionStyle, "D")),
+        };
 }
 
-public record TakeOption(string Key, string Text);
+public record TakePassage(int Id, string? Title, string Content);
 
-public record TakeQuestion(int Id, string Content, List<TakeOption> Options);
+public record TakeOption(string Key, string Text, string Label);
+
+public record TakeQuestion(
+    int Id,
+    string Content,
+    string OptionStyle,
+    TakePassage? Passage,
+    List<TakeOption> Options);
+
+public record TakeGroup(TakePassage? Passage, List<TakeQuestion> Questions);

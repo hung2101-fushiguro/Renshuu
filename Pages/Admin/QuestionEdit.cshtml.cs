@@ -87,6 +87,7 @@ public class QuestionEditModel : PageModel
                 OptionC = Input.OptionC.Trim(),
                 OptionD = Input.OptionD.Trim(),
                 CorrectOption = Input.CorrectOption.Trim().ToUpperInvariant(),
+                OptionStyle = Input.OptionStyle,
                 Explanation = string.IsNullOrWhiteSpace(Input.Explanation) ? null : Input.Explanation.Trim(),
             });
             TempData["Success"] = "Đã thêm câu hỏi.";
@@ -106,6 +107,7 @@ public class QuestionEditModel : PageModel
             question.OptionC = Input.OptionC.Trim();
             question.OptionD = Input.OptionD.Trim();
             question.CorrectOption = Input.CorrectOption.Trim().ToUpperInvariant();
+            question.OptionStyle = Input.OptionStyle;
             question.Explanation = string.IsNullOrWhiteSpace(Input.Explanation) ? null : Input.Explanation.Trim();
             TempData["Success"] = "Đã cập nhật câu hỏi.";
         }

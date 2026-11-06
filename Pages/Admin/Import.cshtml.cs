@@ -69,7 +69,18 @@ public class ImportModel : PageModel
             return Page();
         }
 
-        var duplicates = await _import.FindExistingDuplicatesAsync(drafts);
+        HashSet<int> duplicates;
+        try
+        {
+            duplicates = await _import.FindExistingDuplicatesAsync(drafts);
+        }
+        catch (Exception)
+        {
+            ModelState.AddModelError(string.Empty,
+                "Không kiểm tra được câu trùng do lỗi kết nối cơ sở dữ liệu. Kiểm tra kết nối trước khi lưu.");
+            duplicates = new HashSet<int>();
+        }
+
         Preview = new ImportPreview(drafts, duplicates);
         TempData["ImportDrafts"] = JsonSerializer.Serialize(drafts);
         return Page();

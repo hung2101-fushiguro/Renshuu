@@ -68,9 +68,13 @@ else
                         <td class="num">@question.Id</td>
                         <td>@question.Subject?.Name</td>
                         <td>
-                            @(question.Content.Length > 130 ? question.Content[..130] + "…" : question.Content)
+                            @if (question.PassageId is not null)
+                            {
+                                <span class="badge badge-accent">Bài đọc</span>
+                            }
+                            @Display.RichText(question.Content.Length > 130 ? question.Content[..130] + "…" : question.Content)
                         </td>
-                        <td><span class="badge badge-primary">@question.CorrectOption</span></td>
+                        <td><span class="badge badge-primary">@Display.OptionLabel(question.OptionStyle, question.CorrectOption)</span></td>
                         <td class="num">
                             <div class="table-actions">
                                 <a class="btn btn-secondary btn-sm" asp-page="/Admin/QuestionEdit" asp-route-id="@question.Id">Sửa</a>
@@ -79,7 +83,7 @@ else
                                     <input type="hidden" name="id" value="@question.Id" />
                                     <input type="hidden" name="subjectId" value="@Model.SubjectId" />
                                     <input type="hidden" name="search" value="@Model.Search" />
-                                    <input type="hidden" name="page" value="@Model.PageNumber" />
+                                    <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                                     <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
                                 </form>
                             </div>
@@ -99,7 +103,7 @@ else
                    asp-page="/Admin/Questions"
                    asp-route-subjectId="@Model.SubjectId"
                    asp-route-search="@Model.Search"
-                   asp-route-page="@(Model.PageNumber - 1)">Trang trước</a>
+                   asp-route-pageNumber="@(Model.PageNumber - 1)">Trang trước</a>
             }
             <span class="current">Trang @Model.PageNumber / @Model.TotalPages</span>
             @if (Model.PageNumber < Model.TotalPages)
@@ -108,7 +112,7 @@ else
                    asp-page="/Admin/Questions"
                    asp-route-subjectId="@Model.SubjectId"
                    asp-route-search="@Model.Search"
-                   asp-route-page="@(Model.PageNumber + 1)">Trang sau</a>
+                   asp-route-pageNumber="@(Model.PageNumber + 1)">Trang sau</a>
             }
         </nav>
     }

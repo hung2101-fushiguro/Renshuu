@@ -19,11 +19,11 @@
                     <td class="nowrap">@item.Index</td>
                     <td>@item.Subject</td>
                     <td>
-                        @(item.Content is null
+                        @Display.RichText(item.Content is null
                             ? ""
                             : item.Content.Length > 140 ? item.Content[..140] + "…" : item.Content)
                     </td>
-                    <td class="nowrap">@item.Correct</td>
+                    <td class="nowrap">@Display.OptionLabel(item.OptionStyle, item.Correct ?? "")</td>
                     <td>
                         @if (!item.IsValid)
                         {

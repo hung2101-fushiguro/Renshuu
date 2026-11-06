@@ -13,6 +13,20 @@ public class ImportService
     public const int MaxContentLength = 2000;
     public const int MaxOptionLength = 500;
     public const int MaxExplanationLength = 2000;
+    public const int MaxPassageTitleLength = 300;
+    public const int MaxPassageContentLength = 20000;
+
+    private static readonly Regex PassageMarker = new(
+        @"^\s*\[\s*(?:BÀI\s*ĐỌC|BAI\s*DOC)\s*\]\s*[:：]?\s*(.*)$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex QuestionMarker = new(
+        @"^\s*\[\s*(?:CÂU\s*HỎI|CAU\s*HOI)\s*\]\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
+
+    private static readonly Regex EndPassageMarker = new(
+        @"^\s*\[\s*(?:HẾT\s*BÀI|HET\s*BAI)\s*\]\s*$",
+        RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     private static readonly Dictionary<string, string> ColumnAliases = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -69,11 +83,13 @@ public class ImportService
         var lines = normalized.Split('\n');
 
         string? content = null, a = null, b = null, c = null, d = null, correct = null, explanation = null;
+        var optionStyle = "ABCD";
         var index = 0;
 
         void Reset()
         {
             content = a = b = c = d = correct = explanation = null;
+            optionStyle = "ABCD";
         }
 
         void Flush()
@@ -85,8 +101,78 @@ public class ImportService
             }
 
             index++;
-            results.Add(BuildQuestion(index, subjectName, content, a, b, c, d, correct, explanation));
+            results.Add(BuildQuestion(index, subjectName, content, a, b, c, d, correct, explanation, optionStyle));
             Reset();
+        }
+
+        bool TryAddOptions(string line)
+        {
+            if (TrySplitInlineOptions(line, out var inlineStyle, out var inlineValues, out var inlinePrefix))
+            {
+                if (a is not null || b is not null || c is not null || d is not null)
+                {
+                    Flush();
+                }
+
+                if (content is null && !string.IsNullOrWhiteSpace(inlinePrefix))
+                {
+                    content = CleanQuestionNumber(inlinePrefix);
+                }
+
+                if (content is null)
+                {
+                    return false;
+                }
+
+                a = inlineValues[0];
+                b = inlineValues[1];
+                c = inlineValues[2];
+                d = inlineValues[3];
+                optionStyle = inlineStyle;
+                return true;
+            }
+
+            var optionMatch = Regex.Match(line, @"^([A-Da-d])\s*[\.\)\:]\s*(.*)$");
+            if (!optionMatch.Success)
+            {
+                optionMatch = Regex.Match(line, @"^([1-4])\s*[\.\)\:]\s*(.*)$");
+            }
+
+            if (!optionMatch.Success)
+            {
+                return false;
+            }
+
+            var key = optionMatch.Groups[1].Value.ToUpperInvariant();
+            var value = optionMatch.Groups[2].Value.Trim();
+            var isNumeric = key[0] is >= '1' and <= '4';
+            var mappedKey = isNumeric ? ((char)('A' + (key[0] - '1'))).ToString() : key;
+
+            if (content is null)
+            {
+                return false;
+            }
+
+            if (mappedKey == "A" && a is not null)
+            {
+                Flush();
+            }
+
+            if (content is null)
+            {
+                return false;
+            }
+
+            switch (mappedKey)
+            {
+                case "A": a = value; break;
+                case "B": b = value; break;
+                case "C": c = value; break;
+                case "D": d = value; break;
+            }
+
+            optionStyle = isNumeric ? "1234" : "ABCD";
+            return true;
         }
 
         foreach (var rawLine in lines)
@@ -98,35 +184,28 @@ public class ImportService
                 continue;
             }
 
-            var optionMatch = Regex.Match(line, @"^([A-Da-d])\s*[\.\)\:]\s*(.*)$");
-            if (optionMatch.Success)
+            if (TryAddOptions(line))
             {
-                var key = optionMatch.Groups[1].Value.ToUpperInvariant();
-                var value = optionMatch.Groups[2].Value.Trim();
-                if (key == "A" && a is not null)
-                {
-                    Flush();
-                }
-
-                switch (key)
-                {
-                    case "A": a = value; break;
-                    case "B": b = value; break;
-                    case "C": c = value; break;
-                    case "D": d = value; break;
-                }
-
                 continue;
             }
 
-            var answerMatch = Regex.Match(line, @"^(?:Đáp án|Dap an|Answer)\s*[:\.]?\s*([A-Da-d])\b", RegexOptions.IgnoreCase);
+            var answerMatch = Regex.Match(
+                line,
+                @"^(?:Đáp án|Dap an|Answer)\s*[:\.]?\s*([A-Da-d1-4])\b",
+                RegexOptions.IgnoreCase);
             if (answerMatch.Success)
             {
-                correct = answerMatch.Groups[1].Value.ToUpperInvariant();
+                var answer = answerMatch.Groups[1].Value.ToUpperInvariant();
+                correct = answer[0] is >= '1' and <= '4'
+                    ? ((char)('A' + (answer[0] - '1'))).ToString()
+                    : answer;
                 continue;
             }
 
-            var explanationMatch = Regex.Match(line, @"^(?:Giải thích|Giai thich|Explanation)\s*[:\.]?\s*(.*)$", RegexOptions.IgnoreCase);
+            var explanationMatch = Regex.Match(
+                line,
+                @"^(?:Giải thích|Giai thich|Explanation)\s*[:\.]?\s*(.*)$",
+                RegexOptions.IgnoreCase);
             if (explanationMatch.Success)
             {
                 var value = explanationMatch.Groups[1].Value.Trim();
@@ -134,7 +213,7 @@ public class ImportService
                 continue;
             }
 
-            line = Regex.Replace(line, @"^\d+\s*[\.\)]\s*", string.Empty);
+            line = CleanQuestionNumber(line);
 
             if (content is null)
             {
@@ -151,6 +230,135 @@ public class ImportService
         }
 
         Flush();
+        return results;
+    }
+
+    public static List<ParsedPassage> ParseReadingPassages(string? subjectName, string? text)
+    {
+        var results = new List<ParsedPassage>();
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return results;
+        }
+
+        var normalized = text.Replace("\r\n", "\n").Replace('\r', '\n');
+        var lines = normalized.Split('\n');
+
+        string? title = null;
+        var passageLines = new List<string>();
+        var questionLines = new List<string>();
+        var errors = new List<string>();
+        var state = 0;
+        var hasQuestionMarker = false;
+        var passageIndex = 0;
+        var questionIndex = 0;
+
+        void Reset()
+        {
+            title = null;
+            passageLines = new List<string>();
+            questionLines = new List<string>();
+            errors = new List<string>();
+            hasQuestionMarker = false;
+            state = 0;
+        }
+
+        void FinalizePassage()
+        {
+            if (state == 0)
+            {
+                return;
+            }
+
+            passageIndex++;
+            var content = string.Join("\n", passageLines).Trim();
+            var parsed = ParsePaste(subjectName, string.Join("\n", questionLines));
+            var questions = new List<ParsedQuestion>();
+            foreach (var question in parsed)
+            {
+                questionIndex++;
+                questions.Add(question with { Index = questionIndex });
+            }
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                errors.Add("Thiếu nội dung bài đọc.");
+            }
+            else if (content.Length > MaxPassageContentLength)
+            {
+                errors.Add($"Nội dung bài đọc quá dài (tối đa {MaxPassageContentLength} ký tự).");
+            }
+
+            if (title is not null && title.Length > MaxPassageTitleLength)
+            {
+                errors.Add($"Tiêu đề bài đọc quá dài (tối đa {MaxPassageTitleLength} ký tự).");
+            }
+
+            if (!hasQuestionMarker)
+            {
+                errors.Add("Thiếu dòng [CÂU HỎI].");
+            }
+
+            if (questions.Count == 0)
+            {
+                errors.Add("Bài đọc chưa có câu hỏi nào.");
+            }
+
+            results.Add(new ParsedPassage(passageIndex, title, content, questions, errors));
+            Reset();
+        }
+
+        foreach (var rawLine in lines)
+        {
+            var line = rawLine.TrimEnd();
+            var passageMatch = PassageMarker.Match(line);
+            if (passageMatch.Success)
+            {
+                FinalizePassage();
+                title = passageMatch.Groups[1].Value.Trim();
+                if (title.Length == 0)
+                {
+                    title = null;
+                }
+
+                state = 1;
+                continue;
+            }
+
+            if (QuestionMarker.IsMatch(line))
+            {
+                if (state == 1)
+                {
+                    state = 2;
+                    hasQuestionMarker = true;
+                }
+
+                continue;
+            }
+
+            if (EndPassageMarker.IsMatch(line))
+            {
+                FinalizePassage();
+                continue;
+            }
+
+            if (state == 1)
+            {
+                passageLines.Add(line);
+            }
+            else if (state == 2)
+            {
+                questionLines.Add(line);
+            }
+            else if (!string.IsNullOrWhiteSpace(line))
+            {
+                errors.Add("Nội dung nằm ngoài [BÀI ĐỌC] đã bị bỏ qua.");
+                state = 1;
+                passageLines.Add(line);
+            }
+        }
+
+        FinalizePassage();
         return results;
     }
 
@@ -191,7 +399,7 @@ public class ImportService
             var row = rows[r];
             items.Add(BuildQuestion(r, Get(row, "subject"), Get(row, "content"),
                 Get(row, "a"), Get(row, "b"), Get(row, "c"), Get(row, "d"),
-                Get(row, "correct"), Get(row, "explanation")));
+                Get(row, "correct"), Get(row, "explanation"), Get(row, "optionstyle")));
         }
 
         return items;
@@ -249,7 +457,8 @@ public class ImportService
                 Get("c", "optionc", "optionC", "dapanc", "đáp án c"),
                 Get("d", "optiond", "optionD", "dapand", "đáp án d"),
                 Get("correct", "correctoption", "dapan", "đáp án", "dapandung", "đáp án đúng"),
-                Get("explanation", "giaithich", "giải thích")));
+                Get("explanation", "giaithich", "giải thích"),
+                Get("optionstyle", "option_style", "style", "kiểu đáp án", "kieu dap an")));
         }
 
         return items;
@@ -266,6 +475,11 @@ public class ImportService
 
         var subjectMap = await GetSubjectMapAsync(valid);
         var subjectIds = subjectMap.Values.Select(s => s.Id).Distinct().ToList();
+        if (subjectIds.Count == 0)
+        {
+            return duplicates;
+        }
+
         var existing = await _db.Questions
             .Where(q => subjectIds.Contains(q.SubjectId))
             .Select(q => new { q.SubjectId, q.Content })
@@ -274,7 +488,11 @@ public class ImportService
 
         foreach (var item in valid)
         {
-            var subject = subjectMap[item.Subject!.Trim()];
+            if (!subjectMap.TryGetValue(item.Subject!.Trim(), out var subject))
+            {
+                continue;
+            }
+
             if (existingKeys.Contains(DuplicateKey(subject.Id, item.Content!)))
             {
                 duplicates.Add(item.Index);
@@ -338,6 +556,7 @@ public class ImportService
                 OptionC = item.OptionC!.Trim(),
                 OptionD = item.OptionD!.Trim(),
                 CorrectOption = item.Correct!.Trim().ToUpperInvariant(),
+                OptionStyle = item.OptionStyle,
                 Explanation = string.IsNullOrWhiteSpace(item.Explanation) ? null : item.Explanation.Trim(),
             });
             added++;
@@ -347,13 +566,133 @@ public class ImportService
         return new SaveResult(added, duplicates, invalidCount);
     }
 
+    public async Task<ReadingSaveResult> SaveReadingPassagesAsync(IReadOnlyList<ParsedPassage> passages)
+    {
+        var invalid = 0;
+        var validQuestions = new List<ParsedQuestion>();
+        foreach (var passage in passages)
+        {
+            if (passage.Errors.Count > 0)
+            {
+                invalid += passage.Questions.Count;
+                continue;
+            }
+
+            foreach (var question in passage.Questions)
+            {
+                if (question.IsValid)
+                {
+                    validQuestions.Add(question);
+                }
+                else
+                {
+                    invalid++;
+                }
+            }
+        }
+
+        if (validQuestions.Count == 0)
+        {
+            return new ReadingSaveResult(0, 0, 0, invalid);
+        }
+
+        var subjectMap = await GetSubjectMapAsync(validQuestions);
+        var newSubjects = validQuestions
+            .Select(i => i.Subject!.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(name => !subjectMap.ContainsKey(name))
+            .Select(name => new Subject { Name = name })
+            .ToList();
+
+        if (newSubjects.Count > 0)
+        {
+            _db.Subjects.AddRange(newSubjects);
+            await _db.SaveChangesAsync();
+            foreach (var subject in newSubjects)
+            {
+                subjectMap[subject.Name] = subject;
+            }
+        }
+
+        var subjectIds = subjectMap.Values.Select(s => s.Id).Distinct().ToList();
+        var existing = await _db.Questions
+            .Where(q => subjectIds.Contains(q.SubjectId))
+            .Select(q => new { q.SubjectId, q.Content })
+            .ToListAsync();
+        var seen = new HashSet<string>(existing.Select(x => DuplicateKey(x.SubjectId, x.Content)));
+
+        var passagesAdded = 0;
+        var questionsAdded = 0;
+        var duplicates = 0;
+
+        foreach (var passage in passages)
+        {
+            if (passage.Errors.Count > 0 || string.IsNullOrWhiteSpace(passage.Content))
+            {
+                continue;
+            }
+
+            var valid = passage.Questions
+                .Where(q => q.IsValid && !string.IsNullOrWhiteSpace(q.Subject))
+                .ToList();
+            if (valid.Count == 0)
+            {
+                continue;
+            }
+
+            var subject = subjectMap[valid[0].Subject!.Trim()];
+            var questions = new List<Question>();
+            foreach (var item in valid)
+            {
+                if (!seen.Add(DuplicateKey(subject.Id, item.Content!)))
+                {
+                    duplicates++;
+                    continue;
+                }
+
+                questions.Add(new Question
+                {
+                    SubjectId = subject.Id,
+                    Content = item.Content!.Trim(),
+                    OptionA = item.OptionA!.Trim(),
+                    OptionB = item.OptionB!.Trim(),
+                    OptionC = item.OptionC!.Trim(),
+                    OptionD = item.OptionD!.Trim(),
+                    CorrectOption = item.Correct!.Trim().ToUpperInvariant(),
+                    OptionStyle = item.OptionStyle,
+                    Explanation = string.IsNullOrWhiteSpace(item.Explanation) ? null : item.Explanation.Trim(),
+                });
+            }
+
+            if (questions.Count == 0)
+            {
+                continue;
+            }
+
+            _db.ReadingPassages.Add(new ReadingPassage
+            {
+                SubjectId = subject.Id,
+                Title = string.IsNullOrWhiteSpace(passage.Title) ? null : passage.Title.Trim(),
+                Content = passage.Content.Trim(),
+                Questions = questions,
+            });
+
+            passagesAdded++;
+            questionsAdded += questions.Count;
+        }
+
+        await _db.SaveChangesAsync();
+        return new ReadingSaveResult(passagesAdded, questionsAdded, duplicates, invalid);
+    }
+
     public static ParsedQuestion BuildQuestion(
         int index,
         string? subject,
         string? content,
         string? a, string? b, string? c, string? d,
         string? correct,
-        string? explanation)
+        string? explanation,
+        string? optionStyle = null)
     {
         var errors = new List<string>();
 
@@ -365,6 +704,7 @@ public class ImportService
         d = d?.Trim();
         correct = string.IsNullOrWhiteSpace(correct) ? null : correct.Trim().ToUpperInvariant();
         explanation = explanation?.Trim();
+        optionStyle = optionStyle == "1234" ? "1234" : "ABCD";
 
         if (string.IsNullOrEmpty(subject))
         {
@@ -411,7 +751,67 @@ public class ImportService
             errors.Add($"Giải thích quá dài (tối đa {MaxExplanationLength} ký tự).");
         }
 
-        return new ParsedQuestion(index, subject, content, a, b, c, d, correct, explanation, errors);
+        return new ParsedQuestion(index, subject, content, a, b, c, d, correct, explanation, errors)
+        {
+            OptionStyle = optionStyle,
+        };
+    }
+
+    private static string CleanQuestionNumber(string line) =>
+        Regex.Replace(
+            line,
+            @"^(?:\[\s*\d+\s*\]|[（(]\s*\d+\s*[）)]|\d+\s*[\.\)])\s*",
+            string.Empty);
+
+    private static bool TrySplitInlineOptions(
+        string line,
+        out string style,
+        out string[] values,
+        out string prefix)
+    {
+        style = "ABCD";
+        values = Array.Empty<string>();
+        prefix = string.Empty;
+
+        var matches = Regex.Matches(line, @"(?<!\S)([1-4A-Da-d])\s*[\.\)\:]\s*");
+        if (matches.Count != 4)
+        {
+            return false;
+        }
+
+        var keys = matches
+            .Select(m => m.Groups[1].Value.ToUpperInvariant())
+            .ToList();
+        var isNumeric = keys.All(k => k[0] is >= '1' and <= '4');
+        var isLetters = keys.All(k => k[0] is >= 'A' and <= 'D');
+
+        if (isNumeric && string.Concat(keys) != "1234")
+        {
+            return false;
+        }
+
+        if (isLetters && string.Concat(keys) != "ABCD")
+        {
+            return false;
+        }
+
+        if (!isNumeric && !isLetters)
+        {
+            return false;
+        }
+
+        var parts = new string[4];
+        for (var i = 0; i < 4; i++)
+        {
+            var start = matches[i].Index + matches[i].Length;
+            var end = i + 1 < matches.Count ? matches[i + 1].Index : line.Length;
+            parts[i] = line[start..end].Trim();
+        }
+
+        prefix = line[..matches[0].Index].Trim();
+        style = isNumeric ? "1234" : "ABCD";
+        values = parts;
+        return true;
     }
 
     private async Task<Dictionary<string, Subject>> GetSubjectMapAsync(IReadOnlyList<ParsedQuestion> validItems)
@@ -514,14 +914,45 @@ public record ParsedQuestion(
     string? Explanation,
     List<string> Errors)
 {
+    public string OptionStyle { get; init; } = "ABCD";
+
     public bool IsValid => Errors.Count == 0;
 }
 
+public record ParsedPassage(
+    int Index,
+    string? Title,
+    string? Content,
+    List<ParsedQuestion> Questions,
+    List<string> Errors)
+{
+    public bool IsValid => Errors.Count == 0 && Questions.Count > 0;
+}
+
 public record SaveResult(int Added, int Duplicates, int Invalid);
+
+public record ReadingSaveResult(int PassagesAdded, int QuestionsAdded, int Duplicates, int Invalid);
 
 public record ImportPreview(List<ParsedQuestion> Items, HashSet<int> Duplicates)
 {
     public int ValidCount => Items.Count(i => i.IsValid) - Items.Count(i => i.IsValid && Duplicates.Contains(i.Index));
     public int InvalidCount => Items.Count(i => !i.IsValid);
     public int DuplicateCount => Items.Count(i => i.IsValid && Duplicates.Contains(i.Index));
+}
+
+public record ReadingImportPreview(List<ParsedPassage> Passages, HashSet<int> Duplicates)
+{
+    public int QuestionCount => Passages.Sum(p => p.Questions.Count);
+    public int ValidCount => Passages
+        .Where(p => p.Errors.Count == 0)
+        .SelectMany(p => p.Questions)
+        .Count(q => q.IsValid && !Duplicates.Contains(q.Index));
+    public int InvalidCount => Passages
+        .Sum(p => p.Errors.Count > 0
+            ? p.Questions.Count
+            : p.Questions.Count(q => !q.IsValid));
+    public int DuplicateCount => Passages
+        .Where(p => p.Errors.Count == 0)
+        .SelectMany(p => p.Questions)
+        .Count(q => q.IsValid && Duplicates.Contains(q.Index));
 }

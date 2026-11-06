@@ -1,0 +1,1002 @@
+[
+  {
+    "subject": "PRN222-VIE",
+    "content": "Port là gì?",
+    "a": "Địa chỉ 4 byte định danh một máy tính",
+    "b": "Số nguyên không dấu 2 byte giúp hệ điều hành phân biệt các tiến trình giao tiếp mạng",
+    "c": "Tên miền (hostname) của server",
+    "d": "Giao thức đóng gói dữ liệu",
+    "correct": "B",
+    "explanation": "Port là số nguyên không dấu 2 byte, giúp OS phân biệt tiến trình giao tiếp mạng."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Độ dài của địa chỉ IPv4 và IPv6 lần lượt là?",
+    "a": "2 byte và 8 byte",
+    "b": "8 byte và 16 byte",
+    "c": "4 byte và 16 byte",
+    "d": "4 byte và 32 byte",
+    "correct": "C",
+    "explanation": "IPv4 = 4 byte (ví dụ 192.143.5.1), IPv6 = 16 byte."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Đặc điểm của TCP (Transmission Control Protocol) là gì?",
+    "a": "Connectionless, không có cơ chế xác nhận",
+    "b": "Gửi các datagram độc lập, không đảm bảo đến nơi",
+    "c": "Không cần thiết lập kết nối trước khi gửi",
+    "d": "Connection-based, đảm bảo luồng dữ liệu tin cậy nhờ cơ chế acknowledge",
+    "correct": "D",
+    "explanation": "TCP connection-based, tin cậy nhờ acknowledge."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Phát biểu nào đúng về UDP (User Datagram Protocol)?",
+    "a": "Gửi các datagram độc lập, không đảm bảo đến nơi hay đúng thứ tự",
+    "b": "Luôn đảm bảo đúng thứ tự gói tin",
+    "c": "Dùng cơ chế acknowledge để xác nhận",
+    "d": "Chỉ dùng duy nhất một đường kết nối",
+    "correct": "A",
+    "explanation": "UDP gửi datagram độc lập, không đảm bảo đến nơi/đúng thứ tự; app phải tự xử lý gói mất, trùng, sai thứ tự."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "URI (Uniform Resource Identifier) là gì?",
+    "a": "Chỉ là địa chỉ IP của server",
+    "b": "Đường dẫn vật lý của file trên ổ đĩa",
+    "c": "Chuỗi định dạng đặc biệt mô tả một tài nguyên trên internet hoặc LAN (URL và URN là tập con của URI)",
+    "d": "Giao thức truyền file",
+    "correct": "C",
+    "explanation": "URI là chuỗi mô tả tài nguyên; URL và URN là tập con."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Đặc điểm của URN (ví dụ `urn:isbn:0451450523`) là gì?",
+    "a": "Cho biết vị trí mạng nơi tài nguyên nằm",
+    "b": "Là URI dùng scheme \"urn\", định danh độc lập vị trí và không ngụ ý tài nguyên có sẵn để truy cập",
+    "c": "Luôn bắt đầu bằng `http`",
+    "d": "Đảm bảo tài nguyên luôn truy cập được",
+    "correct": "B",
+    "explanation": "URN dùng scheme \"urn\", độc lập vị trí, không ngụ ý tài nguyên có sẵn. URL mới là thứ chỉ vị trí."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Lớp nào là abstract base class của mô hình request/response (HTTP, FTP, `file:`) theo kiểu không phụ thuộc giao thức?",
+    "a": "WebRequest",
+    "b": "HttpClient",
+    "c": "TcpClient",
+    "d": "Dns",
+    "correct": "A",
+    "explanation": "WebRequest là abstract base class cho HTTP, FTP, `file:`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Client lấy được đối tượng `WebResponse` bằng cách nào?",
+    "a": "`new WebResponse()`",
+    "b": "`WebRequest.Create(Uri)`",
+    "c": "`WebRequest.Abort()`",
+    "d": "Gọi `GetResponse()` trên một `WebRequest`",
+    "correct": "D",
+    "explanation": "Client không tự tạo WebResponse, mà lấy qua `GetResponse()`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "HttpClient khác WebRequest/WebClient ở điểm nào?",
+    "a": "Chỉ dùng cho giao thức FTP",
+    "b": "Thiết kế cho web API/REST, cho phép plug custom message handlers (mock khi unit test), mỗi instance có connection pool riêng",
+    "c": "Không hỗ trợ lập trình bất đồng bộ",
+    "d": "Bắt buộc dựa trên WebRequest trong mọi phiên bản .NET",
+    "correct": "B",
+    "explanation": "HttpClient hợp web API/REST, có custom message handlers (mock được khi unit test), mỗi instance có connection pool riêng."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Method nào gửi GET và trả về response body dạng `string` theo kiểu bất đồng bộ?",
+    "a": "`PostAsync`",
+    "b": "`DeleteAsync`",
+    "c": "`GetStringAsync`",
+    "d": "`PutAsync`",
+    "correct": "C",
+    "explanation": "`GetStringAsync` gửi GET và trả body dạng string."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Domain Name System (DNS) làm nhiệm vụ gì?",
+    "a": "Chuyển địa chỉ Internet dạng gợi nhớ (tên miền) thành địa chỉ IP tương ứng",
+    "b": "Mã hóa dữ liệu truyền đi",
+    "c": "Cấp phát số port cho tiến trình",
+    "d": "Gửi email qua SMTP",
+    "correct": "A",
+    "explanation": "DNS ánh xạ tên miền sang IP."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Ba thành phần của DNS là gì?",
+    "a": "IP, Port, Protocol",
+    "b": "Client, Server, Router",
+    "c": "Socket, Stream, Listener",
+    "d": "Name Space, Globally Distributed Database (Name Servers), Resolver",
+    "correct": "D",
+    "explanation": "Name Space, Globally Distributed Database (Name Servers), Resolver."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Lớp nào phía server dùng để lắng nghe và chấp nhận kết nối TCP đến?",
+    "a": "TcpClient",
+    "b": "TcpListener",
+    "c": "UdpClient",
+    "d": "NetworkStream",
+    "correct": "B",
+    "explanation": "TcpListener lắng nghe và accept kết nối; TcpClient là phía kết nối tới."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Method nào của `TcpClient` trả về `NetworkStream` để gửi/nhận dữ liệu?",
+    "a": "`Accept()`",
+    "b": "`Listen()`",
+    "c": "`GetStream()`",
+    "d": "`Abort()`",
+    "correct": "C",
+    "explanation": "`GetStream()` trả về `NetworkStream` để gửi/nhận."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Method nào của lớp `Socket` đặt socket vào trạng thái lắng nghe?",
+    "a": "`Listen()`",
+    "b": "`Connect(IPAddress, Int32)`",
+    "c": "`Send(Byte[])`",
+    "d": "`Close()`",
+    "correct": "A",
+    "explanation": "`Listen()` đặt Socket vào trạng thái lắng nghe; `Accept()` tạo Socket mới cho kết nối đến."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Hệ mono-processor kiểu von Neumann (input-processing-output) còn được gọi là mô hình nào trong Flynn's Taxonomy?",
+    "a": "MIMD",
+    "b": "SIMD",
+    "c": "MISD",
+    "d": "SISD",
+    "correct": "D",
+    "explanation": "SISD (single instruction, single data), gặp nút thắt von Neumann."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Symmetrical multiprocessing (SMP) có nghĩa là gì?",
+    "a": "Một processor chính làm manager phân phát task cho các processor khác",
+    "b": "Bất kỳ processor/core rảnh nào cũng có thể thực thi task",
+    "c": "Chỉ dùng được một core",
+    "d": "Chỉ chạy được phần mềm tối ưu cho đa xử lý",
+    "correct": "B",
+    "explanation": "SMP: processor/core nào rảnh cũng chạy được task. Câu A là AMP (asymmetrical)."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Một processor có chip quad-core bật Hyper-Threading (HT) chạy được tối đa bao nhiêu task cùng lúc?",
+    "a": "4",
+    "b": "2",
+    "c": "8",
+    "d": "16",
+    "correct": "C",
+    "explanation": "Quad-core x HT (2 logical core/core) = 8 task cùng lúc."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Công nghệ Hyper-Threading do hãng nào phát triển (ra mắt trên Xeon năm 2002)?",
+    "a": "Intel",
+    "b": "AMD",
+    "c": "ARM",
+    "d": "IBM",
+    "correct": "A",
+    "explanation": "Intel phát triển HT, ra mắt trên Xeon năm 2002."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Kiến trúc nào cho phép true parallelism và được hầu hết hệ thống hiện nay sử dụng?",
+    "a": "SISD",
+    "b": "MIMD",
+    "c": "SIMD",
+    "d": "MISD",
+    "correct": "B",
+    "explanation": "MIMD cho true parallelism, được dùng bởi hầu hết hệ thống hiện nay."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Kiến trúc nào thường dùng cho fault tolerance (chịu lỗi), ví dụ máy tính điều khiển tàu con thoi?",
+    "a": "SISD",
+    "b": "SIMD",
+    "c": "MISD",
+    "d": "MIMD",
+    "correct": "C",
+    "explanation": "MISD dùng cho fault tolerance, ví dụ máy tính điều khiển tàu con thoi."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Đặc điểm của Serial Computing (tính toán tuần tự) là gì?",
+    "a": "Các lệnh chạy lần lượt trên một processor, tại một thời điểm chỉ một lệnh được thực thi",
+    "b": "Bài toán chia thành các phần chạy đồng thời",
+    "c": "Dùng nhiều processor cùng lúc",
+    "d": "Cần cơ chế điều phối trung tâm",
+    "correct": "A",
+    "explanation": "Serial: lệnh chạy tuần tự trên một processor."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Hạn chế của Parallel Computing là gì?",
+    "a": "Luôn tốn nhiều chi phí hơn serial",
+    "b": "Không dùng được cho mô phỏng thời gian thực",
+    "c": "Chỉ chạy được trên một CPU",
+    "d": "Giao tiếp và đồng bộ (synchronization) giữa các sub-tasks khó thực hiện",
+    "correct": "D",
+    "explanation": "Giao tiếp và đồng bộ giữa sub-tasks khó."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "TPL (Task Parallel Library) nằm trong các namespace nào?",
+    "a": "`System.Net`",
+    "b": "`System.Threading` và `System.Threading.Tasks`",
+    "c": "`System.Linq`",
+    "d": "`System.IO`",
+    "correct": "B",
+    "explanation": "TPL nằm trong `System.Threading` và `System.Threading.Tasks`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Muốn một task trả về giá trị, ta dùng lớp nào?",
+    "a": "`Task`",
+    "b": "`TaskFactory`",
+    "c": "`Task<TResult>`",
+    "d": "`TaskScheduler`",
+    "correct": "C",
+    "explanation": "`Task` không trả kết quả; cần `Task<TResult>`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`Task.WhenAll(Task[])` làm gì?",
+    "a": "Tạo task hoàn thành khi tất cả task trong mảng đã hoàn thành",
+    "b": "Hoàn thành ngay khi task đầu tiên xong",
+    "c": "Hủy tất cả các task",
+    "d": "Chạy các task lần lượt tuần tự",
+    "correct": "A",
+    "explanation": "`WhenAll` hoàn thành khi tất cả task con xong."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Dùng method nào để chuyển một truy vấn LINQ sang PLINQ?",
+    "a": "`AsSequential()`",
+    "b": "`AsOrdered()`",
+    "c": "`ForAll()`",
+    "d": "`AsParallel()`",
+    "correct": "D",
+    "explanation": "`AsParallel()` là entry point của PLINQ."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Operator `AsOrdered` của PLINQ có tác dụng gì?",
+    "a": "Bỏ qua thứ tự của nguồn dữ liệu",
+    "b": "Yêu cầu PLINQ giữ nguyên thứ tự của chuỗi nguồn",
+    "c": "Giới hạn số processor tối đa",
+    "d": "Bắt query chạy tuần tự",
+    "correct": "B",
+    "explanation": "`AsOrdered` giữ thứ tự chuỗi nguồn; `AsUnordered` thì không cần giữ."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Lưu ý đúng khi dùng PLINQ là gì?",
+    "a": "PLINQ luôn nhanh hơn LINQ",
+    "b": "Nên ghi file/database trực tiếp bên trong query PLINQ",
+    "c": "Parallel có overhead nên cần đo hiệu năng; `AsParallel()` không đảm bảo chắc chắn chạy song song",
+    "d": "PLINQ luôn chạy song song khi có `AsParallel()`",
+    "correct": "C",
+    "explanation": "Parallel có overhead, cần đo; tránh I/O không thread-safe; `AsParallel` không đảm bảo chạy song song."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`async` và `await` giúp được gì?",
+    "a": "Viết async method gần như dễ như synchronous, thread gọi không bị chặn chờ",
+    "b": "Bắt buộc tạo thread mới cho mỗi lệnh",
+    "c": "Chỉ chạy được trên Windows",
+    "d": "Thay thế hoàn toàn lớp `Task`",
+    "correct": "A",
+    "explanation": "`async/await` giúp viết mã bất đồng bộ gần như đồng bộ; thread gọi không bị chặn."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Các nguyên lý SOLID do ai phát triển?",
+    "a": "Bill Gates",
+    "b": "Anders Hejlsberg",
+    "c": "Robert C. Martin (bài luận năm 2000); tên viết tắt SOLID do Michael Feathers đặt",
+    "d": "Martin Fowler",
+    "correct": "C",
+    "explanation": "Robert C. Martin (2000); Michael Feathers đặt tên viết tắt SOLID."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Chữ S (Single Responsibility Principle) nói gì?",
+    "a": "Một class chỉ nên có một trách nhiệm (một lý do để thay đổi)",
+    "b": "Mở cho mở rộng, đóng với sửa đổi",
+    "c": "Subtype thay thế được type cha",
+    "d": "Nhiều interface chuyên biệt tốt hơn một interface chung",
+    "correct": "A",
+    "explanation": "S: một class, một trách nhiệm."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Chữ O (Open/Closed Principle) nói gì?",
+    "a": "Một class chỉ có một trách nhiệm",
+    "b": "Subtype thay thế được type cha",
+    "c": "Module cấp cao phụ thuộc vào abstraction",
+    "d": "Software entity mở cho mở rộng (extension), đóng với sửa đổi (modification)",
+    "correct": "D",
+    "explanation": "O: mở cho mở rộng, đóng với sửa đổi."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Chữ L (Liskov Substitution Principle) nói gì?",
+    "a": "Nhiều interface nhỏ tốt hơn một interface lớn",
+    "b": "Đối tượng có thể được thay bằng instance của subtype mà không làm sai tính đúng đắn của chương trình",
+    "c": "Class chỉ có một trách nhiệm",
+    "d": "Details phải phụ thuộc vào abstractions",
+    "correct": "B",
+    "explanation": "L: subtype thay thế được mà không làm sai chương trình."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Chữ I (Interface Segregation Principle) nói gì?",
+    "a": "Dùng một interface chung thật lớn cho mọi client",
+    "b": "Không nên dùng interface",
+    "c": "Nhiều interface chuyên biệt cho từng client tốt hơn một interface đa dụng",
+    "d": "High-level module phụ thuộc low-level module",
+    "correct": "C",
+    "explanation": "I: nhiều interface chuyên biệt tốt hơn một interface chung."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Chữ D (Dependency Inversion Principle) nói gì?",
+    "a": "High-level module không nên phụ thuộc low-level module; cả hai nên phụ thuộc vào abstractions",
+    "b": "Low-level module phải phụ thuộc vào high-level module",
+    "c": "Abstractions phụ thuộc vào details",
+    "d": "Không dùng interface trong thiết kế",
+    "correct": "A",
+    "explanation": "D: cả high-level và low-level đều phụ thuộc abstraction."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Class `Notification` tạo trực tiếp `new Email()` trong constructor. Đây là dạng gì?",
+    "a": "Loosely coupled",
+    "b": "Tuân thủ Dependency Inversion Principle",
+    "c": "Tuân thủ Open/Closed Principle",
+    "d": "Tightly coupled: muốn gửi loại thông báo khác thì phải sửa lại `Notification`",
+    "correct": "D",
+    "explanation": "`new Email()` trong constructor là tightly coupled, vi phạm DIP và OCP."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Quan hệ giữa DIP và IoC (Inversion of Control) là gì?",
+    "a": "Hai khái niệm giống hệt nhau",
+    "b": "DIP là nguyên tắc (lý thuyết); IoC là pattern với các bước cụ thể để code thân thiện với DIP",
+    "c": "IoC là một framework của Microsoft",
+    "d": "DIP là pattern, IoC là nguyên tắc",
+    "correct": "B",
+    "explanation": "DIP là nguyên tắc/lý thuyết; IoC là pattern có các bước cụ thể để code thân thiện với DIP."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Dependency Injection (DI) là gì?",
+    "a": "Tạo object bằng `new` bên trong class sử dụng nó",
+    "b": "Dùng static class cho mọi dependency",
+    "c": "Cách thực hiện IoC bằng việc inject implementation cụ thể vào class đang dùng abstraction (interface)",
+    "d": "Một loại interface đặc biệt",
+    "correct": "C",
+    "explanation": "DI là cách hiện thực IoC: inject implementation vào class dùng interface."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Ba tính năng cơ bản của DI Container là gì?",
+    "a": "Registration, Resolution, Disposition",
+    "b": "Compile, Link, Run",
+    "c": "Create, Read, Update",
+    "d": "Connect, Send, Receive",
+    "correct": "A",
+    "explanation": "Registration (đăng ký), Resolution (tạo và inject), Disposition (quản lý vòng đời)."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Service lifetime nào tạo instance mới mỗi lần được yêu cầu?",
+    "a": "Singleton",
+    "b": "Scoped",
+    "c": "Static",
+    "d": "Transient",
+    "correct": "D",
+    "explanation": "Transient tạo mới mỗi lần yêu cầu; Singleton dùng một instance duy nhất; Scoped giới hạn trong một context."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Ambient Context cung cấp dependency bằng cách nào?",
+    "a": "Truyền qua constructor",
+    "b": "Qua một static accessor, tránh làm rối API bởi các cross-cutting concerns",
+    "c": "Truyền qua method parameter",
+    "d": "Qua writable property",
+    "correct": "B",
+    "explanation": "Ambient Context cung cấp dependency qua static accessor."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Pattern DI nào đảm bảo dependency luôn có sẵn vì mọi caller bắt buộc cung cấp nó qua constructor?",
+    "a": "Property Injection",
+    "b": "Method Injection",
+    "c": "Constructor Injection",
+    "d": "Ambient Context",
+    "correct": "C",
+    "explanation": "Constructor Injection: phổ biến nhất, đảm bảo dependency có sẵn khi object được khởi tạo."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Nhược điểm của Property Injection là gì?",
+    "a": "Ẩn dependency và property có thể null nên cần kiểm tra null ở mọi nơi dùng",
+    "b": "Đảm bảo dependency luôn có khi khởi tạo",
+    "c": "Bắt buộc phải sửa constructor",
+    "d": "Chỉ dùng được với static class",
+    "correct": "A",
+    "explanation": "Property Injection ẩn dependency và có thể null, dễ gây lỗi `NullReferenceException`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Khi dependency thay đổi theo từng lần gọi (mỗi thao tác một dependency khác nhau), nên dùng pattern nào?",
+    "a": "Dependency cố định suốt vòng đời object",
+    "b": "Biến toàn cục",
+    "c": "Optional property",
+    "d": "Method Injection (truyền dependency như tham số của method)",
+    "correct": "D",
+    "explanation": "Method Injection: dependency khác nhau theo từng lần gọi, truyền bằng parameter."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Đặc điểm của ASP.NET Core là gì?",
+    "a": "Chỉ chạy trên Windows và cần `System.Web.dll`",
+    "b": "Miễn phí, mã nguồn mở, đa nền tảng, kiến trúc modular nhẹ và không phụ thuộc `System.Web.dll`",
+    "c": "Thay thế hoàn toàn C#",
+    "d": "Chỉ chạy được trên IIS",
+    "correct": "B",
+    "explanation": "Free, open-source, cross-platform, modular, không còn phụ thuộc `System.Web.dll`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Hạn chế của ASP.NET Web Forms dẫn đến việc cần framework mới là gì?",
+    "a": "Dễ test và kiểm soát HTML hoàn toàn",
+    "b": "Mô hình stateless đơn giản",
+    "c": "Chỉ chạy trên Linux",
+    "d": "Thiếu testability, mô hình stateful phức tạp, ít kiểm soát HTML sinh ra",
+    "correct": "D",
+    "explanation": "Web Forms: thiếu testability, stateful phức tạp, ít kiểm soát HTML."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Hai nhiệm vụ chính của Routing là gì?",
+    "a": "Ánh xạ request đến vào Controller Action; sinh ra các URL đi ra tương ứng với action",
+    "b": "Render view và lưu database",
+    "c": "Mã hóa URL và nén response",
+    "d": "Quản lý session và cookie",
+    "correct": "A",
+    "explanation": "Routing map request → action và sinh URL đi ra."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Trong mẫu `{controller=Home}/{action=Index}/{id?}`, dấu `?` ở `id?` nghĩa là gì?",
+    "a": "Tham số id bắt buộc",
+    "b": "Id luôn bằng null",
+    "c": "Tham số id là tùy chọn (optional)",
+    "d": "Id là tên controller",
+    "correct": "C",
+    "explanation": "`?` = tham số optional."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Vai trò của Controller trong MVC là gì?",
+    "a": "Chỉ render giao diện HTML",
+    "b": "Xử lý tương tác/request người dùng, xử lý logic cần thiết và trả response (điều phối luồng logic)",
+    "c": "Chỉ lưu dữ liệu vào database",
+    "d": "Chỉ chứa CSS và JavaScript",
+    "correct": "B",
+    "explanation": "Controller điều phối luồng logic và trả response."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Trách nhiệm của View trong MVC là gì?",
+    "a": "Chứa business logic",
+    "b": "Truy cập database",
+    "c": "Xử lý request đến",
+    "d": "Chỉ render model cho người dùng, không nên chứa logic xử lý",
+    "correct": "D",
+    "explanation": "View chỉ render, không xử lý logic."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "ViewModel là gì?",
+    "a": "Class chứa các property chỉ cần cho view; là tùy chọn và giúp chỉ phơi bày dữ liệu cần thiết",
+    "b": "Class bắt buộc phải có trong mọi view",
+    "c": "Chính là DbContext",
+    "d": "Chính là Controller",
+    "correct": "A",
+    "explanation": "ViewModel chứa dữ liệu riêng cho view, là tùy chọn."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Điều kiện của một Action method là gì?",
+    "a": "Có thể là private",
+    "b": "Có thể là protected",
+    "c": "Phải là public và không được là static",
+    "d": "Có thể là static",
+    "correct": "C",
+    "explanation": "Action method phải `public` và không `static`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Nếu không tìm thấy view trong thư mục `Views/<TênController>`, framework sẽ tìm tiếp ở đâu?",
+    "a": "Báo lỗi ngay lập tức",
+    "b": "Thư mục `Views/Shared`",
+    "c": "Thư mục `wwwroot`",
+    "d": "Thư mục `Models`",
+    "correct": "B",
+    "explanation": "View không thấy ở `Views/<Controller>` thì tìm tiếp ở `Views/Shared`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Model Binding là gì?",
+    "a": "Mã hóa dữ liệu form",
+    "b": "Kiểm tra quyền truy cập",
+    "c": "Tạo bảng trong database",
+    "d": "Ánh xạ dữ liệu từ HTTP request (form, route, query string, body) vào tham số của action method",
+    "correct": "D",
+    "explanation": "Model binding map dữ liệu request vào tham số action."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Model Validation diễn ra khi nào?",
+    "a": "Sau model binding và trước khi action thực thi; lỗi được lưu trong `ModelState`",
+    "b": "Sau khi action đã chạy xong",
+    "c": "Trước model binding",
+    "d": "Chỉ diễn ra ở client",
+    "correct": "A",
+    "explanation": "Validation chạy sau binding, trước action; kết quả nằm trong `ModelState`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Attribute `[Compare]` dùng để làm gì?",
+    "a": "Kiểm tra định dạng email",
+    "b": "Kiểm tra giá trị trong một khoảng",
+    "c": "Kiểm tra hai property trong model khớp nhau (ví dụ Password và ConfirmPassword)",
+    "d": "Kiểm tra định dạng URL",
+    "correct": "C",
+    "explanation": "`[Compare]` so khớp hai property."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "So sánh ViewData và ViewBag?",
+    "a": "ViewBag là dictionary key/value, ViewData là dynamic",
+    "b": "ViewData là dictionary key/value; ViewBag tương tự nhưng truy cập bằng dynamic property",
+    "c": "Hai thứ hoàn toàn không liên quan",
+    "d": "Chỉ ViewBag truyền được dữ liệu từ controller sang view",
+    "correct": "B",
+    "explanation": "ViewData là dictionary; ViewBag là wrapper dùng dynamic property."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "TempData dùng để làm gì?",
+    "a": "Chỉ tồn tại trong một view",
+    "b": "Lưu vĩnh viễn vào database",
+    "c": "Chỉ tồn tại ở phía client",
+    "d": "Lưu tạm, thường dùng cho thông điệp một lần/chuyển dữ liệu giữa các action; `TempData.Keep()` giữ lại dữ liệu sau khi render view",
+    "correct": "D",
+    "explanation": "TempData cho dữ liệu tạm/một lần; `Keep()` giữ lại sau khi render."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`HttpContext.Items` có phạm vi lưu trữ như thế nào?",
+    "a": "Chỉ trong một request, bị loại bỏ sau khi request xử lý xong",
+    "b": "Qua nhiều request của cùng một user",
+    "c": "Lưu trong cookie của trình duyệt",
+    "d": "Lưu trong Session",
+    "correct": "A",
+    "explanation": "`HttpContext.Items` chỉ sống trong một request."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Razor Pages là gì?",
+    "a": "Framework chạy hoàn toàn ở client-side",
+    "b": "Framework chỉ dùng được trên Windows",
+    "c": "Framework server-side, page-focused để xây web động, dựa trên MVC, có sẵn từ .NET Core 2.0",
+    "d": "Thư viện thay thế ngôn ngữ C#",
+    "correct": "C",
+    "explanation": "Server-side, page-focused, có từ .NET Core 2.0."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Một Razor Page kèm PageModel gồm hai file nào?",
+    "a": "`Demo2.cshtml` và `Demo2.cshtml.cs` (cùng tên, ánh xạ 1-1)",
+    "b": "`Demo2.razor` và `Demo2.cs`",
+    "c": "`Demo2.html` và `Demo2.js`",
+    "d": "`Demo2.cshtml` và `Demo2.json`",
+    "correct": "A",
+    "explanation": "`.cshtml` + `.cshtml.cs`, ánh xạ 1-1."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Quy ước đặt tên handler method trong Razor Pages là gì?",
+    "a": "`Get()`, `Post()`",
+    "b": "`HandleGet()`, `HandlePost()`",
+    "c": "`get()`, `post()`",
+    "d": "Tiền tố \"On\": `OnGet()`, `OnPost()`; `OnGet` và `OnGetAsync` được coi là cùng một handler",
+    "correct": "D",
+    "explanation": "Quy ước \"On\" + verb: `OnGet`, `OnPost`; bản async là cùng handler."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`_Layout.cshtml` dùng để làm gì?",
+    "a": "Khai báo directive toàn cục",
+    "b": "Làm template cho các content page tham chiếu nó (phần giao diện nhất quán của site)",
+    "c": "Chạy code sau mỗi content page",
+    "d": "Render partial page",
+    "correct": "B",
+    "explanation": "`_Layout` là template chung cho các trang."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`_ViewStart.cshtml` có vai trò gì?",
+    "a": "Khai báo các namespace toàn cục",
+    "b": "Tham gia routing như một trang bình thường",
+    "c": "Chứa code chạy sau code của content page trong cùng thư mục/thư mục con; chỗ tiện để chỉ định layout",
+    "d": "Lưu connection string",
+    "correct": "C",
+    "explanation": "`_ViewStart` chạy sau code content page, tiện để chỉ định layout."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`_ViewImports.cshtml` dùng để làm gì?",
+    "a": "Tập trung các directive dùng chung (`@using`, `@addTagHelper`, `@inject`, `@model`...) cho các Razor page",
+    "b": "Làm template layout",
+    "c": "Quản lý Session",
+    "d": "Kết nối database",
+    "correct": "A",
+    "explanation": "`_ViewImports` tập trung directive dùng chung."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Đặc điểm của Partial Pages là gì?",
+    "a": "Có tham gia routing",
+    "b": "Bắt buộc phải có PageModel",
+    "c": "Thay thế hoàn toàn layout",
+    "d": "Không tham gia routing; render bằng `<partial name=\"_MenuPartial\" />`",
+    "correct": "D",
+    "explanation": "Partial page không tham gia routing; render bằng `<partial />`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "PageModel trong Razor Pages là gì?",
+    "a": "Triển khai pattern MVVM",
+    "b": "Triển khai Page Controller pattern (một page ↔ một controller), vừa là controller vừa là view model",
+    "c": "Triển khai Front Controller xử lý mọi request của site",
+    "d": "Chỉ là một ViewModel thuần dữ liệu",
+    "correct": "B",
+    "explanation": "PageModel = Page Controller pattern; không phải MVVM, không phải Front Controller."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Khi nào nên dùng View Component thay vì partial page hay tag helper?",
+    "a": "Khi chỉ cần HTML tĩnh",
+    "b": "Khi không cần unit test",
+    "c": "Khi cần logic để lấy dữ liệu (gọi file, database, web service); lớp kế thừa `ViewComponent` và có method `Invoke`",
+    "d": "Khi muốn thay thế routing",
+    "correct": "C",
+    "explanation": "View Component dùng khi cần logic lấy dữ liệu; lớp kế thừa `ViewComponent`, có `Invoke`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Trong Razor Pages routing, file `Index.cshtml` ở thư mục gốc `Pages` truy cập được qua URL nào?",
+    "a": "Cả `/` và `/Index`",
+    "b": "Chỉ `/Index`",
+    "c": "Chỉ `/Home`",
+    "d": "Không truy cập được",
+    "correct": "A",
+    "explanation": "`Index.cshtml` truy cập qua `/` và `/Index`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Vì sao vẫn cần server-side validation dù đã có client-side validation?",
+    "a": "Client-side validation không tồn tại",
+    "b": "Server-side nhanh hơn nên thay thế client",
+    "c": "Server-side không cần DataAnnotation",
+    "d": "Client-side rất dễ bị vượt qua; server sẽ chạy các validation attribute và `ModelState.IsValid` trả về `false` nếu có lỗi",
+    "correct": "D",
+    "explanation": "Client-side dễ bị vô hiệu hóa, nên server phải kiểm tra lại. Gợi ý cho Tester: thử tắt JavaScript rồi submit dữ liệu sai."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Attribute `[BindProperty]` trên một public property của PageModel có tác dụng gì?",
+    "a": "Gắn property vào một handler method",
+    "b": "Bind giá trị form được post lên vào property (tiện dùng giá trị ngoài handler, bind với tag helper)",
+    "c": "Tự động validate mọi dữ liệu",
+    "d": "Định nghĩa route cho trang",
+    "correct": "B",
+    "explanation": "`[BindProperty]` bind form value vào property của PageModel."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Tag Helpers trong Razor Pages là gì?",
+    "a": "Thư viện JavaScript để điều khiển DOM",
+    "b": "Công cụ sinh code database",
+    "c": "Thành phần tái sử dụng tự động sinh HTML cho các tag cụ thể; bật bằng `@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers`",
+    "d": "Loại file layout",
+    "correct": "C",
+    "explanation": "Tag Helper tự sinh HTML cho tag cụ thể, bật bằng `@addTagHelper`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Về Session state trong Razor Pages, phát biểu nào đúng?",
+    "a": "Không được bật mặc định, phải bật trong file Startup/cấu hình app; dùng cookie để liên kết các request thành một session",
+    "b": "Mặc định đã bật sẵn",
+    "c": "Không cần dùng cookie",
+    "d": "Chỉ lưu ở phía client",
+    "correct": "A",
+    "explanation": "Session không bật mặc định và dùng cookie để gắn các request."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Điều gì xảy ra với request không qua HTTPS khi dùng attribute `RequireHttps`?",
+    "a": "Được chấp nhận bình thường",
+    "b": "Luôn trả về 404 Not Found",
+    "c": "Luôn bị redirect sang HTTPS dù dùng verb nào",
+    "d": "Request GET được redirect sang phiên bản HTTPS; các verb khác (ví dụ POST) nhận 403 Forbidden",
+    "correct": "D",
+    "explanation": "GET → redirect sang HTTPS; verb khác như POST → 403 Forbidden."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Tên \"Blazor\" được ghép từ hai từ nào?",
+    "a": "Block + Razor",
+    "b": "Browser + Razor",
+    "c": "Binary + Lazor",
+    "d": "Backend + Azure",
+    "correct": "B",
+    "explanation": "Blazor = Browser + Razor."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Trong Blazor Server, các tương tác UI được xử lý thông qua gì?",
+    "a": "SignalR connection",
+    "b": "FTP",
+    "c": "SMTP",
+    "d": "Remote Desktop",
+    "correct": "A",
+    "explanation": "Blazor Server xử lý UI qua SignalR connection."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Blazor WebAssembly phù hợp nhất với loại ứng dụng nào?",
+    "a": "Ứng dụng nội bộ cần kết nối liên tục tới server",
+    "b": "Ứng dụng chỉ chạy trên server",
+    "c": "Ứng dụng offline-capable hoặc public (tải lần đầu lớn nhưng sau đó không cần tương tác server)",
+    "d": "Ứng dụng không dùng C#",
+    "correct": "C",
+    "explanation": "WASM hợp app offline-capable hoặc public; tải lần đầu nặng."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Một Blazor component thường được định nghĩa trong file nào và dùng thế nào?",
+    "a": "File `.cshtml`, dùng `@Component(\"MyComponent\")`",
+    "b": "File `.cs`, dùng `new MyComponent()`",
+    "c": "File `.html`, dùng `<include MyComponent>`",
+    "d": "File `.razor`, dùng như một thẻ: `<MyComponent />`",
+    "correct": "D",
+    "explanation": "Component nằm trong file `.razor`, dùng như `<MyComponent />`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Directive nào khai báo route `/todo` cho một component?",
+    "a": "`@route \"/todo\"`",
+    "b": "`@page \"/todo\"`",
+    "c": "`@url \"/todo\"`",
+    "d": "`@path \"/todo\"`",
+    "correct": "B",
+    "explanation": "`@page \"/todo\"` khai báo route."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`<input @bind=\"newTodo\" />` thực hiện loại binding nào?",
+    "a": "Two-way binding giữa ô input và biến `newTodo`",
+    "b": "Chỉ one-way (hiển thị giá trị)",
+    "c": "Không binding gì",
+    "d": "Chỉ import namespace",
+    "correct": "A",
+    "explanation": "`@bind` là two-way binding."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Attribute nào gắn method C# vào sự kiện click của button?",
+    "a": "`@click`",
+    "b": "`onpress`",
+    "c": "`@onclick`",
+    "d": "`@submit`",
+    "correct": "C",
+    "explanation": "`@onclick` gắn method C# vào sự kiện click."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "File `Routes.razor` trong dự án Blazor Web App có vai trò gì?",
+    "a": "Chứa connection string",
+    "b": "Khai báo namespace dùng chung",
+    "c": "Là entry point khởi động server",
+    "d": "Cấu hình Blazor router (còn `App.razor` là root component)",
+    "correct": "D",
+    "explanation": "`Routes.razor` cấu hình router; `App.razor` là root component."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "File `_Imports.razor` dùng để làm gì?",
+    "a": "Cấu hình router",
+    "b": "Khai báo các namespace thường dùng chung cho các component",
+    "c": "Chứa static files",
+    "d": "Là entry point của ứng dụng",
+    "correct": "B",
+    "explanation": "`_Imports.razor` khai báo namespace chung."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Cascading Values (cascading parameters) trong Blazor dùng để làm gì?",
+    "a": "Chia sẻ dữ liệu giữa các nested component",
+    "b": "Xóa dữ liệu khỏi component",
+    "c": "Chuyển trang",
+    "d": "Biên dịch code C#",
+    "correct": "A",
+    "explanation": "Cascading parameters chia sẻ dữ liệu giữa nested components."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Dòng `@rendermode InteractiveServer` ở đầu component có tác dụng gì?",
+    "a": "Tắt hoàn toàn interactivity",
+    "b": "Bắt component chạy bằng WebAssembly",
+    "c": "Bật interactivity cho component theo chế độ Interactive Server",
+    "d": "Chỉ render HTML tĩnh",
+    "correct": "C",
+    "explanation": "`@rendermode InteractiveServer` bật interactivity kiểu Server."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Lệnh nào áp dụng các migration lên database trong demo Movie (EF Core)?",
+    "a": "`dotnet ef migrations add \"InitialDB\"` (lệnh này chỉ tạo file migration)",
+    "b": "`dotnet new blazor`",
+    "c": "`dotnet run`",
+    "d": "`dotnet ef database update`",
+    "correct": "D",
+    "explanation": "`database update` áp dụng migration; `migrations add` chỉ tạo file migration."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Attribute `[Column(TypeName = \"decimal(18, 2)\")]` trên property `Price` có tác dụng gì?",
+    "a": "Định dạng hiển thị trên giao diện",
+    "b": "Chỉ định kiểu cột trong database",
+    "c": "Bắt buộc người dùng phải nhập giá",
+    "d": "Đổi tên bảng",
+    "correct": "B",
+    "explanation": "`[Column(TypeName=...)]` quy định kiểu cột trong DB."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "\"Pushing\" khác \"Pulling\" ở điểm nào?",
+    "a": "Push là được thông báo có gì mới, thay vì phải đi hỏi xem có gì mới (Pull)",
+    "b": "Push là client liên tục hỏi server",
+    "c": "Pull là server tự gửi dữ liệu xuống client",
+    "d": "Hai khái niệm giống nhau",
+    "correct": "A",
+    "explanation": "Push = được báo có gì mới; Pull = đi hỏi."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Thứ tự fallback của các transport trong SignalR là gì?",
+    "a": "Long Polling → Server-Sent Events → WebSockets",
+    "b": "Server-Sent Events → WebSockets → Long Polling",
+    "c": "WebSockets → Server-Sent Events → Long Polling",
+    "d": "Long Polling → WebSockets → Server-Sent Events",
+    "correct": "C",
+    "explanation": "WebSockets → Server-Sent Events → Long Polling."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Cách tạo một Hub trong SignalR là gì?",
+    "a": "Tạo class implement `IDisposable`",
+    "b": "Tạo static class",
+    "c": "Tạo interface `IHub`",
+    "d": "Khai báo class kế thừa từ `Hub` và thêm các public methods",
+    "correct": "D",
+    "explanation": "Hub là class kế thừa `Hub`, các public method là thứ client gọi được."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Để cấu hình SignalR trong `Program.cs` cần những gì?",
+    "a": "Chỉ cần `MapHub`",
+    "b": "`AddSignalR()` đăng ký services; `MapHub<ChatHub>(\"/chatHub\")` ánh xạ hub tới URL endpoint",
+    "c": "Chỉ cần cài thư viện JavaScript phía client",
+    "d": "Không cần cấu hình gì",
+    "correct": "B",
+    "explanation": "`AddSignalR()` + `MapHub<T>(url)`."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`Clients.Others` gọi method trên đối tượng nào?",
+    "a": "Tất cả client đang kết nối trừ client đã gọi hub method",
+    "b": "Chỉ client đã gọi hub method",
+    "c": "Mọi client đang kết nối",
+    "d": "Chỉ một group",
+    "correct": "A",
+    "explanation": "`Others` = mọi client trừ caller."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "`Context.ConnectionId` trả về gì?",
+    "a": "Tên người dùng",
+    "b": "Địa chỉ IP",
+    "c": "ID duy nhất do SignalR gán cho mỗi connection",
+    "d": "Tên group",
+    "correct": "C",
+    "explanation": "`ConnectionId` là ID duy nhất của mỗi connection."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Cách khắc phục nhược điểm \"magic string\" của `SendAsync(\"ReceiveMessage\", ...)` là gì?",
+    "a": "Dùng JSON thay cho MessagePack",
+    "b": "Dùng hub filter",
+    "c": "Dùng `Context.Items`",
+    "d": "Strongly typed hub với `Hub<T>` để tránh lỗi runtime do sai tên method",
+    "correct": "D",
+    "explanation": "`Hub<T>` giúp bắt lỗi sai tên ngay lúc biên dịch thay vì lỗi runtime."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Attribute `[HubMethodName(\"SendMessageToUser\")]` có tác dụng gì?",
+    "a": "Đổi tên class hub",
+    "b": "Chỉ định tên mà client dùng để gọi method, thay cho tên method .NET mặc định",
+    "c": "Ẩn method khỏi client",
+    "d": "Cấu hình group",
+    "correct": "B",
+    "explanation": "`[HubMethodName]` đổi tên method mà client gọi."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Trong `OnDisconnectedAsync(Exception exception)`, tham số `exception` là `null` khi nào?",
+    "a": "Khi client ngắt kết nối có chủ đích (ví dụ gọi `connection.stop()`)",
+    "b": "Khi có lỗi mạng (network failure)",
+    "c": "Khi server bị crash",
+    "d": "Khi connection bị timeout",
+    "correct": "A",
+    "explanation": "`null` khi ngắt chủ động; có exception khi ngắt do lỗi như mạng."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Phát biểu nào đúng về Hub filters?",
+    "a": "Chỉ có trước ASP.NET Core 3.1",
+    "b": "Chỉ chạy phía client",
+    "c": "Có từ ASP.NET Core 5.0, implement `IHubFilter` với `InvokeMethodAsync`; global filters chạy trước local filters",
+    "d": "Thay thế hoàn toàn class `Hub`",
+    "correct": "C",
+    "explanation": "Hub filter từ ASP.NET Core 5.0, implement `IHubFilter`; global chạy trước local."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "MessagePack so với JSON trong SignalR thì thế nào?",
+    "a": "Lớn hơn và chậm hơn JSON",
+    "b": "Dễ đọc bằng mắt thường hơn",
+    "c": "Hoàn toàn giống nhau",
+    "d": "Là binary serialization nhỏ gọn và nhanh hơn (ví dụ slide: JSON 27 byte, MessagePack 18 byte)",
+    "correct": "D",
+    "explanation": "MessagePack nhỏ và nhanh hơn JSON (18 byte so với 27 byte trong ví dụ)."
+  },
+  {
+    "subject": "PRN222-VIE",
+    "content": "Trong lab Entity Framework + SignalR, vì sao sau `SaveChangesAsync()` ta gọi `Clients.All.SendAsync(\"LoadProducts\")`?",
+    "a": "Để lưu dữ liệu vào database",
+    "b": "Để báo mọi client tải lại danh sách sản phẩm (client gọi `LoadProdData()` rồi vẽ lại bảng), giúp dữ liệu đồng bộ real-time",
+    "c": "Để tạo migration mới",
+    "d": "Để xóa cache của server",
+    "correct": "B",
+    "explanation": "Báo mọi client tải lại danh sách để dữ liệu đồng bộ real-time."
+  }
+]
