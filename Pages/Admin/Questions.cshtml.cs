@@ -24,7 +24,11 @@ public class QuestionsModel : PageModel
 
     public async Task OnGetAsync(int? subjectId, string? search, int pageNumber = 1)
     {
-        Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
         SubjectId = subjectId;
         Search = search?.Trim();
         PageNumber = Math.Max(1, pageNumber);

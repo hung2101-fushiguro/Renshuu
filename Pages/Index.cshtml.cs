@@ -12,6 +12,8 @@ public class IndexModel : PageModel
     public IndexModel(QuizService quiz) => _quiz = quiz;
 
     public List<SubjectSummary> Subjects { get; private set; } = new();
+    public List<FolderSummary> Folders { get; private set; } = new();
+    public List<SubjectSummary> LooseSubjects { get; private set; } = new();
 
     [BindProperty]
     public StartInput Input { get; set; } = new();
@@ -65,5 +67,24 @@ public class IndexModel : PageModel
         return RedirectToPage("/Test/Take", new { id = result.AttemptId });
     }
 
-    private async Task LoadSubjectsAsync() => Subjects = await _quiz.GetSubjectSummariesAsync();
+    private async Task LoadSubjectsAsync()
+    {
+        Subjects = await _quiz.GetSubjectSummariesAsync();
+
+        Folders = Subjects
+            .Where(s => s.FolderId.HasValue)
+            .GroupBy(s => new { Id = s.FolderId!.Value, Name = s.FolderName ?? "Thư mục" })
+            .Select(g => new FolderSummary(
+                g.Key.Id,
+                g.Key.Name,
+                g.Count(),
+                g.Sum(s => s.QuestionCount),
+                g.Sum(s => s.WrongCount)))
+            .OrderBy(f => f.Name)
+            .ToList();
+
+        LooseSubjects = Subjects
+            .Where(s => s.FolderId is null)
+            .ToList();
+    }
 }

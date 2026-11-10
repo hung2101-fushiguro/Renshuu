@@ -23,10 +23,7 @@
             <div class="field">
                 <label asp-for="SubjectId">Môn học (áp dụng cho tất cả câu dán vào)</label>
                 <select asp-for="SubjectId" class="input">
-                    @foreach (var subject in Model.Subjects)
-                    {
-                        <option value="@subject.Id">@subject.Name</option>
-                    }
+                    <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
                 </select>
             </div>
 

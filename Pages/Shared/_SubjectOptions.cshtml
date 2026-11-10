@@ -1,0 +1,24 @@
+@model SubjectOptionsView
+@{
+    var folders = Model.Items
+        .Where(i => i.FolderName is not null)
+        .GroupBy(i => i.FolderName!)
+        .OrderBy(g => g.Key);
+    var loose = Model.Items
+        .Where(i => i.FolderName is null)
+        .OrderBy(i => i.Name)
+        .ToList();
+}
+@foreach (var group in folders)
+{
+    <optgroup label="@group.Key">
+        @foreach (var item in group.OrderBy(i => i.Name))
+        {
+            <option value="@item.Id" selected="@(item.Id == Model.SelectedId)" data-count="@item.QuestionCount">@item.Name@(item.QuestionCount is int count ? $" ({count} câu)" : null)</option>
+        }
+    </optgroup>
+}
+@foreach (var item in loose)
+{
+    <option value="@item.Id" selected="@(item.Id == Model.SelectedId)" data-count="@item.QuestionCount">@item.Name@(item.QuestionCount is int count ? $" ({count} câu)" : null)</option>
+}

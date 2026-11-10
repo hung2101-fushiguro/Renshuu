@@ -26,7 +26,14 @@ public class QuizService
 
         var subjects = await _db.Subjects
             .OrderBy(s => s.Name)
-            .Select(s => new { s.Id, s.Name, QuestionCount = s.Questions.Count })
+            .Select(s => new
+            {
+                s.Id,
+                s.Name,
+                s.FolderId,
+                FolderName = s.Folder != null ? s.Folder.Name : null,
+                QuestionCount = s.Questions.Count,
+            })
             .ToListAsync();
 
         return subjects
@@ -34,7 +41,11 @@ public class QuizService
                 s.Id,
                 s.Name,
                 s.QuestionCount,
-                wrongBySubject.TryGetValue(s.Id, out var count) ? count : 0))
+                wrongBySubject.TryGetValue(s.Id, out var count) ? count : 0)
+            {
+                FolderId = s.FolderId,
+                FolderName = s.FolderName,
+            })
             .ToList();
     }
 
@@ -261,7 +272,13 @@ public class QuizService
     }
 }
 
-public record SubjectSummary(int Id, string Name, int QuestionCount, int WrongCount);
+public record SubjectSummary(int Id, string Name, int QuestionCount, int WrongCount)
+{
+    public int? FolderId { get; init; }
+    public string? FolderName { get; init; }
+}
+
+public record FolderSummary(int Id, string Name, int SubjectCount, int QuestionCount, int WrongCount);
 
 public record StartResult(bool Success, int? AttemptId, string? Error)
 {

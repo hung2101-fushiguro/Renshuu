@@ -26,10 +26,7 @@
         <div class="field">
             <label asp-for="Input.SubjectId">Môn học</label>
             <select asp-for="Input.SubjectId" class="input">
-                @foreach (var subject in Model.Subjects)
-                {
-                    <option value="@subject.Id">@subject.Name</option>
-                }
+                <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.Input.SubjectId)" />
             </select>
             <span asp-validation-for="Input.SubjectId" class="field-error"></span>
         </div>

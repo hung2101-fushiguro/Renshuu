@@ -184,6 +184,9 @@ namespace TracNghiemWeb.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("FolderId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -191,7 +194,30 @@ namespace TracNghiemWeb.Data.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("FolderId");
+
                     b.ToTable("Subjects");
+                });
+
+            modelBuilder.Entity("TracNghiemWeb.Models.SubjectFolder", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("SubjectFolders");
                 });
 
             modelBuilder.Entity("TracNghiemWeb.Models.Attempt", b =>
@@ -253,6 +279,16 @@ namespace TracNghiemWeb.Data.Migrations
                     b.Navigation("Subject");
                 });
 
+            modelBuilder.Entity("TracNghiemWeb.Models.Subject", b =>
+                {
+                    b.HasOne("TracNghiemWeb.Models.SubjectFolder", "Folder")
+                        .WithMany("Subjects")
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Folder");
+                });
+
             modelBuilder.Entity("TracNghiemWeb.Models.Attempt", b =>
                 {
                     b.Navigation("Answers");
@@ -275,6 +311,11 @@ namespace TracNghiemWeb.Data.Migrations
                     b.Navigation("Questions");
 
                     b.Navigation("ReadingPassages");
+                });
+
+            modelBuilder.Entity("TracNghiemWeb.Models.SubjectFolder", b =>
+                {
+                    b.Navigation("Subjects");
                 });
 #pragma warning restore 612, 618
         }

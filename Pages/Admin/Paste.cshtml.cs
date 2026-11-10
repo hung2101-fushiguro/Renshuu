@@ -90,5 +90,9 @@ public class PasteModel : PageModel
     }
 
     private async Task LoadAsync() =>
-        Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
 }

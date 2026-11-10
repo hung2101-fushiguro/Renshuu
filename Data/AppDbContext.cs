@@ -9,6 +9,7 @@ public class AppDbContext : DbContext
     {
     }
 
+    public DbSet<SubjectFolder> SubjectFolders => Set<SubjectFolder>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<ReadingPassage> ReadingPassages => Set<ReadingPassage>();
@@ -17,9 +18,21 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<SubjectFolder>(entity =>
+        {
+            entity.Property(f => f.Name).IsRequired().HasMaxLength(200);
+            entity.HasIndex(f => f.Name).IsUnique();
+
+            entity.HasMany(f => f.Subjects)
+                .WithOne(s => s.Folder)
+                .HasForeignKey(s => s.FolderId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
         modelBuilder.Entity<Subject>(entity =>
         {
             entity.Property(s => s.Name).IsRequired().HasMaxLength(200);
+            entity.HasIndex(s => s.FolderId);
         });
 
         modelBuilder.Entity<ReadingPassage>(entity =>

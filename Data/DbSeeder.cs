@@ -12,8 +12,9 @@ public static class DbSeeder
             return;
         }
 
-        var csharp = new Subject { Name = "Lập trình C# cơ bản" };
-        var aspnet = new Subject { Name = "ASP.NET Core" };
+        var programming = new SubjectFolder { Name = "Lập trình" };
+        var csharp = new Subject { Name = "Lập trình C# cơ bản", Folder = programming };
+        var aspnet = new Subject { Name = "ASP.NET Core", Folder = programming };
 
         csharp.Questions = new List<Question>
         {

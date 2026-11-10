@@ -20,7 +20,11 @@ public class QuestionEditModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int? id, int? subjectId)
     {
-        Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
         if (Subjects.Count == 0)
         {
             TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
@@ -52,7 +56,11 @@ public class QuestionEditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
         IsNew = Input.Id == 0;
 
         if (!Subjects.Any(s => s.Id == Input.SubjectId))

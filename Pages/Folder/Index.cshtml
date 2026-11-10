@@ -1,0 +1,39 @@
+@page "{id:int}"
+@model TracNghiemWeb.Pages.Folder.IndexModel
+@{
+    ViewData["Title"] = Model.Folder.Name;
+    ViewData["Active"] = "subjects";
+}
+
+<nav class="breadcrumb" aria-label="Đường dẫn">
+    <a asp-page="/Index">Môn học</a>
+    <span aria-hidden="true">/</span>
+    <span>@Model.Folder.Name</span>
+</nav>
+
+<div class="page-head">
+    <div>
+        <h1>@Model.Folder.Name</h1>
+        <p>@Model.Subjects.Count bài học · @Model.TotalQuestions câu hỏi</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-ghost" asp-page="/Index">Về tất cả môn</a>
+    </div>
+</div>
+
+@if (Model.Subjects.Count == 0)
+{
+    <div class="empty">
+        <strong>Thư mục này chưa có bài học nào.</strong>
+        <p class="mt-sm">Vào <a asp-page="/Admin/Index">Quản trị</a> để thêm môn học vào thư mục.</p>
+    </div>
+}
+else
+{
+    <div class="grid grid-subjects">
+        @foreach (var subject in Model.Subjects)
+        {
+            <partial name="_SubjectCard" model="subject" />
+        }
+    </div>
+}

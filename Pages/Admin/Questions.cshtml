@@ -24,10 +24,7 @@
         <label for="subject-filter">Môn học</label>
         <select id="subject-filter" name="subjectId" class="input">
             <option value="">Tất cả môn</option>
-            @foreach (var subject in Model.Subjects)
-            {
-                <option value="@subject.Id" selected="@(subject.Id == Model.SubjectId)">@subject.Name</option>
-            }
+            <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
         </select>
     </div>
     <div class="field">

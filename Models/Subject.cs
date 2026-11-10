@@ -6,6 +6,9 @@ public class Subject
 {
     public int Id { get; set; }
 
+    public int? FolderId { get; set; }
+    public SubjectFolder? Folder { get; set; }
+
     [Required(ErrorMessage = "Vui lòng nhập tên môn học.")]
     [StringLength(200, ErrorMessage = "Tên môn học tối đa 200 ký tự.")]
     [Display(Name = "Tên môn học")]

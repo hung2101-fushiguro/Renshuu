@@ -50,7 +50,11 @@ public class AddManyModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int? subjectId)
     {
-        Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
         if (Subjects.Count == 0)
         {
             TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
@@ -68,7 +72,11 @@ public class AddManyModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
         var subject = Subjects.FirstOrDefault(s => s.Id == SubjectId);
         if (subject is null)
         {

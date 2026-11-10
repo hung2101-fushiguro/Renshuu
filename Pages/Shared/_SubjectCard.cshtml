@@ -1,0 +1,23 @@
+@model SubjectSummary
+
+<div class="card">
+    <div class="card-title">
+        <h3>@Model.Name</h3>
+        <span class="badge badge-primary">@Model.QuestionCount câu</span>
+    </div>
+    @if (Model.WrongCount > 0)
+    {
+        <p class="small mb-md"><span class="badge badge-danger">@Model.WrongCount câu còn sai</span></p>
+    }
+    else
+    {
+        <p class="small muted mb-md">Chưa có câu sai nào.</p>
+    }
+    <div class="page-head actions mt-0">
+        <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@Model.Id">Chọn môn này</a>
+        @if (Model.WrongCount > 0)
+        {
+            <a class="btn btn-ghost btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@Model.Id">Xem câu sai</a>
+        }
+    </div>
+</div>

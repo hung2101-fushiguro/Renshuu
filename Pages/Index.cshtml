@@ -30,10 +30,7 @@ else
             <div class="field">
                 <label asp-for="Input.SubjectId">Môn học</label>
                 <select asp-for="Input.SubjectId" class="input" id="subject-select">
-                    @foreach (var subject in Model.Subjects)
-                    {
-                        <option value="@subject.Id" data-count="@subject.QuestionCount">@subject.Name (@subject.QuestionCount câu)</option>
-                    }
+                    <partial name="_SubjectOptions" model="SubjectOptionsView.FromSummaries(Model.Subjects, Model.Input.SubjectId)" />
                 </select>
                 <span asp-validation-for="Input.SubjectId" class="field-error"></span>
             </div>
@@ -66,33 +63,43 @@ else
         </div>
     </form>
 
-    <h2>Danh sách môn</h2>
-    <div class="grid grid-subjects">
-        @foreach (var subject in Model.Subjects)
-        {
-            <div class="card">
-                <div class="card-title">
-                    <h3>@subject.Name</h3>
-                    <span class="badge badge-primary">@subject.QuestionCount câu</span>
-                </div>
-                @if (subject.WrongCount > 0)
-                {
-                    <p class="small mb-md"><span class="badge badge-danger">@subject.WrongCount câu còn sai</span></p>
-                }
-                else
-                {
-                    <p class="small muted mb-md">Chưa có câu sai nào.</p>
-                }
-                <div class="page-head actions mt-0">
-                    <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@subject.Id">Chọn môn này</a>
-                    @if (subject.WrongCount > 0)
+    @if (Model.Folders.Count > 0)
+    {
+        <h2>Thư mục</h2>
+        <div class="grid grid-subjects @(Model.LooseSubjects.Count > 0 ? "mb-lg" : null)">
+            @foreach (var folder in Model.Folders)
+            {
+                <a class="card folder-card" asp-page="/Folder/Index" asp-route-id="@folder.Id">
+                    <div class="folder-head">
+                        <span class="folder-icon" aria-hidden="true">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
+                            </svg>
+                        </span>
+                        <div>
+                            <h3>@folder.Name</h3>
+                            <p class="small muted mb-0">@folder.SubjectCount bài học · @folder.QuestionCount câu hỏi</p>
+                        </div>
+                    </div>
+                    @if (folder.WrongCount > 0)
                     {
-                        <a class="btn btn-ghost btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@subject.Id">Xem câu sai</a>
+                        <p class="small mb-0 mt-sm"><span class="badge badge-danger">@folder.WrongCount câu còn sai</span></p>
                     }
-                </div>
-            </div>
-        }
-    </div>
+                </a>
+            }
+        </div>
+    }
+
+    @if (Model.LooseSubjects.Count > 0)
+    {
+        <h2>@(Model.Folders.Count > 0 ? "Môn học khác" : "Danh sách môn")</h2>
+        <div class="grid grid-subjects">
+            @foreach (var subject in Model.LooseSubjects)
+            {
+                <partial name="_SubjectCard" model="subject" />
+            }
+        </div>
+    }
 }
 
 @section Scripts {

@@ -26,12 +26,7 @@ else
         <div class="field">
             <label for="subjectId">Môn học</label>
             <select id="subjectId" name="subjectId" class="input" onchange="this.form.submit()">
-                @foreach (var subject in Model.Subjects)
-                {
-                    <option value="@subject.Id" selected="@(subject.Id == Model.SubjectId)">
-                        @subject.Name (@subject.WrongCount câu sai)
-                    </option>
-                }
+                <partial name="_SubjectOptions" model="SubjectOptionsView.FromSummaries(Model.Subjects, Model.SubjectId)" />
             </select>
         </div>
         <noscript><button type="submit" class="btn btn-secondary">Xem</button></noscript>

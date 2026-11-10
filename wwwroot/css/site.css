@@ -282,8 +282,60 @@ a.card:hover {
     grid-template-columns: 1fr;
 }
 
+.grid-admin-forms {
+    grid-template-columns: 1fr;
+}
+
 .grid-stats {
     grid-template-columns: 1fr;
+}
+
+/* ==========================================================================
+   Folder cards / breadcrumb
+   ========================================================================== */
+
+.folder-card {
+    display: block;
+}
+
+.folder-head {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-md);
+}
+
+.folder-head h3 {
+    margin: 0 0 var(--space-xs);
+}
+
+.folder-icon {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: #DBEAFE;
+    color: var(--color-primary-hover);
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+    margin-bottom: var(--space-md);
+    color: var(--color-muted-foreground);
+    font-size: 0.9rem;
+}
+
+.breadcrumb a {
+    text-decoration: none;
+}
+
+.breadcrumb a:hover {
+    text-decoration: underline;
 }
 
 /* ==========================================================================
@@ -1003,6 +1055,10 @@ code {
     .grid-subjects { grid-template-columns: repeat(2, 1fr); }
     .grid-stats { grid-template-columns: repeat(2, 1fr); }
     .form-row-2 { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 1024px) {
+    .grid-admin-forms { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 639px) {
