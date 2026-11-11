@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using TracNghiemWeb.Services;
+using TracNghiemWeb.Models;
 
 namespace TracNghiemWeb.Pages;
 
@@ -14,6 +15,9 @@ public class IndexModel : PageModel
     public List<SubjectSummary> Subjects { get; private set; } = new();
     public List<FolderSummary> Folders { get; private set; } = new();
     public List<SubjectSummary> LooseSubjects { get; private set; } = new();
+    public PracticeSummary Summary { get; private set; } = new(0, 0, 0);
+    public List<Attempt> RecentAttempts { get; private set; } = new();
+    public List<PendingAttemptSummary> PendingAttempts { get; private set; } = new();
 
     [BindProperty]
     public StartInput Input { get; set; } = new();
@@ -70,6 +74,9 @@ public class IndexModel : PageModel
     private async Task LoadSubjectsAsync()
     {
         Subjects = await _quiz.GetSubjectSummariesAsync();
+        Summary = await _quiz.GetPracticeSummaryAsync();
+        RecentAttempts = await _quiz.GetHistoryAsync(3);
+        PendingAttempts = await _quiz.GetPendingAttemptsAsync();
 
         Folders = Subjects
             .Where(s => s.FolderId.HasValue)

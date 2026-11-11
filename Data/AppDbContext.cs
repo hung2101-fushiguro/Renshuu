@@ -76,6 +76,7 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Attempt>(entity =>
         {
             entity.HasIndex(a => new { a.SubjectId, a.StartedAt });
+            entity.HasIndex(a => new { a.SubmittedAt, a.Id });
 
             entity.HasOne(a => a.Subject)
                 .WithMany(s => s.Attempts)

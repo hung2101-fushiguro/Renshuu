@@ -1,0 +1,110 @@
+// Run with playwright-core available on NODE_PATH. Uses only read-only HTTP and local UI state.
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const { chromium } = require('playwright-core');
+const base = process.argv[2] || 'http://localhost:5186';
+const output = path.resolve('artifacts/scrollcraft');
+fs.mkdirSync(output, { recursive: true });
+const isolateNativePointer = () => {
+    Element.prototype.requestPointerLock = () => Promise.reject(new Error('Native pointer lock disabled for verification'));
+    Element.prototype.setPointerCapture = () => {};
+};
+
+(async () => {
+    const browser = await chromium.launch({ executablePath: process.env.SCROLLCRAFT_CHROME || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
+    const errors = [], failures = [], checks = [];
+    try {
+        const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+        await context.addInitScript(isolateNativePointer);
+        const page = await context.newPage();
+        page.on('pageerror', error => errors.push(error.message));
+        page.on('response', response => { if (response.status() >= 400 && response.url().startsWith(base)) failures.push(response.status() + ' ' + response.url()); });
+        await page.goto(base, { waitUntil: 'networkidle' });
+        await page.evaluate(() => document.fonts.ready);
+        await page.waitForFunction(() => window.ScrollCraft?.instances.length === 1);
+        checks.push('Scroll Craft engine mounts exactly once');
+        const subjects = await page.locator('#session-subjects').evaluate(element => JSON.parse(element.textContent));
+        assert(subjects.length, 'Need at least one seeded subject for interaction verification');
+        const subject = subjects[Math.min(1, subjects.length - 1)];
+        const quick = page.locator('[data-quick-subject="' + subject.Id + '"]');
+        if (await quick.count()) await quick.click();
+        else await page.locator('#subject-select').selectOption(String(subject.Id));
+        assert.equal(await page.locator('#subject-select').inputValue(), String(subject.Id));
+        assert.equal(await page.locator('#ticket-subject').textContent(), subject.Name);
+        await page.locator('#Input_QuestionCount').fill('3');
+        assert.equal(await page.locator('#ticket-count').textContent(), '3');
+        await page.locator('#Input_TimeLimitMinutes').fill('12');
+        assert.match(await page.locator('#ticket-time').textContent(), /12 phút/);
+        checks.push('Subject, question count and time stay synchronized with the real form');
+        await page.locator('button[data-session-mode="review"]').click();
+        assert.equal(await page.locator('#ticket-count').textContent(), String(Math.min(subject.WrongCount, 200)));
+        assert.match(await page.locator('#session-action').getAttribute('href'), new RegExp('/Wrong\\?subjectId=' + subject.Id));
+        assert.equal(await page.locator('button[data-session-mode="review"]').getAttribute('aria-pressed'), 'true');
+        await page.locator('button[data-session-mode="practice"]').click();
+        assert.equal(await page.locator('#ticket-count').textContent(), '3');
+        checks.push('Review mode uses real wrong-answer counts and the subject-specific review route');
+
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+        const opening = await page.locator('.session-ticket').evaluate(element => getComputedStyle(element).transform);
+        await page.screenshot({ path: path.join(output, 'desktop-opening.png') });
+        await page.evaluate(() => window.scrollTo({ top: 350, behavior: 'instant' }));
+        await page.waitForFunction(before => getComputedStyle(document.querySelector('.session-ticket')).transform !== before, opening);
+        await page.screenshot({ path: path.join(output, 'desktop-midpoint.png') });
+        checks.push('The 3D planes visibly change with actual scroll progress');
+        await page.locator('#motion-toggle').click();
+        await page.waitForFunction(() => ScrollCraft.instances.length === 0);
+        const paused = await page.locator('.session-ticket').evaluate(element => getComputedStyle(element).transform);
+        await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+        assert.equal(await page.locator('.session-ticket').evaluate(element => getComputedStyle(element).transform), paused);
+        await page.locator('#motion-toggle').click();
+        await page.waitForFunction(() => ScrollCraft.instances.length === 1);
+        checks.push('Pause destroys the engine, preserves a static surface and resumes without duplicate instances');
+        for (const width of [1440, 1024, 820, 768, 390, 375]) {
+            await page.setViewportSize({ width, height: width < 600 ? 844 : 1000 });
+            if (width <= 760) await page.waitForFunction(() => document.getElementById('sidebar').getBoundingClientRect().right <= 1);
+            await page.evaluate(() => window.scrollTo({ top: 0, behavior: 'instant' }));
+            const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+            assert.equal(overflow, false, 'Horizontal overflow at ' + width);
+            await page.screenshot({ path: path.join(output, 'width-' + width + '.png'), fullPage: true });
+        }
+        checks.push('No horizontal overflow at six desktop, tablet and phone widths');
+        await page.locator('#menu-toggle').click();
+        assert.equal(await page.locator('#menu-toggle').getAttribute('aria-expanded'), 'true');
+        assert.equal(await page.locator('.app-shell').evaluate(element => element.inert), true);
+        await page.keyboard.press('Escape');
+        assert.equal(await page.locator('#menu-toggle').getAttribute('aria-expanded'), 'false');
+        assert.equal(await page.locator('#menu-toggle').evaluate(element => document.activeElement === element), true);
+        checks.push('Mobile menu opens, isolates the page and restores keyboard focus on Escape');
+        await page.goto(base + '/History', { waitUntil: 'networkidle' });
+        await page.goBack({ waitUntil: 'networkidle' });
+        await page.waitForFunction(() => window.ScrollCraft?.instances.length === 1);
+        checks.push('Returning through browser history restores one working engine instance');
+
+        const reducedContext = await browser.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+        await reducedContext.addInitScript(isolateNativePointer);
+        const reducedPage = await reducedContext.newPage();
+        reducedPage.on('pageerror', error => errors.push(error.message));
+        await reducedPage.goto(base, { waitUntil: 'networkidle' });
+        assert.equal(await reducedPage.evaluate(() => ScrollCraft.instances.length), 0);
+        assert.equal(await reducedPage.locator('#motion-toggle').isDisabled(), true);
+        assert.equal(await reducedPage.locator('#start-practice').isVisible(), true);
+        await reducedPage.screenshot({ path: path.join(output, 'reduced-motion.png'), fullPage: true });
+        checks.push('Reduced motion starts with no engine, a complete 3D still and usable practice controls');
+        const plainContext = await browser.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
+        await plainContext.addInitScript(isolateNativePointer);
+        const plainPage = await plainContext.newPage();
+        await plainPage.goto(base, { waitUntil: 'networkidle' });
+        assert(await plainPage.locator('#start-practice').isVisible());
+        assert(await plainPage.locator('.workspace-nav a').first().isVisible());
+        assert.equal(await plainPage.locator('.session-modes').isVisible(), false);
+        await plainPage.screenshot({ path: path.join(output, 'javascript-off.png'), fullPage: true });
+        checks.push('Without JavaScript, mobile navigation and the real Razor form remain available');
+        assert.deepEqual(errors, [], 'JavaScript errors');
+        assert.deepEqual(failures, [], 'Failed local resources');
+        checks.push('No JavaScript exceptions or failed local resources');
+        const report = { base, checks, errors, failures };
+        fs.writeFileSync(path.join(output, 'interaction-report.json'), JSON.stringify(report, null, 2));
+        checks.forEach(check => console.log('PASS ' + check));
+    } finally { await browser.close(); }
+})().catch(error => { console.error(error); process.exitCode = 1; });

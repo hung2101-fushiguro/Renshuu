@@ -1,0 +1,45 @@
+@model TracNghiemWeb.Pages.IndexModel
+@{
+    var selected = Model.Subjects.FirstOrDefault(s => s.Id == Model.Input.SubjectId) ?? Model.Subjects.FirstOrDefault();
+    var available = selected?.QuestionCount ?? 0;
+    var initialCount = Math.Clamp(Model.Input.QuestionCount, 0, Math.Min(available, 200));
+}
+<section class="launch-experience" data-sc-act="flow" aria-labelledby="session-heading">
+    <div class="preview-heading">
+        <h2 id="session-heading">Xem trước</h2>
+        <button class="scene-pause loop-pause" id="scene-pause" type="button" aria-label="Tạm dừng chuyển động thẻ ôn tập" aria-pressed="false">Ⅱ</button>
+    </div>
+    <div class="launch-copy" data-sc-copy>
+        @if (Model.Subjects.Count > 0)
+        {
+            <div class="session-modes" role="group" aria-label="Chế độ luyện tập">
+                <button type="button" data-session-mode="practice" aria-pressed="true">Luyện tập</button>
+                <button type="button" data-session-mode="review" aria-pressed="false">Ôn câu sai</button>
+            </div>
+        }
+    </div>
+    <div class="session-stage" aria-hidden="true">
+        <div class="session-depth session-depth-back" data-sc-parallax="-0.18">
+            <div class="session-plane session-bank"><span class="plane-topline">Ngân hàng câu hỏi</span><strong id="session-bank-count">@available</strong><span>câu trong môn</span></div>
+        </div>
+        <div class="session-depth session-depth-main" data-sc-parallax="0.16">
+            <div class="session-plane session-ticket">
+                <div class="ticket-heading"><span id="ticket-kind">Phiên luyện tập</span></div>
+                <strong class="ticket-subject" id="ticket-subject">@(selected?.Name ?? "Môn học của bạn")</strong>
+                <div class="ticket-count"><strong id="ticket-count">@initialCount</strong><span>câu chọn</span></div>
+                <div class="ticket-divider"></div>
+                <div class="ticket-detail"><svg class="icon"><use href="/images/icons.svg#calendar" /></svg><span id="ticket-time">@(Model.Input.TimeLimitMinutes is int minutes ? $"{minutes} phút luyện tập" : "Theo nhịp của bạn")</span></div>
+                <div class="ticket-detail"><svg class="icon"><use href="/images/icons.svg#shuffle" /></svg><span>Thứ tự ngẫu nhiên</span><svg class="icon ticket-check"><use href="/images/icons.svg#check" /></svg></div>
+            </div>
+        </div>
+        <div class="session-depth session-depth-front" data-sc-parallax="0.3">
+            <div class="session-plane session-review"><span class="review-plane-icon"><svg class="icon"><use href="/images/icons.svg#retry" /></svg></span><div><strong id="ticket-wrong">@(selected?.WrongCount ?? 0)</strong><span>câu cần ôn lại</span></div><svg class="icon review-plane-arrow"><use href="/images/icons.svg#arrow-up" /></svg></div>
+        </div>
+    </div>
+    <div class="launch-actions">
+        <span class="session-note" id="session-note">@(selected is null ? "Thêm môn để bắt đầu." : "Đồng bộ theo tùy chọn bài.")</span>
+        <a class="btn btn-quiet" id="session-action" href="@(selected is null ? "/Admin" : "#practice")"><span>@(selected is null ? "Thêm môn học" : "Điều chỉnh")</span><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#arrow" /></svg></a>
+    </div>
+</section>
+<p class="visually-hidden" id="session-announcement" role="status"></p>
+<script type="application/json" id="session-subjects">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Subjects.Select(s => new { s.Id, s.Name, s.QuestionCount, s.WrongCount })))</script>

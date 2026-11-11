@@ -21,10 +21,12 @@ public class TakeModel : PageModel
     public string SubjectName { get; private set; } = string.Empty;
     public int? TimeLimitMinutes { get; private set; }
     public DateTime StartedAt { get; private set; }
+    public double? RemainingSeconds { get; private set; }
+    public DateTime? DraftSavedAt { get; private set; }
     public List<TakeQuestion> Questions { get; private set; } = new();
     public List<TakeGroup> Groups { get; private set; } = new();
 
-    [BindProperty]
+    [BindProperty(Name = "Answers")]
     public Dictionary<int, string?> Answers { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(int id)
@@ -44,10 +46,20 @@ public class TakeModel : PageModel
             return RedirectToPage("/Test/Result", new { id });
         }
 
+        var remaining = _quiz.GetRemainingTime(attempt);
+        if (remaining is TimeSpan time && time <= TimeSpan.Zero)
+        {
+            await _quiz.SubmitAsync(id, new Dictionary<int, string?>(), savedOnly: true);
+            TempData["Warning"] = "Bài đã hết giờ. Kết quả được chấm từ các đáp án đã lưu trên máy chủ.";
+            return RedirectToPage("/Test/Result", new { id });
+        }
+
         AttemptId = attempt.Id;
         SubjectName = attempt.Subject?.Name ?? string.Empty;
         TimeLimitMinutes = attempt.TimeLimitMinutes;
         StartedAt = attempt.StartedAt;
+        RemainingSeconds = remaining?.TotalSeconds;
+        DraftSavedAt = attempt.DraftSavedAt;
 
         var rows = await (
             from answer in _db.AttemptAnswers
@@ -65,6 +77,7 @@ public class TakeModel : PageModel
                 question.OptionC,
                 question.OptionD,
                 question.OptionStyle,
+                answer.SelectedOption,
                 PassageId = passage == null ? (int?)null : passage.Id,
                 PassageTitle = passage == null ? null : passage.Title,
                 PassageContent = passage == null ? null : passage.Content,
@@ -83,13 +96,20 @@ public class TakeModel : PageModel
                     r.Content,
                     r.OptionStyle,
                     passage,
-                    BuildOptions(r.OptionA, r.OptionB, r.OptionC, r.OptionD, r.OptionStyle));
+                    BuildOptions(r.OptionA, r.OptionB, r.OptionC, r.OptionD, r.OptionStyle), r.SelectedOption);
             })
             .ToList();
 
         Groups = BuildGroups(Questions);
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostSaveDraftAsync(int id)
+    {
+        var result = await _quiz.SaveDraftAsync(id, Answers);
+        return new JsonResult(new { result.Success, result.SavedCount, result.SavedAt, result.Error, result.Closed })
+        { StatusCode = result.Success ? 200 : result.Closed ? 409 : 404 };
     }
 
     public async Task<IActionResult> OnPostAsync(int id)
@@ -101,6 +121,9 @@ public class TakeModel : PageModel
             TempData["Error"] = result.Error;
             return RedirectToPage("/Index");
         }
+
+        if (result.UsedSavedAnswers)
+            TempData["Warning"] = "Bài đã quá hạn nộp. Máy chủ chỉ chấm các đáp án đã được lưu trước khi hết giờ.";
 
         return RedirectToPage("/Test/Result", new { id });
     }
@@ -151,6 +174,7 @@ public record TakeQuestion(
     string Content,
     string OptionStyle,
     TakePassage? Passage,
-    List<TakeOption> Options);
+    List<TakeOption> Options,
+    string? SelectedOption);
 
 public record TakeGroup(TakePassage? Passage, List<TakeQuestion> Questions);

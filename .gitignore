@@ -38,3 +38,7 @@ Desktop.ini
 ## Secrets - never commit
 appsettings.*.local.json
 *.pfx
+
+## Local visual QA / browser profiles
+artifacts/
+.taste-skill/

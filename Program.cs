@@ -13,6 +13,7 @@ builder.Services.AddSession(options =>
     options.Cookie.IsEssential = true;
 });
 builder.Services.AddScoped<QuizService>();
+builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ImportService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
