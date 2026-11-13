@@ -299,6 +299,10 @@ namespace TracNghiemWeb.Data.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Chapter")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
                     b.Property<string>("Content")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -308,6 +312,10 @@ namespace TracNghiemWeb.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(1)
                         .HasColumnType("nvarchar(1)");
+
+                    b.Property<string>("Difficulty")
+                        .HasMaxLength(10)
+                        .HasColumnType("nvarchar(10)");
 
                     b.Property<string>("Explanation")
                         .HasMaxLength(2000)
@@ -345,6 +353,10 @@ namespace TracNghiemWeb.Data.Migrations
 
                     b.Property<int>("SubjectId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Topic")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("Id");
 

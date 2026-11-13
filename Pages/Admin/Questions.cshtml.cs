@@ -17,16 +17,22 @@ public class QuestionsModel : PageModel
     public List<Subject> Subjects { get; private set; } = new();
     public List<Question> Questions { get; private set; } = new();
     public int? SubjectId { get; private set; }
+    public string? Chapter { get; private set; }
+    public string? Topic { get; private set; }
+    public string? Difficulty { get; private set; }
     public string? Search { get; private set; }
     public int PageNumber { get; private set; } = 1;
     public int TotalPages { get; private set; } = 1;
     public int TotalCount { get; private set; }
 
-    public async Task OnGetAsync(int? subjectId, string? search, int pageNumber = 1)
+    public async Task OnGetAsync(int? subjectId, string? search, int pageNumber = 1, string? chapter = null, string? topic = null, string? difficulty = null)
     {
         Subjects = await _db.Subjects.OrderBy(s => s.Name).AsNoTracking().ToListAsync();
         SubjectId = subjectId;
         Search = search?.Trim();
+        Chapter = chapter?.Trim();
+        Topic = topic?.Trim();
+        Difficulty = difficulty;
         PageNumber = Math.Max(1, pageNumber);
 
         var query = _db.Questions.AsNoTracking();
@@ -40,6 +46,9 @@ public class QuestionsModel : PageModel
             query = query.Where(q => q.Content.Contains(Search));
         }
 
+        if (!string.IsNullOrWhiteSpace(Chapter)) query = query.Where(q => q.Chapter != null && q.Chapter.Contains(Chapter));
+        if (!string.IsNullOrWhiteSpace(Topic)) query = query.Where(q => q.Topic != null && q.Topic.Contains(Topic));
+        if (!string.IsNullOrWhiteSpace(Difficulty)) query = query.Where(q => q.Difficulty == Difficulty);
         TotalCount = await query.CountAsync();
         TotalPages = Math.Max(1, (int)Math.Ceiling(TotalCount / (double)PageSize));
         PageNumber = Math.Min(PageNumber, TotalPages);
@@ -53,7 +62,7 @@ public class QuestionsModel : PageModel
             .ToListAsync();
     }
 
-    public async Task<IActionResult> OnPostDeleteAsync(int id, int? subjectId, string? search, int pageNumber = 1)
+    public async Task<IActionResult> OnPostDeleteAsync(int id, int? subjectId, string? search, int pageNumber = 1, string? chapter = null, string? topic = null, string? difficulty = null)
     {
         var question = await _db.Questions.FindAsync(id);
         if (question is null)
@@ -74,6 +83,6 @@ public class QuestionsModel : PageModel
             }
         }
 
-        return RedirectToPage(new { subjectId, search, pageNumber });
+        return RedirectToPage(new { subjectId, search, pageNumber, chapter, topic, difficulty });
     }
 }

@@ -458,3 +458,46 @@ GO
 
 COMMIT;
 GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113055114_AddQuestionClassification'
+)
+BEGIN
+    ALTER TABLE [Questions] ADD [Chapter] nvarchar(100) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113055114_AddQuestionClassification'
+)
+BEGIN
+    ALTER TABLE [Questions] ADD [Difficulty] nvarchar(10) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113055114_AddQuestionClassification'
+)
+BEGIN
+    ALTER TABLE [Questions] ADD [Topic] nvarchar(100) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113055114_AddQuestionClassification'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261113055114_AddQuestionClassification', N'8.0.32');
+END;
+GO
+
+COMMIT;
+GO

@@ -34,8 +34,16 @@
         <label for="search">Tìm theo nội dung</label>
         <input id="search" type="search" name="search" value="@Model.Search" class="input" placeholder="Nhập từ khóa..." />
     </div>
+    <div class="field"><label for="chapter">Chương</label><input id="chapter" name="chapter" value="@Model.Chapter" class="input" maxlength="100" /></div>
+    <div class="field"><label for="topic">Chủ đề</label><input id="topic" name="topic" value="@Model.Topic" class="input" maxlength="100" /></div>
+    <div class="field"><label for="difficulty">Độ khó</label><select id="difficulty" name="difficulty" class="input">
+        <option value="">Tất cả mức</option>
+        <option value="Easy" selected="@(Model.Difficulty == "Easy")">Dễ</option>
+        <option value="Medium" selected="@(Model.Difficulty == "Medium")">Trung bình</option>
+        <option value="Hard" selected="@(Model.Difficulty == "Hard")">Khó</option>
+    </select></div>
     <button type="submit" class="btn btn-secondary">Lọc</button>
-    @if (Model.SubjectId.HasValue || !string.IsNullOrEmpty(Model.Search))
+    @if (Model.SubjectId.HasValue || !string.IsNullOrEmpty(Model.Search) || !string.IsNullOrEmpty(Model.Chapter) || !string.IsNullOrEmpty(Model.Topic) || !string.IsNullOrEmpty(Model.Difficulty))
     {
         <a class="btn btn-ghost" asp-page="/Admin/Questions">Xóa bộ lọc</a>
     }
@@ -57,6 +65,7 @@ else
                     <th scope="col" class="num">ID</th>
                     <th scope="col">Môn</th>
                     <th scope="col">Nội dung</th>
+                    <th scope="col">Phân loại</th>
                     <th scope="col">Đáp án</th>
                     <th scope="col"><span class="visually-hidden">Hành động</span></th>
                 </tr>
@@ -74,6 +83,10 @@ else
                             }
                             @Display.RichText(question.Content.Length > 130 ? question.Content[..130] + "…" : question.Content)
                         </td>
+                        <td>
+                            <div>@question.Chapter</div><div>@question.Topic</div>
+                            <span class="badge">@(question.Difficulty switch { "Easy" => "Dễ", "Medium" => "Trung bình", "Hard" => "Khó", _ => "Chưa phân loại" })</span>
+                        </td>
                         <td><span class="badge badge-primary">@Display.OptionLabel(question.OptionStyle, question.CorrectOption)</span></td>
                         <td class="num">
                             <div class="table-actions">
@@ -82,6 +95,9 @@ else
                                       onsubmit="return confirm('Xóa câu hỏi này?');">
                                     <input type="hidden" name="id" value="@question.Id" />
                                     <input type="hidden" name="subjectId" value="@Model.SubjectId" />
+                                    <input type="hidden" name="chapter" value="@Model.Chapter" />
+                                    <input type="hidden" name="topic" value="@Model.Topic" />
+                                    <input type="hidden" name="difficulty" value="@Model.Difficulty" />
                                     <input type="hidden" name="search" value="@Model.Search" />
                                     <input type="hidden" name="pageNumber" value="@Model.PageNumber" />
                                     <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
@@ -102,6 +118,9 @@ else
                 <a class="btn btn-secondary btn-sm"
                    asp-page="/Admin/Questions"
                    asp-route-subjectId="@Model.SubjectId"
+                   asp-route-chapter="@Model.Chapter"
+                   asp-route-topic="@Model.Topic"
+                   asp-route-difficulty="@Model.Difficulty"
                    asp-route-search="@Model.Search"
                    asp-route-pageNumber="@(Model.PageNumber - 1)">Trang trước</a>
             }
@@ -111,6 +130,9 @@ else
                 <a class="btn btn-secondary btn-sm"
                    asp-page="/Admin/Questions"
                    asp-route-subjectId="@Model.SubjectId"
+                   asp-route-chapter="@Model.Chapter"
+                   asp-route-topic="@Model.Topic"
+                   asp-route-difficulty="@Model.Difficulty"
                    asp-route-search="@Model.Search"
                    asp-route-pageNumber="@(Model.PageNumber + 1)">Trang sau</a>
             }

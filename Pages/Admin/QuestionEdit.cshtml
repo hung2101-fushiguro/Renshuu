@@ -91,9 +91,30 @@
             <span asp-validation-for="Input.Explanation" class="field-error"></span>
         </div>
 
+        <fieldset class="field">
+            <legend>Phân loại kiến thức</legend>
+            <div class="form-row-2">
+                <div class="field"><label asp-for="Input.Chapter">Chương</label><input asp-for="Input.Chapter" class="input" maxlength="100" /><span asp-validation-for="Input.Chapter" class="field-error"></span></div>
+                <div class="field"><label asp-for="Input.Topic">Chủ đề</label><input asp-for="Input.Topic" class="input" maxlength="100" /><span asp-validation-for="Input.Topic" class="field-error"></span></div>
+            </div>
+            <label asp-for="Input.Difficulty">Độ khó dự kiến</label>
+            <select asp-for="Input.Difficulty" class="input"><option value="">Chưa phân loại</option><option value="Easy">Dễ</option><option value="Medium">Trung bình</option><option value="Hard">Khó</option></select>
+            <span asp-validation-for="Input.Difficulty" class="field-error"></span>
+            <p class="hint">AI đề xuất dựa trên nội dung; bạn có thể chỉnh sửa trước khi lưu.</p>
+            <button type="button" id="analyze-question" class="btn btn-secondary">AI đề xuất phân loại</button>
+            <p id="analysis-status" role="status" aria-live="polite"></p>
+            <div id="analysis-preview" hidden>
+                <strong id="analysis-summary"></strong><p id="analysis-reason"></p>
+                <button type="button" id="apply-analysis" class="btn btn-secondary">Áp dụng đề xuất</button>
+            </div>
+        </fieldset>
         <div class="page-head actions mt-0">
             <button type="submit" class="btn btn-primary">@(Model.IsNew ? "Thêm câu hỏi" : "Lưu thay đổi")</button>
             <a class="btn btn-ghost" asp-page="/Admin/Questions" asp-route-subjectId="@Model.Input.SubjectId">Hủy</a>
         </div>
     </div>
 </form>
+
+@section Scripts {
+    <script src="~/js/question-analysis.js" asp-append-version="true"></script>
+}

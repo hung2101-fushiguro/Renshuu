@@ -9,6 +9,16 @@ public class Question
 
     public int Id { get; set; }
 
+    [StringLength(100)]
+    public string? Chapter { get; set; }
+
+    [StringLength(100)]
+    public string? Topic { get; set; }
+
+    [RegularExpression("^(Easy|Medium|Hard)$")]
+    [StringLength(10)]
+    public string? Difficulty { get; set; }
+
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
 
