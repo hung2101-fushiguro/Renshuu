@@ -4,7 +4,7 @@
 .history-list-heading { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 8px; }
 .history-list-heading h2 { font-size: 18px; margin: 0; }.history-list-heading > span { font-size: 12px; color: var(--color-muted-foreground); }
 .history-list { list-style: none; padding: 0; margin: 0; }
-.history-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px 100px auto; align-items: center; column-gap: 28px; padding: 24px 0; border-bottom: 1px solid #ededed; }
+.history-row { display: grid; grid-template-columns: minmax(0, 1fr) 100px 100px auto; align-items: center; column-gap: 28px; padding: 24px 0; border-bottom: 1px solid var(--color-border); }
 .history-course { min-width: 0; }.history-course strong { font-size: 14px; font-weight: 600; display: block; overflow-wrap: anywhere; }
 .history-course time { display: block; font-size: 12px; color: var(--color-muted-foreground); margin-top: 6px; font-variant-numeric: tabular-nums; }
 .history-result strong, .history-duration strong { display: block; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
