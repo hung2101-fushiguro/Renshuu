@@ -9,6 +9,8 @@ dotnet run --project TracNghiemWeb.csproj
 
 Development startup áp dụng các migration còn thiếu. AddIdentityAccounts thêm bảng Identity và UserId nullable vào Attempts. Bài cũ được giữ nguyên nhưng không hiển thị trong tài khoản mới. AddPracticeMode thêm IsPractice, mặc định false cho các bài cũ.
 
+Nếu muốn cập nhật database bằng SQL/SSMS, xem [hướng dẫn và script database](database/README.md).
+
 Truy cập http://localhost:5080/Account/Login và đăng ký tài khoản. Mật khẩu cần ít nhất 8 ký tự, gồm chữ hoa, chữ thường, số và ký tự đặc biệt.
 
 Để cấp quyền quản trị cho tài khoản đã đăng ký trên máy phát triển:
