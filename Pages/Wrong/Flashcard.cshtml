@@ -1,0 +1,370 @@
+@page
+@model TracNghiemWeb.Pages.Wrong.FlashcardModel
+@{
+    ViewData["Title"] = "Thẻ ghi nhớ ôn câu sai";
+    ViewData["Active"] = "wrong";
+
+    // Prepare questions data for client-side flashcard logic
+    var cardData = Model.Questions.Select(q => new
+    {
+        id = q.Id,
+        passageTitle = q.Passage?.Title ?? "",
+        passageContent = q.Passage?.Content ?? "",
+        content = q.Content,
+        optionA = q.OptionA,
+        optionB = q.OptionB,
+        optionC = q.OptionC,
+        optionD = q.OptionD,
+        optionStyle = q.OptionStyle,
+        correctOption = q.CorrectOption,
+        labelA = Display.OptionLabel(q.OptionStyle, "A"),
+        labelB = Display.OptionLabel(q.OptionStyle, "B"),
+        labelC = Display.OptionLabel(q.OptionStyle, "C"),
+        labelD = Display.OptionLabel(q.OptionStyle, "D"),
+        explanation = q.Explanation ?? ""
+    }).ToList();
+
+    var cardDataJson = System.Text.Json.JsonSerializer.Serialize(cardData);
+}
+
+<div class="page-head">
+    <div>
+        <h1>Thẻ ghi nhớ ôn câu sai (Flashcard)</h1>
+        <p>Lật thẻ ôn tập nhanh từng câu bạn đang làm sai, không cần làm lại cả bài thi.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-secondary" asp-page="/Wrong/Index" asp-route-subjectId="@Model.SubjectId">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12" />
+                <polyline points="12 19 5 12 12 5" />
+            </svg>
+            Danh sách câu sai
+        </a>
+    </div>
+</div>
+
+@if (Model.Subjects.Count == 0)
+{
+    <div class="empty">
+        <strong>Chưa có môn học nào.</strong>
+        <p class="mt-sm">Vào <a asp-page="/Admin/Index">Quản trị</a> để thêm môn học và câu hỏi.</p>
+    </div>
+}
+else
+{
+    <form method="get" class="toolbar mb-lg">
+        <div class="field">
+            <label for="subjectId">Môn học</label>
+            <select id="subjectId" name="subjectId" class="input" onchange="this.form.submit()">
+                @foreach (var subject in Model.Subjects)
+                {
+                    <option value="@subject.Id" selected="@(subject.Id == Model.SubjectId)">
+                        @subject.Name (@subject.WrongCount câu sai)
+                    </option>
+                }
+            </select>
+        </div>
+        <noscript><button type="submit" class="btn btn-secondary">Xem</button></noscript>
+    </form>
+
+    @if (Model.Questions.Count == 0)
+    {
+        <div class="empty">
+            <strong>Không còn câu sai nào ở môn "@Model.SelectedSubject?.Name".</strong>
+            <p class="mt-sm">Bạn đã nắm vững toàn bộ câu hỏi của môn này!</p>
+            <a class="btn btn-primary mt-md" asp-page="/Index" asp-route-subjectId="@Model.SubjectId">Làm bài kiểm tra mới</a>
+        </div>
+    }
+    else
+    {
+        <div id="flashcard-app" class="flashcard-wrapper">
+            <!-- Progress Header -->
+            <div class="flashcard-topbar">
+                <div class="flashcard-counter">
+                    <span class="muted">Tiến độ:</span>
+                    <strong id="fc-progress-text">1 / @Model.Questions.Count</strong>
+                </div>
+                <div class="flashcard-stats">
+                    <span class="badge badge-success" id="fc-mastered-badge">Đã thuộc: 0</span>
+                    <span class="badge badge-accent" id="fc-remaining-badge">Còn lại: @Model.Questions.Count</span>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="fc-progress-track">
+                <div id="fc-progress-bar" class="fc-progress-fill" style="width: 0%;"></div>
+            </div>
+
+            <!-- Flashcard Container -->
+            <div class="flashcard-stage">
+                <div id="fc-card" class="flashcard-card" tabindex="0" role="region" aria-label="Thẻ ghi nhớ">
+                    <!-- Front Side -->
+                    <div class="flashcard-side flashcard-front">
+                        <div class="fc-side-tag">MẶT TRƯỚC: CÂU HỎI</div>
+                        <div id="fc-passage" class="fc-passage-box" style="display: none;">
+                            <div class="fc-passage-title" id="fc-passage-title"></div>
+                            <div class="fc-passage-content" id="fc-passage-content"></div>
+                        </div>
+                        <h2 class="fc-question-text" id="fc-question-content"></h2>
+                        <div class="fc-options-list" id="fc-options-front">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="fc-hint">
+                            <span class="badge badge-muted">Nhấn phím <strong>Space</strong> hoặc nút bên dưới để lật thẻ</span>
+                        </div>
+                    </div>
+
+                    <!-- Back Side -->
+                    <div class="flashcard-side flashcard-back">
+                        <div class="fc-side-tag is-back">MẶT SAU: ĐÁP ÁN & GIẢI THÍCH</div>
+                        <div class="fc-answer-badge">
+                            <span class="badge badge-success">Đáp án đúng: <strong id="fc-correct-letter"></strong></span>
+                        </div>
+                        <div class="fc-options-list" id="fc-options-back">
+                            <!-- Populated by JS -->
+                        </div>
+                        <div class="explanation mt-md" id="fc-explanation-box">
+                            <strong>Giải thích:</strong>
+                            <p id="fc-explanation-text" class="mb-0"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Flashcard Action Buttons -->
+            <div class="flashcard-controls mt-lg">
+                <!-- State: Not Flipped -->
+                <div id="fc-flip-controls">
+                    <button type="button" class="btn btn-primary btn-lg btn-block" id="fc-btn-flip">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="17 1 21 5 17 9" />
+                            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+                            <polyline points="7 23 3 19 7 15" />
+                            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                        </svg>
+                        Lật thẻ xem đáp án (Phím Space)
+                    </button>
+                </div>
+
+                <!-- State: Flipped -->
+                <div id="fc-judge-controls" class="grid grid-2" style="display: none;">
+                    <button type="button" class="btn btn-danger btn-lg" id="fc-btn-repeat">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="15" y1="9" x2="9" y2="15" />
+                            <line x1="9" y1="9" x2="15" y2="15" />
+                        </svg>
+                        Chưa thuộc - Ôn lại (Phím 1 hoặc ←)
+                    </button>
+                    <button type="button" class="btn btn-success btn-lg" id="fc-btn-mastered">
+                        <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                            <polyline points="22 4 12 14.01 9 11.01" />
+                        </svg>
+                        Đã thuộc - Bỏ qua (Phím 2 hoặc →)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Complete View -->
+            <div id="fc-complete-view" class="card empty" style="display: none;">
+                <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🎉</div>
+                <h2>Xuất sắc! Bạn đã hoàn thành bộ thẻ!</h2>
+                <p class="muted">Bạn đã ôn thuộc toàn bộ các câu hỏi sai của môn này trong lượt vừa rồi.</p>
+                <div class="actions mt-lg" style="justify-content: center;">
+                    <button type="button" class="btn btn-secondary" id="fc-btn-restart">Ôn lại từ đầu</button>
+                    <a class="btn btn-accent" asp-page="/Wrong/Index" asp-route-subjectId="@Model.SubjectId">Làm bài kiểm tra lại</a>
+                </div>
+            </div>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        (function () {
+            var rawData = @Html.Raw(cardDataJson);
+            if (!rawData || rawData.length === 0) return;
+
+            var queue = rawData.slice(); // Current learning queue
+            var initialTotal = rawData.length;
+            var masteredCount = 0;
+            var isFlipped = false;
+
+            var cardEl = document.getElementById('fc-card');
+            var flipControls = document.getElementById('fc-flip-controls');
+            var judgeControls = document.getElementById('fc-judge-controls');
+            var completeView = document.getElementById('fc-complete-view');
+            var appWrapper = document.getElementById('flashcard-app');
+
+            var btnFlip = document.getElementById('fc-btn-flip');
+            var btnRepeat = document.getElementById('fc-btn-repeat');
+            var btnMastered = document.getElementById('fc-btn-mastered');
+            var btnRestart = document.getElementById('fc-btn-restart');
+
+            var progressText = document.getElementById('fc-progress-text');
+            var progressBar = document.getElementById('fc-progress-bar');
+            var masteredBadge = document.getElementById('fc-mastered-badge');
+            var remainingBadge = document.getElementById('fc-remaining-badge');
+
+            var qContent = document.getElementById('fc-question-content');
+            var passageBox = document.getElementById('fc-passage');
+            var passageTitle = document.getElementById('fc-passage-title');
+            var passageContent = document.getElementById('fc-passage-content');
+            var optionsFront = document.getElementById('fc-options-front');
+            var optionsBack = document.getElementById('fc-options-back');
+            var correctLetter = document.getElementById('fc-correct-letter');
+            var explanationText = document.getElementById('fc-explanation-text');
+            var explanationBox = document.getElementById('fc-explanation-box');
+
+            function renderCurrentCard() {
+                if (queue.length === 0) {
+                    // All cards completed
+                    cardEl.closest('.flashcard-stage').style.display = 'none';
+                    flipControls.style.display = 'none';
+                    judgeControls.style.display = 'none';
+                    completeView.style.display = 'block';
+                    updateProgress();
+                    return;
+                }
+
+                completeView.style.display = 'none';
+                cardEl.closest('.flashcard-stage').style.display = 'block';
+
+                var current = queue[0];
+                isFlipped = false;
+                cardEl.classList.remove('is-flipped');
+                flipControls.style.display = 'block';
+                judgeControls.style.display = 'none';
+
+                // Passage
+                if (current.passageContent) {
+                    passageBox.style.display = 'block';
+                    passageTitle.textContent = current.passageTitle;
+                    passageContent.textContent = current.passageContent;
+                } else {
+                    passageBox.style.display = 'none';
+                }
+
+                // Question content
+                qContent.textContent = current.content;
+
+                // Options Front
+                var options = [
+                    { key: 'A', label: current.labelA, text: current.optionA },
+                    { key: 'B', label: current.labelB, text: current.optionB },
+                    { key: 'C', label: current.labelC, text: current.optionC },
+                    { key: 'D', label: current.labelD, text: current.optionD }
+                ];
+
+                optionsFront.innerHTML = '';
+                optionsBack.innerHTML = '';
+
+                options.forEach(function (opt) {
+                    // Front option
+                    var divF = document.createElement('div');
+                    divF.className = 'option option-static';
+                    divF.innerHTML = '<span class="option-key">' + opt.label + '.</span> <span>' + escapeHtml(opt.text) + '</span>';
+                    optionsFront.appendChild(divF);
+
+                    // Back option (with highlight for correct)
+                    var isCorrect = (opt.key === current.correctOption);
+                    var divB = document.createElement('div');
+                    divB.className = 'option option-static ' + (isCorrect ? 'option-correct' : 'option-muted');
+                    divB.innerHTML = '<span class="option-key">' + opt.label + '.</span> <span>' + escapeHtml(opt.text) + '</span>' +
+                        (isCorrect ? ' <span class="badge badge-success nowrap">Đáp án đúng</span>' : '');
+                    optionsBack.appendChild(divB);
+                });
+
+                // Back: correct letter & explanation
+                correctLetter.textContent = current.correctOption;
+                if (current.explanation && current.explanation.trim()) {
+                    explanationBox.style.display = 'block';
+                    explanationText.textContent = current.explanation;
+                } else {
+                    explanationBox.style.display = 'none';
+                }
+
+                updateProgress();
+            }
+
+            function updateProgress() {
+                var remaining = queue.length;
+                var currentCardIndex = masteredCount + 1;
+                progressText.textContent = (masteredCount + (remaining > 0 ? 1 : 0)) + ' / ' + initialTotal;
+                masteredBadge.textContent = 'Đã thuộc: ' + masteredCount;
+                remainingBadge.textContent = 'Còn lại: ' + remaining;
+
+                var percent = Math.min(100, Math.round((masteredCount / initialTotal) * 100));
+                progressBar.style.width = percent + '%';
+            }
+
+            function flipCard() {
+                if (isFlipped) return;
+                isFlipped = true;
+                cardEl.classList.add('is-flipped');
+                flipControls.style.display = 'none';
+                judgeControls.style.display = 'grid';
+            }
+
+            function onRepeat() {
+                if (!isFlipped || queue.length === 0) return;
+                // Move current card to the end of the queue
+                var current = queue.shift();
+                queue.push(current);
+                renderCurrentCard();
+            }
+
+            function onMastered() {
+                if (!isFlipped || queue.length === 0) return;
+                // Remove current card from queue
+                queue.shift();
+                masteredCount++;
+                renderCurrentCard();
+            }
+
+            function restart() {
+                queue = rawData.slice();
+                masteredCount = 0;
+                renderCurrentCard();
+            }
+
+            function escapeHtml(str) {
+                if (!str) return '';
+                return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            }
+
+            // Button Click Listeners
+            btnFlip.addEventListener('click', flipCard);
+            cardEl.addEventListener('click', function (e) {
+                if (!isFlipped) flipCard();
+            });
+            btnRepeat.addEventListener('click', onRepeat);
+            btnMastered.addEventListener('click', onMastered);
+            btnRestart.addEventListener('click', restart);
+
+            // Keyboard Shortcuts
+            document.addEventListener('keydown', function (e) {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA') return;
+
+                if (e.code === 'Space') {
+                    e.preventDefault();
+                    if (!isFlipped) flipCard();
+                } else if (e.key === '1' || e.key === 'ArrowLeft') {
+                    if (isFlipped) {
+                        e.preventDefault();
+                        onRepeat();
+                    }
+                } else if (e.key === '2' || e.key === 'ArrowRight') {
+                    if (isFlipped) {
+                        e.preventDefault();
+                        onMastered();
+                    }
+                }
+            });
+
+            // Initial render
+            renderCurrentCard();
+        })();
+    </script>
+}

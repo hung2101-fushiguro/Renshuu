@@ -1,0 +1,199 @@
+@page
+@model TracNghiemWeb.Pages.History.AnalyticsModel
+@{
+    ViewData["Title"] = "Thống kê & Phân tích tiến độ";
+    ViewData["Active"] = "analytics";
+    var a = Model.Analytics;
+}
+
+<div class="page-head">
+    <div>
+        <h1>Thống kê & Phân tích tiến độ</h1>
+        <p>Đánh giá năng lực, hiệu quả ôn tập câu sai và xu hướng điểm số của bạn.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-secondary" asp-page="/History/Index">Lịch sử làm bài</a>
+        <a class="btn btn-accent" asp-page="/Wrong/Index">Kho câu sai</a>
+    </div>
+</div>
+
+<div class="grid grid-stats mb-xl">
+    <div class="stat">
+        <div class="stat-value">@a.TotalAttempts</div>
+        <div class="stat-label">Tổng số bài đã làm</div>
+    </div>
+    <div class="stat is-accent">
+        <div class="stat-value">@a.TotalQuestionsAnswered</div>
+        <div class="stat-label">Số câu hỏi đã luyện</div>
+    </div>
+    <div class="stat">
+        <div class="stat-value">@Display.Duration(a.TotalTimeSpent)</div>
+        <div class="stat-label">Tổng thời gian học</div>
+    </div>
+    <div class="stat is-success">
+        <div class="stat-value">@Display.Percentage(a.RecoveryRate)</div>
+        <div class="stat-label">Tỷ lệ khắc phục câu sai (@a.RecoveredWrongQuestions/@a.TotalEverWrongQuestions)</div>
+    </div>
+</div>
+
+@if (a.TotalAttempts == 0)
+{
+    <div class="empty">
+        <strong>Chưa có dữ liệu thống kê.</strong>
+        <p class="mt-sm">Hãy <a asp-page="/Index">làm một bài thi trắc nghiệm</a> để hệ thống bắt đầu ghi nhận và phân tích tiến độ học tập của bạn.</p>
+    </div>
+}
+else
+{
+    <section class="card mb-xl">
+        <div class="card-head">
+            <div>
+                <h2 class="mt-0 mb-0">Biểu đồ tiến bộ điểm số (15 bài gần nhất)</h2>
+                <p class="muted mt-xs mb-0">Tỷ lệ chính xác (%) theo từng lần làm bài. Điểm mốc: 80% (Giỏi), 50% (Đạt).</p>
+            </div>
+            <div class="chart-legend">
+                <span class="legend-item"><span class="legend-dot is-pass"></span> ≥ 80% (Giỏi)</span>
+                <span class="legend-item"><span class="legend-dot is-avg"></span> 50% - 79%</span>
+                <span class="legend-item"><span class="legend-dot is-fail"></span> &lt; 50%</span>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            @{
+                var trends = a.RecentTrends;
+                var count = trends.Count;
+                var chartWidth = 800;
+                var chartHeight = 260;
+                var padLeft = 45;
+                var padRight = 30;
+                var padTop = 30;
+                var padBottom = 40;
+                var plotWidth = chartWidth - padLeft - padRight;
+                var plotHeight = chartHeight - padTop - padBottom;
+
+                // Build points
+                var points = new List<(double X, double Y, RecentAttemptTrend Data)>();
+                for (int i = 0; i < count; i++)
+                {
+                    var item = trends[i];
+                    var x = count == 1 ? padLeft + plotWidth / 2.0 : padLeft + (double)i / (count - 1) * plotWidth;
+                    var y = padTop + (1.0 - (item.Percentage / 100.0)) * plotHeight;
+                    points.Add((x, y, item));
+                }
+                var polylinePoints = string.Join(" ", points.Select(p => $"{p.X:F1},{p.Y:F1}"));
+            }
+
+            <svg viewBox="0 0 @chartWidth @chartHeight" class="progress-svg" preserveAspectRatio="none" role="img" aria-label="Biểu đồ tiến độ điểm số">
+                <!-- Background Grid Lines -->
+                <line x1="@padLeft" y1="@(padTop)" x2="@(chartWidth - padRight)" y2="@(padTop)" class="grid-line" />
+                <text x="@(padLeft - 8)" y="@(padTop + 4)" class="grid-label">100%</text>
+
+                <line x1="@padLeft" y1="@(padTop + plotHeight * 0.2)" x2="@(chartWidth - padRight)" y2="@(padTop + plotHeight * 0.2)" class="grid-line benchmark-80" stroke-dasharray="4 4" />
+                <text x="@(padLeft - 8)" y="@(padTop + plotHeight * 0.2 + 4)" class="grid-label text-success">80%</text>
+
+                <line x1="@padLeft" y1="@(padTop + plotHeight * 0.5)" x2="@(chartWidth - padRight)" y2="@(padTop + plotHeight * 0.5)" class="grid-line benchmark-50" stroke-dasharray="4 4" />
+                <text x="@(padLeft - 8)" y="@(padTop + plotHeight * 0.5 + 4)" class="grid-label text-accent">50%</text>
+
+                <line x1="@padLeft" y1="@(padTop + plotHeight)" x2="@(chartWidth - padRight)" y2="@(padTop + plotHeight)" class="grid-line" />
+                <text x="@(padLeft - 8)" y="@(padTop + plotHeight + 4)" class="grid-label">0%</text>
+
+                @if (count > 1)
+                {
+                    <!-- Area fill under line -->
+                    var areaD = $"M {points[0].X:F1},{padTop + plotHeight} " +
+                                string.Join(" ", points.Select(p => $"L {p.X:F1},{p.Y:F1}")) +
+                                $" L {points[^1].X:F1},{padTop + plotHeight} Z";
+                    <path d="@areaD" class="chart-area" />
+                    <!-- Connecting Line -->
+                    <polyline points="@polylinePoints" class="chart-line" />
+                }
+
+                <!-- Data Dots -->
+                @for (int i = 0; i < points.Count; i++)
+                {
+                    var pt = points[i];
+                    var dotClass = pt.Data.Percentage >= 80 ? "dot-success" : pt.Data.Percentage >= 50 ? "dot-accent" : "dot-danger";
+                    <g class="chart-node" tabindex="0" role="button">
+                        <circle cx="@pt.X:F1" cy="@pt.Y:F1" r="5" class="chart-dot @dotClass" />
+                        <text x="@pt.X:F1" y="@(pt.Y - 10)" class="chart-value-label">@Math.Round(pt.Data.Percentage)%</text>
+                        <title>Bài #@pt.Data.AttemptId - @pt.Data.SubjectName: @pt.Data.CorrectCount/@pt.Data.TotalQuestions (@Math.Round(pt.Data.Percentage)%) lúc @pt.Data.SubmittedAt.ToString("HH:mm dd/MM") (@(pt.Data.IsPractice ? "Ôn tập" : "Làm bài"))</title>
+                    </g>
+                }
+            </svg>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2 class="mt-0">Điểm mạnh & Điểm yếu theo môn học</h2>
+        <p class="muted">Đánh giá mức độ thành thạo dựa trên tỷ lệ câu trả lời đúng và số lượng câu sai cần khắc phục.</p>
+
+        <div class="table-wrap">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th scope="col">Môn học</th>
+                        <th scope="col" class="num">Lượt làm</th>
+                        <th scope="col" class="num">Số câu đã luyện</th>
+                        <th scope="col" class="num">Tỷ lệ đúng</th>
+                        <th scope="col" class="num">Câu còn sai</th>
+                        <th scope="col">Đánh giá</th>
+                        <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var sub in a.SubjectProficiencies)
+                    {
+                        var badgeClass = sub.GradeLevel switch
+                        {
+                            "Nắm vững" => "badge-success",
+                            "Khá" => "badge-primary",
+                            "Trung bình" => "badge-accent",
+                            "Cần cải thiện" => "badge-danger",
+                            _ => "badge-muted"
+                        };
+
+                        <tr>
+                            <td>
+                                <strong>@sub.SubjectName</strong>
+                            </td>
+                            <td class="num">@sub.AttemptCount</td>
+                            <td class="num">@sub.TotalAnswered</td>
+                            <td class="num">
+                                @if (sub.AttemptCount > 0)
+                                {
+                                    <span class="badge @badgeClass">@Display.Percentage(sub.AveragePercentage)</span>
+                                }
+                                else
+                                {
+                                    <span class="muted">—</span>
+                                }
+                            </td>
+                            <td class="num">
+                                @if (sub.CurrentWrongCount > 0)
+                                {
+                                    <span class="text-danger font-bold">@sub.CurrentWrongCount câu</span>
+                                }
+                                else
+                                {
+                                    <span class="text-success">0 câu</span>
+                                }
+                            </td>
+                            <td>
+                                <span class="badge @badgeClass">@sub.GradeLevel</span>
+                            </td>
+                            <td class="num">
+                                <div class="table-actions">
+                                    <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@sub.SubjectId">Làm bài</a>
+                                    @if (sub.CurrentWrongCount > 0)
+                                    {
+                                        <a class="btn btn-accent btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@sub.SubjectId">Sửa câu sai</a>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}

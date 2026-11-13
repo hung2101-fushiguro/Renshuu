@@ -206,6 +206,107 @@ public class QuizService
         return attempts.Count;
     }
 
+    public async Task<AnalyticsData> GetAnalyticsAsync()
+    {
+        var attempts = await _db.Attempts
+            .AsNoTracking()
+            .Include(a => a.Subject)
+            .Where(a => a.SubmittedAt != null)
+            .OrderByDescending(a => a.StartedAt)
+            .ToListAsync();
+
+        var totalAttempts = attempts.Count;
+        var totalQuestionsAnswered = attempts.Sum(a => a.TotalQuestions);
+        var totalCorrect = attempts.Sum(a => a.CorrectCount);
+        var overallAccuracy = totalQuestionsAnswered > 0
+            ? Math.Round((double)totalCorrect / totalQuestionsAnswered * 100, 1)
+            : 0;
+
+        var totalTimeSpent = TimeSpan.FromTicks(attempts.Sum(a => a.Duration.Ticks));
+
+        var everWrongQuestionIds = await _db.AttemptAnswers
+            .Where(a => a.Attempt!.SubmittedAt != null && !a.IsCorrect)
+            .Select(a => a.QuestionId)
+            .Distinct()
+            .ToListAsync();
+
+        var recoveredCount = 0;
+        if (everWrongQuestionIds.Count > 0)
+        {
+            recoveredCount = await LatestAnswers()
+                .Where(a => a.IsCorrect && everWrongQuestionIds.Contains(a.QuestionId))
+                .Select(a => a.QuestionId)
+                .Distinct()
+                .CountAsync();
+        }
+
+        var recentTrends = attempts
+            .Take(15)
+            .OrderBy(a => a.StartedAt)
+            .Select(a => new RecentAttemptTrend(
+                a.Id,
+                a.Subject?.Name ?? "Không rõ",
+                a.SubmittedAt ?? a.StartedAt,
+                a.CorrectCount,
+                a.TotalQuestions,
+                a.Percentage,
+                a.IsPractice))
+            .ToList();
+
+        var currentWrongBySubject = await LatestAnswers()
+            .Where(a => !a.IsCorrect)
+            .Join(_db.Questions, a => a.QuestionId, q => q.Id, (a, q) => q.SubjectId)
+            .GroupBy(subjectId => subjectId)
+            .Select(g => new { SubjectId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.SubjectId, x => x.Count);
+
+        var subjects = await _db.Subjects
+            .OrderBy(s => s.Name)
+            .Select(s => new { s.Id, s.Name })
+            .ToListAsync();
+
+        var proficiencies = new List<SubjectProficiency>();
+        foreach (var sub in subjects)
+        {
+            var subAttempts = attempts.Where(a => a.SubjectId == sub.Id).ToList();
+            var subCount = subAttempts.Count;
+            var subAnswered = subAttempts.Sum(a => a.TotalQuestions);
+            var subCorrect = subAttempts.Sum(a => a.CorrectCount);
+            var subAccuracy = subAnswered > 0
+                ? Math.Round((double)subCorrect / subAnswered * 100, 1)
+                : 0;
+
+            var wrongCount = currentWrongBySubject.TryGetValue(sub.Id, out var wc) ? wc : 0;
+
+            string grade;
+            if (subCount == 0) grade = "Chưa làm bài";
+            else if (subAccuracy >= 80) grade = "Nắm vững";
+            else if (subAccuracy >= 65) grade = "Khá";
+            else if (subAccuracy >= 50) grade = "Trung bình";
+            else grade = "Cần cải thiện";
+
+            proficiencies.Add(new SubjectProficiency(
+                sub.Id,
+                sub.Name,
+                subCount,
+                subAnswered,
+                subCorrect,
+                subAccuracy,
+                wrongCount,
+                grade));
+        }
+
+        return new AnalyticsData(
+            totalAttempts,
+            totalQuestionsAnswered,
+            totalTimeSpent,
+            overallAccuracy,
+            recoveredCount,
+            everWrongQuestionIds.Count,
+            recentTrends,
+            proficiencies);
+    }
+
     private IQueryable<AttemptAnswer> LatestAnswers() =>
         _db.AttemptAnswers.Where(a =>
             a.Attempt!.SubmittedAt != null
@@ -276,3 +377,40 @@ public record SubmitResult(bool Success, int? AttemptId, string? Error)
     public static SubmitResult Ok(int attemptId) => new(true, attemptId, null);
     public static SubmitResult Fail(string error) => new(false, null, error);
 }
+
+public record AnalyticsData(
+    int TotalAttempts,
+    int TotalQuestionsAnswered,
+    TimeSpan TotalTimeSpent,
+    double OverallAccuracy,
+    int RecoveredWrongQuestions,
+    int TotalEverWrongQuestions,
+    List<RecentAttemptTrend> RecentTrends,
+    List<SubjectProficiency> SubjectProficiencies
+)
+{
+    public double RecoveryRate => TotalEverWrongQuestions > 0
+        ? Math.Round((double)RecoveredWrongQuestions / TotalEverWrongQuestions * 100, 1)
+        : 100.0;
+}
+
+public record RecentAttemptTrend(
+    int AttemptId,
+    string SubjectName,
+    DateTime SubmittedAt,
+    int CorrectCount,
+    int TotalQuestions,
+    double Percentage,
+    bool IsPractice
+);
+
+public record SubjectProficiency(
+    int SubjectId,
+    string SubjectName,
+    int AttemptCount,
+    int TotalAnswered,
+    int TotalCorrect,
+    double AveragePercentage,
+    int CurrentWrongCount,
+    string GradeLevel
+);

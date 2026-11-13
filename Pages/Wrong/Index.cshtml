@@ -11,6 +11,16 @@
         <h1>Câu còn sai</h1>
         <p>Những câu bạn trả lời sai ở lần làm gần nhất. Trả lời đúng trong lần làm sau, câu đó sẽ được gỡ khỏi danh sách.</p>
     </div>
+    <div class="actions">
+        <a class="btn btn-secondary" asp-page="/Wrong/Flashcard" asp-route-subjectId="@Model.SubjectId">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
+                <line x1="8" y1="21" x2="16" y2="21" />
+                <line x1="12" y1="17" x2="12" y2="21" />
+            </svg>
+            Ôn bằng Flashcard
+        </a>
+    </div>
 </div>
 
 @if (Model.Subjects.Count == 0)
@@ -64,6 +74,9 @@ else
                     </svg>
                     Làm lại các câu sai (@Model.Questions.Count câu)
                 </button>
+                <a class="btn btn-secondary" asp-page="/Wrong/Flashcard" asp-route-subjectId="@Model.SubjectId">
+                    Ôn nhanh bằng Flashcard
+                </a>
             </form>
         </div>
 

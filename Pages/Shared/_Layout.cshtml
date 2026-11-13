@@ -25,6 +25,7 @@
                 <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Môn học</a>
                 <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Câu còn sai</a>
                 <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
+                <a asp-page="/History/Analytics" class="@(ViewData["Active"] as string == "analytics" ? "active" : null)">Tiến độ</a>
                 @if (User.IsInRole("Admin")) {
                 <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản trị</a>
                 }
