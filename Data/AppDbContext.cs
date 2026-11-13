@@ -15,6 +15,8 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
         _http = http;
     }
 
+    public DbSet<LearnerProfile> LearnerProfiles => Set<LearnerProfile>();
+    public DbSet<SavedQuestion> SavedQuestions => Set<SavedQuestion>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<Question> Questions => Set<Question>();
     public DbSet<ReadingPassage> ReadingPassages => Set<ReadingPassage>();
@@ -24,6 +26,12 @@ public class AppDbContext : IdentityDbContext<IdentityUser>
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<LearnerProfile>().HasQueryFilter(p => p.UserId == CurrentUserId);
+        modelBuilder.Entity<LearnerProfile>().HasOne<IdentityUser>().WithOne().HasForeignKey<LearnerProfile>(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<SavedQuestion>().HasQueryFilter(p => p.UserId == CurrentUserId);
+        modelBuilder.Entity<SavedQuestion>().HasIndex(p => new { p.UserId, p.QuestionId }).IsUnique();
+        modelBuilder.Entity<SavedQuestion>().HasOne<IdentityUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<SavedQuestion>().HasOne(p => p.Question).WithMany().HasForeignKey(p => p.QuestionId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<Attempt>().HasQueryFilter(a => CurrentUserId != null && a.UserId == CurrentUserId);
         modelBuilder.Entity<AttemptAnswer>().HasQueryFilter(a => CurrentUserId != null && a.Attempt!.UserId == CurrentUserId);
         modelBuilder.Entity<Attempt>().HasOne<IdentityUser>().WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Restrict);

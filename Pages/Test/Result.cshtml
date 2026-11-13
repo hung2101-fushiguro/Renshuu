@@ -82,7 +82,7 @@
                 <div class="question-head">
                     <span class="question-number">@questionNumber</span>
                     <div>
-                        <p class="question-content">@Display.RichText(question.Content)</p>
+                        <p class="question-content">@Display.RichText(question.Content) <a asp-page="/Learner/Save" asp-route-questionId="@question.Id">Lưu câu / ghi chú</a></p>
                         <p class="mt-sm mb-0">
                             @if (isCorrect)
                             {

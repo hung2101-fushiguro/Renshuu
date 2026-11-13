@@ -100,13 +100,7 @@
             <label asp-for="Input.Difficulty">Độ khó dự kiến</label>
             <select asp-for="Input.Difficulty" class="input"><option value="">Chưa phân loại</option><option value="Easy">Dễ</option><option value="Medium">Trung bình</option><option value="Hard">Khó</option></select>
             <span asp-validation-for="Input.Difficulty" class="field-error"></span>
-            <p class="hint">AI đề xuất dựa trên nội dung; bạn có thể chỉnh sửa trước khi lưu.</p>
-            <button type="button" id="analyze-question" class="btn btn-secondary">AI đề xuất phân loại</button>
-            <p id="analysis-status" role="status" aria-live="polite"></p>
-            <div id="analysis-preview" hidden>
-                <strong id="analysis-summary"></strong><p id="analysis-reason"></p>
-                <button type="button" id="apply-analysis" class="btn btn-secondary">Áp dụng đề xuất</button>
-            </div>
+            <p class="hint">Chọn chương, chủ đề và độ khó phù hợp trước khi lưu.</p>
         </fieldset>
         <div class="page-head actions mt-0">
             <button type="submit" class="btn btn-primary">@(Model.IsNew ? "Thêm câu hỏi" : "Lưu thay đổi")</button>
@@ -114,7 +108,3 @@
         </div>
     </div>
 </form>
-
-@section Scripts {
-    <script src="~/js/question-analysis.js" asp-append-version="true"></script>
-}

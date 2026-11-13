@@ -291,6 +291,24 @@ namespace TracNghiemWeb.Data.Migrations
                     b.ToTable("AttemptAnswers");
                 });
 
+            modelBuilder.Entity("TracNghiemWeb.Models.LearnerProfile", b =>
+                {
+                    b.Property<string>("UserId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("DailyGoal")
+                        .HasColumnType("int");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("UserId");
+
+                    b.ToTable("LearnerProfiles");
+                });
+
             modelBuilder.Entity("TracNghiemWeb.Models.Question", b =>
                 {
                     b.Property<int>("Id")
@@ -392,6 +410,38 @@ namespace TracNghiemWeb.Data.Migrations
                     b.HasIndex("SubjectId");
 
                     b.ToTable("ReadingPassages");
+                });
+
+            modelBuilder.Entity("TracNghiemWeb.Models.SavedQuestion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("Favorite")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<int>("QuestionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("QuestionId");
+
+                    b.HasIndex("UserId", "QuestionId")
+                        .IsUnique();
+
+                    b.ToTable("SavedQuestions");
                 });
 
             modelBuilder.Entity("TracNghiemWeb.Models.Subject", b =>
@@ -498,6 +548,15 @@ namespace TracNghiemWeb.Data.Migrations
                     b.Navigation("Question");
                 });
 
+            modelBuilder.Entity("TracNghiemWeb.Models.LearnerProfile", b =>
+                {
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithOne()
+                        .HasForeignKey("TracNghiemWeb.Models.LearnerProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TracNghiemWeb.Models.Question", b =>
                 {
                     b.HasOne("TracNghiemWeb.Models.ReadingPassage", "Passage")
@@ -525,6 +584,23 @@ namespace TracNghiemWeb.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Subject");
+                });
+
+            modelBuilder.Entity("TracNghiemWeb.Models.SavedQuestion", b =>
+                {
+                    b.HasOne("TracNghiemWeb.Models.Question", "Question")
+                        .WithMany()
+                        .HasForeignKey("QuestionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Microsoft.AspNetCore.Identity.IdentityUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Question");
                 });
 
             modelBuilder.Entity("TracNghiemWeb.Models.Attempt", b =>

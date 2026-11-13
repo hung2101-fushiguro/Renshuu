@@ -1,0 +1,32 @@
+@page
+@model TracNghiemWeb.Pages.Learner.IndexModel
+@{ ViewData["Title"] = "Góc học tập"; }
+<div class="page-head"><div><h1>Góc học tập của bạn</h1><p>Hồ sơ, câu đã lưu và tiến độ học mỗi ngày.</p></div></div>
+<section class="card"><h2>Hồ sơ và mục tiêu</h2>
+<p>Hôm nay: <strong>@Model.Today / @Model.DailyGoal câu</strong> · @(Model.Today >= Model.DailyGoal ? "Đã đạt mục tiêu!" : "Tiếp tục luyện tập nhé.")</p>
+<p class="hint">Tính các câu khác nhau đã trả lời trong bài đã nộp, theo ngày Việt Nam.</p>
+<form method="post" asp-page-handler="Profile" class="form-grid">
+<label asp-for="DisplayName">Tên hiển thị</label><input asp-for="DisplayName" class="input" maxlength="100" />
+<label asp-for="DailyGoal">Số câu mỗi ngày</label><input asp-for="DailyGoal" class="input" min="1" max="500" />
+<button class="btn btn-primary">Lưu hồ sơ</button></form></section>
+<section class="card"><h2>Đổi mật khẩu</h2><form method="post" asp-page-handler="Password" class="form-grid">
+<label for="current-password">Mật khẩu hiện tại</label><input id="current-password" name="currentPassword" type="password" autocomplete="current-password" class="input" required />
+<label for="new-password">Mật khẩu mới</label><input id="new-password" name="newPassword" type="password" autocomplete="new-password" class="input" required minlength="8" />
+<label for="confirm-password">Xác nhận mật khẩu mới</label><input id="confirm-password" name="confirmPassword" type="password" autocomplete="new-password" class="input" required />
+<button class="btn btn-secondary">Đổi mật khẩu</button></form></section>
+<section class="card"><h2>Bài đang làm</h2>
+@if (Model.Pending.Count == 0) { <p>Không có bài đang làm.</p> }
+@foreach (var attempt in Model.Pending) { <p><a asp-page="/Test/Take" asp-route-id="@attempt.Id">Tiếp tục @attempt.Subject?.Name — @attempt.StartedAt.ToString("dd/MM HH:mm")</a></p> }
+<p class="hint">Thời gian làm bài tiếp tục chạy khi rời trang.</p></section>
+<section><h2>Câu đã lưu và ghi chú</h2>
+<form method="get" class="toolbar"><label for="subject">Môn</label><select id="subject" name="subjectId" class="input"><option value="">Tất cả</option>@foreach(var subject in Model.Subjects) { <option value="@subject.Id">@subject.Name</option> }</select><label for="search">Từ khóa</label><input id="search" name="search" class="input" /><button class="btn btn-secondary">Tìm</button></form>
+@if (Model.Saved.Count == 0) { <p>Chưa có câu phù hợp. Bạn có thể lưu câu trong lúc ôn tập hoặc xem kết quả.</p> }
+@foreach (var saved in Model.Saved) {
+<article class="card"><p class="hint">@saved.Question?.Subject?.Name</p>
+@if (saved.Question?.Passage is {} passage) { <p>@Display.RichText(passage.Content)</p> }
+<h3>@saved.Question?.Content</h3>
+<form method="post" asp-page-handler="Save" class="form-grid"><input type="hidden" name="questionId" value="@saved.QuestionId" />
+<label><input type="checkbox" name="favorite" value="true" checked="@saved.Favorite" /> Yêu thích</label>
+<label for="note-@saved.Id">Ghi chú riêng</label><textarea id="note-@saved.Id" name="note" class="input" maxlength="2000">@saved.Note</textarea>
+<button class="btn btn-secondary">Lưu thay đổi</button><p class="hint">Bỏ yêu thích và xóa ghi chú để gỡ câu khỏi danh sách.</p></form></article>
+}</section>

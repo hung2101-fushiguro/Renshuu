@@ -75,12 +75,13 @@
                     @foreach (var option in question.Options)
                     {
                         <label class="option">
-                            <input type="radio" name="Answers[@question.Id]" value="@option.Key" />
+                            <input type="radio" name="Answers[@question.Id]" value="@option.Key" checked="@(Model.Answers.GetValueOrDefault(question.Id) == option.Key)" />
                             <span class="option-key">@(option.Label).</span>
                             <span>@Display.RichText(option.Text)</span>
                         </label>
                     }
                 </div>
+                @if (Model.IsPractice) { <a asp-page="/Learner/Save" asp-route-questionId="@question.Id" target="_blank" rel="noopener">Lưu câu / ghi chú</a> }
                 @if (Model.IsPractice)
                 {
                     @foreach (var correctOption in question.Options.Where(option => option.Key == question.CorrectOption))
@@ -95,9 +96,9 @@
         }
     }
 
-    <div class="mt-lg">
+    <p id="draft-status" role="status"></p><div class="mt-lg">
         <button type="submit" class="btn btn-accent btn-lg btn-block">Nộp bài</button>
-        <p class="small muted mt-sm mb-0">Đáp án bạn chọn được lưu tạm trong trình duyệt; nếu lỡ tải lại trang, các lựa chọn vẫn còn.</p>
+        <p class="small muted mt-sm mb-0">Đáp án được lưu trên máy chủ khi có kết nối. Kiểm tra trạng thái lưu trước khi rời trang.</p>
     </div>
 </form>
 @if (Model.IsPractice)
@@ -106,6 +107,7 @@
 }
 
 @section Scripts {
+    <script src="~/js/learner-draft.js" asp-append-version="true" defer></script>
     @if (Model.IsPractice)
     {
         <script src="~/js/quiz-answers.js" asp-append-version="true" defer></script>
@@ -117,12 +119,6 @@
             var total = parseInt(form.dataset.total, 10) || 0;
             var storageKey = 'quiz_attempt_' + attemptId;
             var saved = {};
-
-            try {
-                saved = JSON.parse(sessionStorage.getItem(storageKey) || '{}') || {};
-            } catch (e) {
-                saved = {};
-            }
 
             var radios = Array.prototype.slice.call(form.querySelectorAll('input[type="radio"]'));
             var progressBar = document.getElementById('progress-bar');

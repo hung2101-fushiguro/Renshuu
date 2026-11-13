@@ -32,3 +32,9 @@ For account/login work, load `.agents/skills/razor-login/SKILL.md`. For new or r
 3. Implement the smallest complete change; include a regression test when a test project exists and the behavior warrants one.
 4. Review the full diff for data loss, migration, validation, security, and UI-flow effects.
 5. Run the project build and any applicable tests. Report exact checks and environment limitations; never imply that an unrun check passed.
+
+## Database handoff after every task
+- After every task, update `database/TASK-LOG.md`. If there is no database change, explicitly record "Không cần SQL/migration".
+- For schema changes, include the EF migration, regenerate `database/update-database.sql` with `dotnet ef migrations script --idempotent --project TracNghiemWeb.csproj --output database/update-database.sql`, and update `database/verify-database.sql` and `database/README.md`.
+- Handoff instructions must let a teammate's agent identify its own effective server/database, inspect existing migration history, back up existing data, execute SQL with error checking, and verify migrations/schema and row counts afterwards. Never assume a teammate uses the same SQL Server instance.
+- Report which database was actually updated; distinguish generated SQL from executed SQL. Preserve credentials outside Git and do not export account data in schema scripts.

@@ -45,6 +45,7 @@ public class TakeModel : PageModel
             return RedirectToPage("/Test/Result", new { id });
         }
 
+        Answers = await _db.AttemptAnswers.Where(a => a.AttemptId == id).ToDictionaryAsync(a => a.QuestionId, a => a.SelectedOption);
         AttemptId = attempt.Id;
         SubjectName = attempt.Subject?.Name ?? string.Empty;
         TimeLimitMinutes = attempt.TimeLimitMinutes;
@@ -94,6 +95,11 @@ public class TakeModel : PageModel
         Groups = BuildGroups(Questions);
 
         return Page();
+    }
+
+    public async Task<IActionResult> OnPostDraftAsync(int id, [FromServices] LearnerService learner)
+    {
+        return await learner.SaveDraftAsync(id, Answers) ? new JsonResult(new { saved = true }) : StatusCode(409);
     }
 
     public async Task<IActionResult> OnPostAsync(int id)

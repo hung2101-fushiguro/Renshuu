@@ -501,3 +501,70 @@ GO
 
 COMMIT;
 GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113110547_AddLearnerFeatures'
+)
+BEGIN
+    CREATE TABLE [LearnerProfiles] (
+        [UserId] nvarchar(450) NOT NULL,
+        [DisplayName] nvarchar(100) NOT NULL,
+        [DailyGoal] int NOT NULL,
+        CONSTRAINT [PK_LearnerProfiles] PRIMARY KEY ([UserId]),
+        CONSTRAINT [FK_LearnerProfiles_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113110547_AddLearnerFeatures'
+)
+BEGIN
+    CREATE TABLE [SavedQuestions] (
+        [Id] int NOT NULL IDENTITY,
+        [UserId] nvarchar(450) NOT NULL,
+        [QuestionId] int NOT NULL,
+        [Favorite] bit NOT NULL,
+        [Note] nvarchar(2000) NULL,
+        CONSTRAINT [PK_SavedQuestions] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_SavedQuestions_AspNetUsers_UserId] FOREIGN KEY ([UserId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_SavedQuestions_Questions_QuestionId] FOREIGN KEY ([QuestionId]) REFERENCES [Questions] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113110547_AddLearnerFeatures'
+)
+BEGIN
+    CREATE INDEX [IX_SavedQuestions_QuestionId] ON [SavedQuestions] ([QuestionId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113110547_AddLearnerFeatures'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_SavedQuestions_UserId_QuestionId] ON [SavedQuestions] ([UserId], [QuestionId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261113110547_AddLearnerFeatures'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261113110547_AddLearnerFeatures', N'8.0.32');
+END;
+GO
+
+COMMIT;
+GO

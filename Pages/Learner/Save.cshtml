@@ -1,0 +1,9 @@
+@page
+@model TracNghiemWeb.Pages.Learner.SaveModel
+@{ ViewData["Title"] = "Lưu câu hỏi"; }
+<h1>Lưu câu hỏi</h1><p>@Model.Question.Content</p>
+<form method="post" asp-page="/Learner/Index" asp-page-handler="Save" class="card form-grid">
+<input type="hidden" name="questionId" value="@Model.Question.Id" />
+<label><input type="checkbox" name="favorite" value="true" checked="@(Model.Saved?.Favorite ?? true)" /> Yêu thích</label>
+<label for="note">Ghi chú riêng</label><textarea id="note" name="note" class="input" maxlength="2000">@Model.Saved?.Note</textarea>
+<button class="btn btn-primary">Lưu</button><a asp-page="/Learner/Index">Về góc học tập</a></form>

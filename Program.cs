@@ -18,8 +18,9 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-builder.Services.AddHttpClient<QuestionAnalysisService>(client => client.Timeout = TimeSpan.FromMinutes(3));
-builder.Services.AddScoped<QuizService>();
+
+builder.Services.AddScoped<LearnerService>();
+ builder.Services.AddScoped<QuizService>();
 builder.Services.AddScoped<ImportService>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>

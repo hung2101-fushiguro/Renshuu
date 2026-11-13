@@ -122,6 +122,7 @@ public class QuizService
 
     public async Task<SubmitResult> SubmitAsync(int attemptId, IReadOnlyDictionary<int, string?> answers)
     {
+        await using var transaction = await _db.Database.BeginTransactionAsync(System.Data.IsolationLevel.Serializable);
         var attempt = await _db.Attempts
             .Include(a => a.Answers)
             .ThenInclude(a => a.Question)
@@ -139,7 +140,8 @@ public class QuizService
 
         foreach (var answer in attempt.Answers)
         {
-            var selected = answers.TryGetValue(answer.QuestionId, out var value) ? value : null;
+            var expired = attempt.TimeLimitMinutes is int limit && DateTime.Now > attempt.StartedAt.AddMinutes(limit).AddSeconds(5);
+            var selected = expired ? answer.SelectedOption : answers.TryGetValue(answer.QuestionId, out var value) ? value : null;
             answer.SelectedOption = NormalizeOption(selected);
             answer.IsCorrect = answer.SelectedOption is not null
                 && answer.Question is not null
@@ -150,6 +152,7 @@ public class QuizService
         attempt.SubmittedAt = DateTime.Now;
 
         await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
         return SubmitResult.Ok(attempt.Id);
     }
 

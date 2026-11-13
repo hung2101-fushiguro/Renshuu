@@ -22,6 +22,7 @@
                 <span>Trắc nghiệm</span>
             </a>
             <nav class="site-nav" aria-label="Điều hướng chính">
+                <a asp-page="/Learner/Index">Góc học tập</a>
                 <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Môn học</a>
                 <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Câu còn sai</a>
                 <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
