@@ -11,6 +11,8 @@ public class Attempt
 
     public DateTime? SubmittedAt { get; set; }
 
+    public DateTime? DraftSavedAt { get; set; }
+
     public int? TimeLimitMinutes { get; set; }
 
     public int TotalQuestions { get; set; }
@@ -20,6 +22,8 @@ public class Attempt
     public ICollection<AttemptAnswer> Answers { get; set; } = new List<AttemptAnswer>();
 
     public bool IsSubmitted => SubmittedAt.HasValue;
+
+    public DateTime? Deadline => TimeLimitMinutes is int minutes ? StartedAt.AddMinutes(minutes) : null;
 
     public TimeSpan Duration => (SubmittedAt ?? DateTime.Now) - StartedAt;
 

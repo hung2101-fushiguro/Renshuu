@@ -1,53 +1,84 @@
+@{
+    var active = ViewData["Active"] as string ?? "subjects";
+    var navigation = new[] {
+        (Page: "/Index", Key: "subjects", Icon: "grid", Text: "Tổng quan"),
+        (Page: "/Wrong/Index", Key: "wrong", Icon: "retry", Text: "Ôn lại câu sai"),
+        (Page: "/History/Index", Key: "history", Icon: "history", Text: "Lịch sử luyện tập"),
+        (Page: "/Admin/Index", Key: "admin", Icon: "settings", Text: "Quản lý nội dung")
+    };
+}
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" class="no-js" data-type="software" data-radius="soft" data-buttons="solid" data-motion>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@(ViewData["Title"] is null ? "Trắc nghiệm" : $"{ViewData["Title"]} – Trắc nghiệm")</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Renshuu — không gian luyện trắc nghiệm, ôn lại câu sai và theo dõi kết quả học tập." />
+    <meta name="page-type" content="software" />
+    <meta name="site-kind" content="software" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>@(ViewData["Title"] is null ? "Renshuu — Luyện trắc nghiệm" : $"{ViewData["Title"]} · Renshuu")</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet" />
+    @if (ViewData["ScrollCraft"] is true)
+    {
+        <link rel="stylesheet" href="~/assets/scrollcraft/scrollcraft.css" asp-append-version="true" />
+    }
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/motion/motion.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>
-    <a class="skip-link" href="#main">Bỏ qua điều hướng, đến nội dung chính</a>
-
-    <header class="site-header">
-        <div class="container header-inner">
-            <a class="brand" asp-page="/Index">
-                <svg class="icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
-                <span>Trắc nghiệm</span>
-            </a>
-            <nav class="site-nav" aria-label="Điều hướng chính">
-                <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Môn học</a>
-                <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Câu còn sai</a>
-                <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
-                <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản trị</a>
-            </nav>
+    <!-- Software learning workspace. Monochrome / Be Vietnam Pro; quiet motion and live study controls. -->
+    <a class="skip-link" href="#main">Đến nội dung chính</a>
+    <aside class="sidebar" id="sidebar" aria-label="Điều hướng ứng dụng">
+        <button class="icon-button sidebar-close" id="menu-close" type="button" aria-label="Đóng điều hướng">×</button>
+        <a class="brand" asp-page="/Index" aria-label="Renshuu — Trang chủ">
+            <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#layers" /></svg></span>
+            <span>renshuu</span>
+        </a>
+        <nav class="workspace-nav" aria-label="Điều hướng chính">
+            @foreach (var item in navigation)
+            {
+                <a asp-page="@item.Page" class="@(active == item.Key ? "active" : null)" aria-current="@(active == item.Key ? "page" : null)">
+                    <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#@item.Icon" /></svg>
+                    <span>@item.Text</span>
+                    @if (active == item.Key) { <span class="nav-indicator" aria-hidden="true"></span> }
+                </a>
+            }
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="workspace-signature"><span class="signature-mark">r.</span><div><strong>Renshuu</strong><span>Luyện tập mỗi ngày.</span></div></div>
         </div>
-    </header>
-
-    <main id="main" class="container main">
-        @if (TempData["Error"] is string errorMessage)
-        {
-            <div class="alert alert-danger" role="alert">@errorMessage</div>
-        }
-        @if (TempData["Success"] is string successMessage)
-        {
-            <div class="alert alert-success" role="status">@successMessage</div>
-        }
-        @RenderBody()
-    </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>Trắc nghiệm – luyện tập để nhớ lâu hơn.</p>
-        </div>
-    </footer>
-
+    </aside>
+    <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+    <div class="app-shell">
+        <header class="topbar">
+            <div class="topbar-location">
+                <button class="icon-button mobile-menu" id="menu-toggle" type="button" aria-label="Mở điều hướng" aria-controls="sidebar" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#menu" /></svg></button>
+                <span>Renshuu</span><span class="topbar-divider" aria-hidden="true">/</span><strong>@ViewData["Title"]</strong>
+            </div>
+            <div class="topbar-actions">
+                <span class="today-date"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#calendar" /></svg> @DateTime.Now.ToString("dd.MM.yyyy")</span>
+                <button class="icon-button" id="motion-toggle" type="button" aria-label="Tạm dừng chuyển động" aria-pressed="false" title="Bật hoặc tắt chuyển động"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#motion" /></svg></button>
+            </div>
+        </header>
+        <main id="main" class="container main" tabindex="-1">
+            @if (TempData["Error"] is string errorMessage)
+            { <div class="alert alert-danger" role="alert">@errorMessage</div> }
+            @if (TempData["Success"] is string successMessage)
+            { <div class="alert alert-success" role="status">@successMessage</div> }
+            @if (TempData["Warning"] is string warningMessage)
+            { <div class="alert alert-warning" role="status">@warningMessage</div> }
+            @RenderBody()
+        </main>
+        <footer class="workspace-footer"><span>renshuu<span class="footer-dot">.</span></span><span>Học. Hiểu. Nhớ.</span></footer>
+    </div>
+    <script src="~/js/workspace.js" asp-append-version="true" defer></script>
+    <script src="~/js/import-preview.js" asp-append-version="true" defer></script>
+    <script type="module" src="~/assets/motion/motion.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

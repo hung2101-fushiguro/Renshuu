@@ -2,8 +2,11 @@
 @model TracNghiemWeb.Pages.Test.TakeModel
 @{
     ViewData["Title"] = "Làm bài";
+    ViewData["Active"] = "subjects";
+    var answered = Model.Questions.Count(q => q.SelectedOption is not null);
 }
 
+<div class="quiz-title"><h1>@Model.SubjectName</h1><p>Chọn một đáp án cho mỗi câu.</p></div>
 <div class="quiz-bar">
     <div class="quiz-meta">
         <span class="badge badge-primary">@Model.SubjectName</span>
@@ -25,18 +28,26 @@
     </div>
 
     <div class="quiz-meta">
-        <span id="progress-text" aria-live="polite">0/@Model.Questions.Count câu</span>
+        <span id="progress-text" aria-live="polite">@answered/@Model.Questions.Count câu</span>
         <button type="submit" form="quiz-form" class="btn btn-accent">Nộp bài</button>
     </div>
 
-    <div class="progress" role="progressbar" aria-label="Tiến độ trả lời" aria-valuemin="0" aria-valuemax="@Model.Questions.Count" aria-valuenow="0" id="progress">
-        <span id="progress-bar"></span>
+    <div class="progress" role="progressbar" aria-label="Tiến độ trả lời" aria-valuemin="0" aria-valuemax="@Model.Questions.Count" aria-valuenow="@answered" id="progress">
+        <span id="progress-bar" style="width: @(Model.Questions.Count > 0 ? answered * 100 / Model.Questions.Count : 0)%"></span>
     </div>
+    <p class="small muted mb-0" id="draft-status" role="status">@(Model.DraftSavedAt is DateTime saved ? $"Đã lưu trên máy chủ lúc {saved:HH:mm:ss}." : "Đáp án sẽ tự lưu trên máy chủ khi bạn chọn.")</p>
 </div>
+
+<nav class="question-jump" aria-label="Chuyển đến câu hỏi">
+    <span class="question-jump-label">Câu hỏi</span>
+    @for (var number = 1; number <= Model.Questions.Count; number++)
+    { <a href="#question-@number" data-question-number="@number" aria-label="Đến câu @number">@number</a> }
+</nav>
 
 <form method="post" id="quiz-form"
       data-attempt-id="@Model.AttemptId"
-      data-started-at="@Model.StartedAt.ToString("o")"
+      data-result-url="@Url.Page("/Test/Result", new { id = Model.AttemptId })"
+      data-remaining-seconds="@Model.RemainingSeconds?.ToString(System.Globalization.CultureInfo.InvariantCulture)"
       data-total="@Model.Questions.Count">
     <input type="hidden" name="id" value="@Model.AttemptId" />
 
@@ -59,7 +70,7 @@
         @foreach (var question in group.Questions)
         {
             questionNumber++;
-            <section class="question">
+            <section class="question" id="question-@questionNumber" data-question-number="@questionNumber">
                 <div class="question-head">
                     <span class="question-number">@questionNumber</span>
                     <p class="question-content">@Display.RichText(question.Content)</p>
@@ -69,7 +80,7 @@
                     @foreach (var option in question.Options)
                     {
                         <label class="option">
-                            <input type="radio" name="Answers[@question.Id]" value="@option.Key" />
+                            <input type="radio" name="Answers[@question.Id]" value="@option.Key" checked="@(question.SelectedOption == option.Key)" />
                             <span class="option-key">@(option.Label).</span>
                             <span>@Display.RichText(option.Text)</span>
                         </label>
@@ -81,97 +92,11 @@
 
     <div class="mt-lg">
         <button type="submit" class="btn btn-accent btn-lg btn-block">Nộp bài</button>
-        <p class="small muted mt-sm mb-0">Đáp án bạn chọn được lưu tạm trong trình duyệt; nếu lỡ tải lại trang, các lựa chọn vẫn còn.</p>
+        <p class="small muted mt-sm mb-0">Bạn có thể rời trang sau khi thấy xác nhận đã lưu và tiếp tục bài từ trang tổng quan.</p>
+        <noscript><p class="small">Tự lưu cần JavaScript. Bạn vẫn có thể chọn đáp án và nộp bài trực tiếp.</p></noscript>
     </div>
 </form>
 
 @section Scripts {
-    <script>
-        (function () {
-            var form = document.getElementById('quiz-form');
-            var attemptId = form.dataset.attemptId;
-            var total = parseInt(form.dataset.total, 10) || 0;
-            var storageKey = 'quiz_attempt_' + attemptId;
-            var saved = {};
-
-            try {
-                saved = JSON.parse(sessionStorage.getItem(storageKey) || '{}') || {};
-            } catch (e) {
-                saved = {};
-            }
-
-            var radios = Array.prototype.slice.call(form.querySelectorAll('input[type="radio"]'));
-            var progressBar = document.getElementById('progress-bar');
-            var progressText = document.getElementById('progress-text');
-            var progress = document.getElementById('progress');
-
-            function questionIdOf(radio) {
-                var match = radio.name.match(/(\d+)/);
-                return match ? match[1] : '';
-            }
-
-            function updateProgress() {
-                var answered = 0;
-                var seen = {};
-                radios.forEach(function (radio) {
-                    var qid = questionIdOf(radio);
-                    if (radio.checked) { seen[qid] = true; }
-                });
-                answered = Object.keys(seen).length;
-                progressText.textContent = answered + '/' + total + ' câu';
-                progress.setAttribute('aria-valuenow', String(answered));
-                progressBar.style.width = total > 0 ? (answered * 100 / total) + '%' : '0%';
-            }
-
-            radios.forEach(function (radio) {
-                var qid = questionIdOf(radio);
-                if (saved[qid] === radio.value) {
-                    radio.checked = true;
-                }
-                radio.addEventListener('change', function () {
-                    if (!radio.checked) { return; }
-                    saved[qid] = radio.value;
-                    try { sessionStorage.setItem(storageKey, JSON.stringify(saved)); } catch (e) { }
-                    updateProgress();
-                });
-            });
-
-            updateProgress();
-
-            form.addEventListener('submit', function () {
-                try { sessionStorage.removeItem(storageKey); } catch (e) { }
-            });
-
-            var timer = document.getElementById('timer');
-            if (timer) {
-                var limitMinutes = parseInt(timer.dataset.limit, 10) || 0;
-                var startedAt = new Date(form.dataset.startedAt).getTime();
-                var timerText = document.getElementById('timer-text');
-                var submitted = false;
-
-                function tick() {
-                    if (submitted) { return; }
-                    var elapsed = (Date.now() - startedAt) / 1000;
-                    var remaining = limitMinutes * 60 - elapsed;
-                    if (remaining <= 0) {
-                        submitted = true;
-                        timerText.textContent = '00:00';
-                        timer.classList.add('is-danger');
-                        if (form.requestSubmit) { form.requestSubmit(); } else { form.submit(); }
-                        return;
-                    }
-                    var seconds = Math.floor(remaining);
-                    var minutes = Math.floor(seconds / 60);
-                    var secs = seconds % 60;
-                    timerText.textContent =
-                        (minutes < 10 ? '0' : '') + minutes + ':' + (secs < 10 ? '0' : '') + secs;
-                    timer.classList.toggle('is-warning', remaining <= 300);
-                    timer.classList.toggle('is-danger', remaining <= 60);
-                }
-
-                tick();
-                setInterval(tick, 1000);
-            }
-        })();
-    </script>
+    <script src="~/js/quiz.js" asp-append-version="true" defer></script>
 }

@@ -2,6 +2,7 @@
 @model TracNghiemWeb.Pages.Test.ResultModel
 @{
     ViewData["Title"] = "Kết quả";
+    ViewData["Active"] = "history";
     var attempt = Model.Attempt;
     var total = attempt.TotalQuestions;
     var correct = attempt.CorrectCount;
@@ -21,6 +22,11 @@
         <a class="btn btn-secondary" asp-page="/History/Index">Lịch sử</a>
     </div>
 </div>
+
+<section class="result-summary" aria-label="Tổng kết bài làm">
+    <div class="score-ring" style="--score: @attempt.Percentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%"><div><strong>@Display.Percentage(attempt.Percentage)</strong><span>Tỷ lệ trả lời đúng</span></div></div>
+    <div><h2>@(correct == total ? "Bạn đã nắm vững bài này!" : "Mỗi bài làm, thêm một lần hiểu.")</h2><p>Bạn trả lời đúng @correct trong @total câu hỏi. @(Model.WrongCount > 0 ? "Xem giải thích và luyện lại câu sai để củng cố kiến thức." : "Tiếp tục với một môn học hoặc bài luyện tập mới.")</p></div>
+</section>
 
 <div class="grid grid-stats mb-lg">
     <div class="stat is-success">
@@ -137,6 +143,7 @@
 @section Scripts {
     <script>
         (function () {
+            try { sessionStorage.removeItem('quiz_attempt_@attempt.Id'); } catch (e) { }
             var toggle = document.getElementById('only-wrong');
             var list = document.getElementById('review-list');
             if (!toggle || !list) { return; }

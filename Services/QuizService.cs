@@ -8,12 +8,43 @@ public class QuizService
 {
     public const int MaxQuestionsPerAttempt = 200;
     public const int MaxTimeLimitMinutes = 240;
+    public const int SubmissionGraceSeconds = 5;
 
     private static readonly string[] OptionKeys = { "A", "B", "C", "D" };
 
     private readonly AppDbContext _db;
+    private readonly TimeProvider _time;
 
-    public QuizService(AppDbContext db) => _db = db;
+    public QuizService(AppDbContext db, TimeProvider time)
+    {
+        _db = db;
+        _time = time;
+    }
+
+    private DateTime Now => _time.GetLocalNow().DateTime;
+
+    public TimeSpan? GetRemainingTime(Attempt attempt) => attempt.Deadline is DateTime deadline ? deadline - Now : null;
+
+    public Task<List<PendingAttemptSummary>> GetPendingAttemptsAsync(int take = 5) =>
+        _db.Attempts.AsNoTracking()
+            .Where(a => a.SubmittedAt == null)
+            .OrderByDescending(a => a.StartedAt).ThenByDescending(a => a.Id)
+            .Take(Math.Clamp(take, 1, 20))
+            .Select(a => new PendingAttemptSummary(a.Id, a.Subject!.Name, a.TotalQuestions,
+                a.Answers.Count(answer => answer.SelectedOption != null), a.StartedAt, a.DraftSavedAt, a.TimeLimitMinutes))
+            .ToListAsync();
+
+    public async Task<PracticeSummary> GetPracticeSummaryAsync()
+    {
+        var summary = await _db.Attempts.AsNoTracking()
+            .Where(a => a.SubmittedAt != null)
+            .GroupBy(a => 1)
+            .Select(g => new { Count = g.Count(), Correct = g.Sum(a => a.CorrectCount), Total = g.Sum(a => a.TotalQuestions) })
+            .OrderBy(s => s.Count)
+            .FirstOrDefaultAsync();
+
+        return summary is null ? new(0, 0, 0) : new(summary.Count, summary.Correct, summary.Total);
+    }
 
     public async Task<List<SubjectSummary>> GetSubjectSummariesAsync()
     {
@@ -87,7 +118,7 @@ public class QuizService
                 break;
             }
 
-            if (questionIds.Count > 0 && questionIds.Count + group.Count > MaxQuestionsPerAttempt)
+            if (questionIds.Count + group.Count > MaxQuestionsPerAttempt)
             {
                 continue;
             }
@@ -95,9 +126,9 @@ public class QuizService
             questionIds.AddRange(group);
         }
 
-        if (questionIds.Count > MaxQuestionsPerAttempt)
+        if (questionIds.Count == 0)
         {
-            questionIds = questionIds.Take(MaxQuestionsPerAttempt).ToList();
+            return StartResult.Fail("Không có nhóm câu hỏi phù hợp. Một bài đọc không được vượt quá 200 câu; vui lòng tách bài đọc trước khi luyện tập.");
         }
 
         return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes);
@@ -127,41 +158,66 @@ public class QuizService
             return StartResult.Fail($"Bạn không còn câu sai nào ở môn \"{subject.Name}\".");
         }
 
-        questionIds = questionIds.OrderBy(_ => Guid.NewGuid()).ToList();
+        questionIds = questionIds.OrderBy(_ => Guid.NewGuid()).Take(MaxQuestionsPerAttempt).ToList();
         return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes);
     }
 
-    public async Task<SubmitResult> SubmitAsync(int attemptId, IReadOnlyDictionary<int, string?> answers)
+    public async Task<DraftSaveResult> SaveDraftAsync(int attemptId, IReadOnlyDictionary<int, string?> answers)
     {
-        var attempt = await _db.Attempts
-            .Include(a => a.Answers)
-            .ThenInclude(a => a.Question)
-            .FirstOrDefaultAsync(a => a.Id == attemptId);
-
-        if (attempt is null)
+        var now = Now;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        var attempt = await _db.Attempts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == attemptId);
+        if (attempt is null) return new(false, 0, null, "Bài làm không tồn tại.");
+        if (attempt.IsSubmitted || attempt.Deadline is DateTime deadline && now >= deadline)
         {
-            return SubmitResult.Fail("Bài làm không tồn tại.");
+            return new(false, 0, null, "Bài đã nộp hoặc hết giờ. Vui lòng xem kết quả.", true);
         }
 
-        if (attempt.IsSubmitted)
+        // The conditional update holds the attempt's write lock until answers commit.
+        // Submission claims the same row, so an in-flight draft cannot rewrite a grade.
+        var claimed = await _db.Attempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.DraftSavedAt, (DateTime?)now));
+        if (claimed == 0) return new(false, 0, null, "Bài đã được nộp.", true);
+        var rows = await _db.AttemptAnswers.Where(a => a.AttemptId == attemptId).ToListAsync();
+        foreach (var row in rows)
         {
-            return SubmitResult.Ok(attempt.Id);
+            row.SelectedOption = NormalizeOption(answers.GetValueOrDefault(row.QuestionId));
         }
+        await _db.SaveChangesAsync();
+        await transaction.CommitAsync();
+        return new(true, rows.Count(a => a.SelectedOption != null), now, null);
+    }
 
-        foreach (var answer in attempt.Answers)
+    public async Task<SubmitResult> SubmitAsync(int attemptId, IReadOnlyDictionary<int, string?> answers, bool savedOnly = false)
+    {
+        var now = Now;
+        await using var transaction = await _db.Database.BeginTransactionAsync();
+        // Claim once, inside the same transaction as grading. Concurrent POSTs cannot both grade.
+        var claimed = await _db.Attempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.SubmittedAt, (DateTime?)now));
+        if (claimed == 0)
         {
-            var selected = answers.TryGetValue(answer.QuestionId, out var value) ? value : null;
+            return await _db.Attempts.AnyAsync(a => a.Id == attemptId)
+                ? SubmitResult.Ok(attemptId) : SubmitResult.Fail("Bài làm không tồn tại.");
+        }
+        var attempt = await _db.Attempts.AsNoTracking().SingleAsync(a => a.Id == attemptId);
+        var useSaved = savedOnly || attempt.Deadline is DateTime deadline && now > deadline.AddSeconds(SubmissionGraceSeconds);
+        var rows = await _db.AttemptAnswers.Where(a => a.AttemptId == attemptId).Include(a => a.Question).ToListAsync();
+        foreach (var answer in rows)
+        {
+            var selected = useSaved ? answer.SelectedOption : answers.GetValueOrDefault(answer.QuestionId);
             answer.SelectedOption = NormalizeOption(selected);
             answer.IsCorrect = answer.SelectedOption is not null
                 && answer.Question is not null
                 && answer.SelectedOption == answer.Question.CorrectOption;
         }
 
-        attempt.CorrectCount = attempt.Answers.Count(a => a.IsCorrect);
-        attempt.SubmittedAt = DateTime.Now;
-
+        var correct = rows.Count(a => a.IsCorrect);
         await _db.SaveChangesAsync();
-        return SubmitResult.Ok(attempt.Id);
+        await _db.Attempts.Where(a => a.Id == attemptId)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.CorrectCount, correct));
+        await transaction.CommitAsync();
+        return SubmitResult.Ok(attemptId, useSaved);
     }
 
     public Task<Attempt?> GetAttemptForResultAsync(int attemptId) =>
@@ -178,7 +234,7 @@ public class QuizService
             .AsNoTracking()
             .Include(a => a.Subject)
             .Where(a => a.SubmittedAt != null)
-            .OrderByDescending(a => a.StartedAt)
+            .OrderByDescending(a => a.SubmittedAt).ThenByDescending(a => a.Id)
             .Take(take)
             .ToListAsync();
 
@@ -220,16 +276,17 @@ public class QuizService
     private IQueryable<AttemptAnswer> LatestAnswers() =>
         _db.AttemptAnswers.Where(a =>
             a.Attempt!.SubmittedAt != null
-            && a.Id == _db.AttemptAnswers
-                .Where(other => other.QuestionId == a.QuestionId && other.Attempt!.SubmittedAt != null)
-                .Max(other => (int?)other.Id));
+            && !_db.AttemptAnswers.Any(other => other.QuestionId == a.QuestionId
+                && other.Attempt!.SubmittedAt != null
+                && (other.Attempt.SubmittedAt.Value > a.Attempt.SubmittedAt.Value
+                    || other.Attempt.SubmittedAt.Value == a.Attempt.SubmittedAt.Value && other.Id > a.Id)));
 
     private async Task<StartResult> CreateAttemptAsync(int subjectId, List<int> questionIds, int? timeLimitMinutes)
     {
         var attempt = new Attempt
         {
             SubjectId = subjectId,
-            StartedAt = DateTime.Now,
+            StartedAt = Now,
             TimeLimitMinutes = timeLimitMinutes,
             TotalQuestions = questionIds.Count,
             Answers = questionIds.Select(id => new AttemptAnswer { QuestionId = id }).ToList(),
@@ -280,14 +337,24 @@ public record SubjectSummary(int Id, string Name, int QuestionCount, int WrongCo
 
 public record FolderSummary(int Id, string Name, int SubjectCount, int QuestionCount, int WrongCount);
 
+public record PracticeSummary(int AttemptCount, int CorrectCount, int TotalQuestions)
+{
+    public double Accuracy => TotalQuestions == 0 ? 0 : CorrectCount * 100.0 / TotalQuestions;
+}
+
 public record StartResult(bool Success, int? AttemptId, string? Error)
 {
     public static StartResult Ok(int attemptId) => new(true, attemptId, null);
     public static StartResult Fail(string error) => new(false, null, error);
 }
 
-public record SubmitResult(bool Success, int? AttemptId, string? Error)
+public record DraftSaveResult(bool Success, int SavedCount, DateTime? SavedAt, string? Error, bool Closed = false);
+
+public record PendingAttemptSummary(int Id, string SubjectName, int TotalQuestions, int AnsweredCount,
+    DateTime StartedAt, DateTime? DraftSavedAt, int? TimeLimitMinutes);
+
+public record SubmitResult(bool Success, int? AttemptId, string? Error, bool UsedSavedAnswers = false)
 {
-    public static SubmitResult Ok(int attemptId) => new(true, attemptId, null);
+    public static SubmitResult Ok(int attemptId, bool usedSavedAnswers = false) => new(true, attemptId, null, usedSavedAnswers);
     public static SubmitResult Fail(string error) => new(false, null, error);
 }

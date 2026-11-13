@@ -4,70 +4,55 @@
     ViewData["Title"] = "Lịch sử làm bài";
     ViewData["Active"] = "history";
 }
-
 <div class="page-head">
-    <div>
-        <h1>Lịch sử làm bài</h1>
-        <p>Các bài đã nộp, mới nhất ở trên cùng.</p>
-    </div>
+    <h1>Lịch sử làm bài</h1>
     @if (Model.Attempts.Count > 0)
     {
-        <div class="actions">
-            <form method="post" asp-page-handler="Clear" class="inline-form"
-                  onsubmit="return confirm('Xóa toàn bộ lịch sử làm bài? Hành động này không thể hoàn tác.');">
-                <button type="submit" class="btn btn-danger">Xóa toàn bộ lịch sử</button>
-            </form>
-        </div>
+        <form method="post" asp-page-handler="Clear" class="inline-form"
+              onsubmit="return confirm('Xóa toàn bộ lịch sử làm bài? Hành động này không thể hoàn tác.');">
+            <button type="submit" class="btn btn-quiet">Xóa lịch sử</button>
+        </form>
     }
 </div>
-
 @if (Model.Attempts.Count == 0)
 {
     <div class="empty">
         <strong>Chưa có bài làm nào.</strong>
-        <p class="mt-sm">Hãy <a asp-page="/Index">bắt đầu một bài luyện tập</a>.</p>
+        <p>Hoàn thành bài đầu tiên để xem kết quả.</p>
+        <a class="btn btn-primary" asp-page="/Index">Bắt đầu luyện tập</a>
     </div>
 }
 else
 {
-    <div class="table-wrap">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Môn học</th>
-                    <th scope="col">Thời điểm</th>
-                    <th scope="col" class="num">Điểm</th>
-                    <th scope="col" class="num">Tỷ lệ</th>
-                    <th scope="col" class="num">Thời gian</th>
-                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var attempt in Model.Attempts)
-                {
-                    <tr>
-                        <td>@attempt.Subject?.Name</td>
-                        <td class="nowrap">@attempt.StartedAt.ToString("HH:mm dd/MM/yyyy")</td>
-                        <td class="num">@attempt.CorrectCount/@attempt.TotalQuestions</td>
-                        <td class="num">
-                            <span class="badge @(attempt.Percentage >= 80 ? "badge-success" : attempt.Percentage >= 50 ? "badge-accent" : "badge-danger")">
-                                @Display.Percentage(attempt.Percentage)
-                            </span>
-                        </td>
-                        <td class="num nowrap">@Display.Duration(attempt.Duration)</td>
-                        <td class="num">
-                            <div class="table-actions">
-                                <a class="btn btn-secondary btn-sm" asp-page="/Test/Result" asp-route-id="@attempt.Id">Xem lại</a>
-                                <form method="post" asp-page-handler="Delete" class="inline-form"
-                                      onsubmit="return confirm('Xóa bài làm này?');">
-                                    <input type="hidden" name="id" value="@attempt.Id" />
-                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+    <dl class="history-summary" aria-label="Thống kê các bài trong danh sách">
+        <div><dt>Bài đã nộp</dt><dd>@Model.Attempts.Count</dd></div>
+        <div><dt>Môn đã học</dt><dd>@Model.Attempts.Select(a => a.SubjectId).Distinct().Count()</dd></div>
+        <div><dt>Cao nhất</dt><dd>@Display.Percentage(Model.Attempts.Max(a => a.Percentage))</dd></div>
+        <div><dt>Câu đã làm</dt><dd>@Model.Attempts.Sum(a => a.TotalQuestions)</dd></div>
+    </dl>
+    <div class="history-list-heading"><h2>Bài gần đây</h2><span>Tối đa 100 bài</span></div>
+    <ol class="history-list" role="list" aria-label="Bài đã nộp, mới nhất trước">
+        @foreach (var attempt in Model.Attempts)
+        {
+            <li class="history-row">
+                <div class="history-course">
+                    <strong>@attempt.Subject?.Name</strong>
+                    <time datetime="@attempt.SubmittedAt?.ToString("o")">@attempt.SubmittedAt?.ToString("dd/MM/yyyy · HH:mm")</time>
+                </div>
+                <div class="history-result">
+                    <span class="visually-hidden">Kết quả:</span><strong>@attempt.CorrectCount/@attempt.TotalQuestions</strong>
+                    <span>@Display.Percentage(attempt.Percentage) đúng</span>
+                </div>
+                <div class="history-duration"><span>Thời gian</span><strong>@Display.Duration(attempt.Duration)</strong></div>
+                <div class="history-actions">
+                    <a class="btn btn-quiet" asp-page="/Test/Result" asp-route-id="@attempt.Id">Xem lại<svg class="icon" aria-hidden="true"><use href="/images/icons.svg#arrow" /></svg></a>
+                    <form method="post" asp-page-handler="Delete" class="inline-form" onsubmit="return confirm('Xóa bài làm này?');">
+                        <input type="hidden" name="id" value="@attempt.Id" />
+                        <button type="submit" class="btn btn-quiet" aria-label="Xóa bài @attempt.Subject?.Name, nộp @attempt.SubmittedAt?.ToString("dd/MM HH:mm")">Xóa</button>
+                    </form>
+                </div>
+            </li>
+        }
+    </ol>
 }
+@section Styles { <link rel="stylesheet" href="~/css/history.css" asp-append-version="true" /> }

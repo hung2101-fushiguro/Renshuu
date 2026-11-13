@@ -33,6 +33,9 @@ namespace TracNghiemWeb.Data.Migrations
                     b.Property<int>("CorrectCount")
                         .HasColumnType("int");
 
+                    b.Property<DateTime?>("DraftSavedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("StartedAt")
                         .HasColumnType("datetime2");
 
@@ -51,6 +54,8 @@ namespace TracNghiemWeb.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SubjectId", "StartedAt");
+
+                    b.HasIndex("SubmittedAt", "Id");
 
                     b.ToTable("Attempts");
                 });
