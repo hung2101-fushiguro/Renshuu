@@ -1,5 +1,20 @@
 # Chạy chức năng tài khoản
 
+## Tài khoản dùng thử (Development)
+
+Hệ thống đã có sẵn 2 tài khoản mẫu phục vụ thử nghiệm và đánh giá chức năng:
+
+| Vai trò | Email | Mật khẩu | Quyền hạn & Chức năng |
+| :--- | :--- | :--- | :--- |
+| **Quản trị viên (Admin)** | `admin@example.com` | `Admin@123456` | Truy cập khu vực quản trị `/Admin`: quản lý môn học, danh mục câu hỏi, nhập đề thi |
+| **Người dùng (User)** | `user@example.com` | `User@123456` | Làm bài trắc nghiệm, chế độ ôn tập, xem kết quả, lịch sử, phân tích tiến độ, ôn Flashcard |
+
+> **Mẹo:** Trong môi trường Development, thông tin tài khoản Admin đã được cấu hình tự động hiển thị ngay bên dưới nút bấm ở trang đăng nhập để tiện thao tác kiểm thử nhanh.
+
+---
+
+## Khởi chạy ứng dụng
+
 Chạy bằng PowerShell tại thư mục dự án:
 
 ```powershell
