@@ -17,12 +17,6 @@
         document.getElementById('progress-text').textContent = `${count}/${total} câu`;
         document.getElementById('progress').setAttribute('aria-valuenow', count);
         document.getElementById('progress-bar').style.width = `${total ? count / total * 100 : 0}%`;
-        form.querySelectorAll('.question').forEach(question => {
-            const complete = !!question.querySelector('input:checked');
-            const link = document.querySelector(`.question-jump a[data-question-number="${question.dataset.questionNumber}"]`);
-            link?.classList.toggle('answered', complete);
-            link?.setAttribute('aria-label', `Đến câu ${question.dataset.questionNumber}, ${complete ? 'đã' : 'chưa'} trả lời`);
-        });
     }
     async function save() {
         if (busy || submitting || closed || savedVersion === version) return;

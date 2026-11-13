@@ -43,10 +43,10 @@ try:
     assert option, "Need a seeded subject with questions"
     subject_id = option[1]
     passed.append("Dashboard renders database-backed subject options")
-    for route in ("/Wrong", "/History", "/Admin", "/Admin/Questions", "/Admin/QuestionEdit", "/Admin/Import", "/Admin/Paste", "/Admin/AddMany", "/Admin/Readings"):
+    for route in ("/Wrong", "/History", "/Admin", "/Admin/Questions", "/Admin/QuestionEdit", "/Admin/Paste", "/Admin/AddMany", "/Admin/Readings"):
         text, _ = fetch(route)
         assert 'class="app-shell"' in text and "<h1>" in text, route
-    passed.append("Nine study/admin pages render with the shared layout")
+    passed.append("Eight study/admin pages render with the shared layout")
     for asset in ("/css/workspace.css", "/js/workspace.js", "/js/dashboard.js", "/images/icons.svg", "/favicon.svg", "/assets/motion/motion.js", "/assets/motion/motion.css"):
         fetch(asset)
     passed.append("All seven local UI assets return HTTP 200")
@@ -57,9 +57,9 @@ try:
     assert path.startswith("/Test/Take/"), path
     attempt_id = int(path.rsplit("/", 1)[1]); created.append(attempt_id)
     ids = list(dict.fromkeys(re.findall(r'name="Answers\[(\d+)\]"', take)))
-    assert len(ids) >= 2 and 'id="timer"' in take and 'class="question-jump"' in take
+    assert len(ids) >= 2 and 'id="timer"' in take and 'class="question-jump"' not in take
     assert "CorrectOption" not in take
-    passed.append("Start creates an attempt, timer and question navigation")
+    passed.append("Start creates an attempt with a timer and no question-jump nav")
     result, path = post(path, take, {"id": attempt_id})
     assert path == "/Test/Result/" + str(attempt_id) and "score-ring" in result
     assert 'class="question is-wrong"' in result

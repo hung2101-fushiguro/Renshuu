@@ -38,12 +38,6 @@
     <p class="small muted mb-0" id="draft-status" role="status">@(Model.DraftSavedAt is DateTime saved ? $"Đã lưu trên máy chủ lúc {saved:HH:mm:ss}." : "Đáp án sẽ tự lưu trên máy chủ khi bạn chọn.")</p>
 </div>
 
-<nav class="question-jump" aria-label="Chuyển đến câu hỏi">
-    <span class="question-jump-label">Câu hỏi</span>
-    @for (var number = 1; number <= Model.Questions.Count; number++)
-    { <a href="#question-@number" data-question-number="@number" aria-label="Đến câu @number">@number</a> }
-</nav>
-
 <form method="post" id="quiz-form"
       data-attempt-id="@Model.AttemptId"
       data-result-url="@Url.Page("/Test/Result", new { id = Model.AttemptId })"
