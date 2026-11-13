@@ -1,0 +1,21 @@
+name: .NET build
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore
+        run: dotnet restore TracNghiemWeb.csproj
+      - name: Build
+        run: dotnet build TracNghiemWeb.csproj --configuration Release --no-restore

@@ -1,12 +1,13 @@
 @page "{id:int}"
 @model TracNghiemWeb.Pages.Test.TakeModel
 @{
-    ViewData["Title"] = "Làm bài";
+    ViewData["Title"] = Model.IsPractice ? "Ôn tập" : "Làm bài";
 }
 
 <div class="quiz-bar">
     <div class="quiz-meta">
         <span class="badge badge-primary">@Model.SubjectName</span>
+        <span class="badge badge-muted">@(Model.IsPractice ? "Ôn tập" : "Làm bài")</span>
         @if (Model.TimeLimitMinutes is int limit)
         {
             <span class="timer" id="timer" data-limit="@limit">
@@ -26,6 +27,11 @@
 
     <div class="quiz-meta">
         <span id="progress-text" aria-live="polite">0/@Model.Questions.Count câu</span>
+        @if (Model.IsPractice)
+        {
+            <button type="button" id="toggle-answers" class="btn btn-secondary"
+                    aria-pressed="false" aria-controls="quiz-form" aria-keyshortcuts="S" hidden>Hiện đáp án (S)</button>
+        }
         <button type="submit" form="quiz-form" class="btn btn-accent">Nộp bài</button>
     </div>
 
@@ -75,6 +81,16 @@
                         </label>
                     }
                 </div>
+                @if (Model.IsPractice)
+                {
+                    @foreach (var correctOption in question.Options.Where(option => option.Key == question.CorrectOption))
+                    {
+                        <div class="explanation" data-answer-reveal hidden>
+                            <strong>Đáp án đúng: @(correctOption.Label).</strong>
+                            @Display.RichText(correctOption.Text)
+                        </div>
+                    }
+                }
             </section>
         }
     }
@@ -84,8 +100,16 @@
         <p class="small muted mt-sm mb-0">Đáp án bạn chọn được lưu tạm trong trình duyệt; nếu lỡ tải lại trang, các lựa chọn vẫn còn.</p>
     </div>
 </form>
+@if (Model.IsPractice)
+{
+    <p id="answer-visibility-status" class="visually-hidden" role="status" aria-live="polite"></p>
+}
 
 @section Scripts {
+    @if (Model.IsPractice)
+    {
+        <script src="~/js/quiz-answers.js" asp-append-version="true" defer></script>
+    }
     <script>
         (function () {
             var form = document.getElementById('quiz-form');

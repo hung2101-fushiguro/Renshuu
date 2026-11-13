@@ -1,12 +1,18 @@
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using System.Security.Claims;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Models;
 
 namespace TracNghiemWeb.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<IdentityUser>
 {
-    public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
+    public string? CurrentUserId => _http?.HttpContext?.User.FindFirstValue(ClaimTypes.NameIdentifier);
+    private readonly IHttpContextAccessor? _http;
+    public AppDbContext(DbContextOptions<AppDbContext> options, IHttpContextAccessor? http = null) : base(options)
     {
+        _http = http;
     }
 
     public DbSet<Subject> Subjects => Set<Subject>();
@@ -17,6 +23,10 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<Attempt>().HasQueryFilter(a => CurrentUserId != null && a.UserId == CurrentUserId);
+        modelBuilder.Entity<AttemptAnswer>().HasQueryFilter(a => CurrentUserId != null && a.Attempt!.UserId == CurrentUserId);
+        modelBuilder.Entity<Attempt>().HasOne<IdentityUser>().WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Restrict);
         modelBuilder.Entity<Subject>(entity =>
         {
             entity.Property(s => s.Name).IsRequired().HasMaxLength(200);

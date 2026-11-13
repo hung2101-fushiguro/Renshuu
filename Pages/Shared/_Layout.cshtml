@@ -25,7 +25,11 @@
                 <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Môn học</a>
                 <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Câu còn sai</a>
                 <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
+                @if (User.IsInRole("Admin")) {
                 <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản trị</a>
+                }
+                @if (User.Identity?.IsAuthenticated == true) { <form method="post" asp-page="/Account/Logout"><button class="btn btn-secondary" type="submit">Đăng xuất</button></form> }
+
             </nav>
         </div>
     </header>

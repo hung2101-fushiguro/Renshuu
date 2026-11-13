@@ -28,6 +28,8 @@ public class IndexModel : PageModel
         [Range(1, QuizService.MaxTimeLimitMinutes,
             ErrorMessage = "Thời gian làm bài phải từ 1 đến 240 phút.")]
         public int? TimeLimitMinutes { get; set; }
+
+        public bool IsPractice { get; set; }
     }
 
     public async Task OnGetAsync(int? subjectId)
@@ -54,7 +56,7 @@ public class IndexModel : PageModel
             return Page();
         }
 
-        var result = await _quiz.StartAsync(Input.SubjectId, Input.QuestionCount, Input.TimeLimitMinutes);
+        var result = await _quiz.StartAsync(Input.SubjectId, Input.QuestionCount, Input.TimeLimitMinutes, Input.IsPractice);
         if (!result.Success)
         {
             ModelState.AddModelError(string.Empty, result.Error!);

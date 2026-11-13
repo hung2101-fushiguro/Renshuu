@@ -3,6 +3,7 @@ namespace TracNghiemWeb.Models;
 public class Attempt
 {
     public int Id { get; set; }
+    public string? UserId { get; set; }
 
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
@@ -12,6 +13,8 @@ public class Attempt
     public DateTime? SubmittedAt { get; set; }
 
     public int? TimeLimitMinutes { get; set; }
+
+    public bool IsPractice { get; set; }
 
     public int TotalQuestions { get; set; }
 

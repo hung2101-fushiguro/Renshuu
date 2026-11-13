@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] – Trắc nghiệm</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth-layout.css" asp-append-version="true" />
+</head>
+<body class="auth-page">
+    <a class="skip-link" href="#main">Đến biểu mẫu tài khoản</a>
+
+    <header class="container auth-page-header">
+        <a class="brand" asp-page="/Account/Login" aria-label="Trắc nghiệm – đăng nhập">
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4" />
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+            </svg>
+            <span>Trắc nghiệm</span>
+        </a>
+    </header>
+
+    <main id="main" class="container auth-page-main" tabindex="-1">
+        @RenderBody()
+    </main>
+
+    <footer class="auth-page-footer">
+        <p>Trắc nghiệm – luyện tập để nhớ lâu hơn.</p>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

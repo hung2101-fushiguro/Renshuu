@@ -28,6 +28,14 @@ else
 
         <div class="form-grid">
             <div class="field">
+                <label asp-for="Input.IsPractice">Chế độ</label>
+                <select asp-for="Input.IsPractice" class="input" aria-describedby="mode-hint">
+                    <option value="false">Làm bài</option>
+                    <option value="true">Ôn tập</option>
+                </select>
+                <span class="hint" id="mode-hint">Ôn tập: nhấn S để xem đáp án. Làm bài: xem đáp án sau khi nộp.</span>
+            </div>
+            <div class="field">
                 <label asp-for="Input.SubjectId">Môn học</label>
                 <select asp-for="Input.SubjectId" class="input" id="subject-select">
                     @foreach (var subject in Model.Subjects)

@@ -38,7 +38,7 @@ public class QuizService
             .ToList();
     }
 
-    public async Task<StartResult> StartAsync(int subjectId, int questionCount, int? timeLimitMinutes)
+    public async Task<StartResult> StartAsync(int subjectId, int questionCount, int? timeLimitMinutes, bool isPractice = false)
     {
         var error = ValidateStartRequest(questionCount, timeLimitMinutes);
         if (error is not null)
@@ -89,7 +89,7 @@ public class QuizService
             questionIds = questionIds.Take(MaxQuestionsPerAttempt).ToList();
         }
 
-        return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes);
+        return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes, isPractice);
     }
 
     public async Task<StartResult> StartWrongAsync(int subjectId, int? timeLimitMinutes)
@@ -117,7 +117,7 @@ public class QuizService
         }
 
         questionIds = questionIds.OrderBy(_ => Guid.NewGuid()).ToList();
-        return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes);
+        return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes, isPractice: true);
     }
 
     public async Task<SubmitResult> SubmitAsync(int attemptId, IReadOnlyDictionary<int, string?> answers)
@@ -213,13 +213,15 @@ public class QuizService
                 .Where(other => other.QuestionId == a.QuestionId && other.Attempt!.SubmittedAt != null)
                 .Max(other => (int?)other.Id));
 
-    private async Task<StartResult> CreateAttemptAsync(int subjectId, List<int> questionIds, int? timeLimitMinutes)
+    private async Task<StartResult> CreateAttemptAsync(int subjectId, List<int> questionIds, int? timeLimitMinutes, bool isPractice)
     {
         var attempt = new Attempt
         {
+            UserId = _db.CurrentUserId ?? throw new InvalidOperationException("Authentication required."),
             SubjectId = subjectId,
             StartedAt = DateTime.Now,
             TimeLimitMinutes = timeLimitMinutes,
+            IsPractice = isPractice,
             TotalQuestions = questionIds.Count,
             Answers = questionIds.Select(id => new AttemptAnswer { QuestionId = id }).ToList(),
         };

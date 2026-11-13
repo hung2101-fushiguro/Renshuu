@@ -20,11 +20,12 @@ public class TakeModel : PageModel
     public int AttemptId { get; private set; }
     public string SubjectName { get; private set; } = string.Empty;
     public int? TimeLimitMinutes { get; private set; }
+    public bool IsPractice { get; private set; }
     public DateTime StartedAt { get; private set; }
     public List<TakeQuestion> Questions { get; private set; } = new();
     public List<TakeGroup> Groups { get; private set; } = new();
 
-    [BindProperty]
+    [BindProperty(Name = "Answers")]
     public Dictionary<int, string?> Answers { get; set; } = new();
 
     public async Task<IActionResult> OnGetAsync(int id)
@@ -47,6 +48,7 @@ public class TakeModel : PageModel
         AttemptId = attempt.Id;
         SubjectName = attempt.Subject?.Name ?? string.Empty;
         TimeLimitMinutes = attempt.TimeLimitMinutes;
+        IsPractice = attempt.IsPractice;
         StartedAt = attempt.StartedAt;
 
         var rows = await (
@@ -65,6 +67,7 @@ public class TakeModel : PageModel
                 question.OptionC,
                 question.OptionD,
                 question.OptionStyle,
+                CorrectOption = attempt.IsPractice ? question.CorrectOption : null,
                 PassageId = passage == null ? (int?)null : passage.Id,
                 PassageTitle = passage == null ? null : passage.Title,
                 PassageContent = passage == null ? null : passage.Content,
@@ -82,6 +85,7 @@ public class TakeModel : PageModel
                     r.Id,
                     r.Content,
                     r.OptionStyle,
+                    r.CorrectOption,
                     passage,
                     BuildOptions(r.OptionA, r.OptionB, r.OptionC, r.OptionD, r.OptionStyle));
             })
@@ -150,6 +154,7 @@ public record TakeQuestion(
     int Id,
     string Content,
     string OptionStyle,
+    string? CorrectOption,
     TakePassage? Passage,
     List<TakeOption> Options);
 

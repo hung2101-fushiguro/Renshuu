@@ -11,6 +11,7 @@
     <div>
         <h1>Kết quả: @attempt.Subject?.Name</h1>
         <p>Làm lúc @attempt.StartedAt.ToString("HH:mm dd/MM/yyyy")</p>
+        <span class="badge badge-muted">@(attempt.IsPractice ? "Ôn tập" : "Làm bài")</span>
     </div>
     <div class="actions">
         <a class="btn btn-primary" asp-page="/Index" asp-route-subjectId="@attempt.SubjectId">Làm bài mới</a>

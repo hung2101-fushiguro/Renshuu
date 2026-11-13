@@ -839,6 +839,11 @@ table.table {
     font-size: 0.9rem;
 }
 
+#toggle-answers[hidden],
+[data-answer-reveal][hidden] {
+    display: none;
+}
+
 .timer {
     display: inline-flex;
     align-items: center;
@@ -1032,3 +1037,5 @@ code {
         scroll-behavior: auto !important;
     }
 }
+
+.auth-shell{display:grid;grid-template-columns:1fr 1fr;max-width:980px;margin:40px auto;border:1px solid #dbe3e8;border-radius:24px;overflow:hidden;background:white}.auth-intro{padding:64px 40px;background:#e9f4ef;color:#163d35}.auth-intro h1{font-size:clamp(28px,4vw,42px);line-height:1.3;margin:32px 0}.auth-form{padding:40px}.auth-form label{display:block;margin:20px 0 8px}.auth-form .input{width:100%}.auth-form .btn{margin-top:16px}.auth-form .text-danger{color:#a32020}.auth-form a{text-decoration:underline}.auth-form :focus-visible{outline:3px solid #247b68;outline-offset:3px}@media(max-width:700px){.auth-shell{grid-template-columns:1fr;margin:16px auto}.auth-intro,.auth-form{padding:28px}.auth-intro h1{margin:16px 0}}

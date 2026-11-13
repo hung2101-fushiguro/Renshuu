@@ -46,7 +46,10 @@ else
                 @foreach (var attempt in Model.Attempts)
                 {
                     <tr>
-                        <td>@attempt.Subject?.Name</td>
+                        <td>
+                            @attempt.Subject?.Name
+                            <span class="badge badge-muted">@(attempt.IsPractice ? "Ôn tập" : "Làm bài")</span>
+                        </td>
                         <td class="nowrap">@attempt.StartedAt.ToString("HH:mm dd/MM/yyyy")</td>
                         <td class="num">@attempt.CorrectCount/@attempt.TotalQuestions</td>
                         <td class="num">

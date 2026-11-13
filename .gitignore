@@ -16,6 +16,9 @@ obj/
 coverage*.json
 coverage*.xml
 
+## Local documents, browser screenshots and test artifacts
+output/
+
 ## Publish
 publish/
 *.publishsettings
