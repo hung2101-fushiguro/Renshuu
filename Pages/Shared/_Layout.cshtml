@@ -1,13 +1,16 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="vi" data-type="software">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="page-type" content="software" />
+    <meta name="site-kind" content="software" />
     <title>@(ViewData["Title"] is null ? "Trắc nghiệm" : $"{ViewData["Title"]} – Trắc nghiệm")</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/study.css" asp-append-version="true" />
 </head>
 <body>
     <a class="skip-link" href="#main">Bỏ qua điều hướng, đến nội dung chính</a>
@@ -21,12 +24,19 @@
                 </svg>
                 <span>Trắc nghiệm</span>
             </a>
+            @if (ViewData["FocusMode"] as bool? == true)
+            {
+                <button type="submit" form="quiz-form" asp-page="/Test/Take" asp-route-id="@ViewContext.RouteData.Values["id"]" asp-page-handler="SaveAndExit" class="btn btn-ghost btn-sm" id="leave-quiz">Lưu &amp; thoát</button>
+            }
+            else
+            {
             <nav class="site-nav" aria-label="Điều hướng chính">
-                <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Môn học</a>
-                <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Câu còn sai</a>
+                <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Luyện tập</a>
+                <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Ôn câu sai</a>
                 <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
-                <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản trị</a>
+                <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản lý</a>
             </nav>
+            }
         </div>
     </header>
 
@@ -39,12 +49,16 @@
         {
             <div class="alert alert-success" role="status">@successMessage</div>
         }
+        @if (TempData["Warning"] is string warningMessage)
+        {
+            <div class="alert alert-warning" role="status">@warningMessage</div>
+        }
         @RenderBody()
     </main>
 
     <footer class="site-footer">
         <div class="container">
-            <p>Trắc nghiệm – luyện tập để nhớ lâu hơn.</p>
+            <p>Trắc nghiệm <span aria-hidden="true">·</span> Không gian học tập</p>
         </div>
     </footer>
 

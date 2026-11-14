@@ -14,6 +14,8 @@ public class IndexModel : PageModel
     public List<SubjectSummary> Subjects { get; private set; } = new();
     public List<FolderSummary> Folders { get; private set; } = new();
     public List<SubjectSummary> LooseSubjects { get; private set; } = new();
+    public List<PendingAttemptSummary> PendingAttempts { get; private set; } = new();
+    public List<TracNghiemWeb.Models.Attempt> RecentAttempts { get; private set; } = new();
 
     [BindProperty]
     public StartInput Input { get; set; } = new();
@@ -44,7 +46,9 @@ public class IndexModel : PageModel
         }
         else if (Subjects.Count > 0)
         {
-            Input.SubjectId = Subjects[0].Id;
+            var subject = Subjects.FirstOrDefault(s => s.QuestionCount > 0) ?? Subjects[0];
+            Input.SubjectId = subject.Id;
+            Input.QuestionCount = Math.Clamp(10, 1, Math.Max(1, subject.QuestionCount));
         }
     }
 
@@ -70,6 +74,8 @@ public class IndexModel : PageModel
     private async Task LoadSubjectsAsync()
     {
         Subjects = await _quiz.GetSubjectSummariesAsync();
+        PendingAttempts = await _quiz.GetPendingAttemptsAsync();
+        RecentAttempts = await _quiz.GetHistoryAsync(3);
 
         Folders = Subjects
             .Where(s => s.FolderId.HasValue)

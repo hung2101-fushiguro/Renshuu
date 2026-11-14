@@ -29,6 +29,7 @@ PublishScripts/
 ## Logs
 *.log
 logs/
+artifacts/
 
 ## OS
 Thumbs.db

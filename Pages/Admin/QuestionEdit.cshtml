@@ -9,7 +9,6 @@
 <div class="page-head">
     <div>
         <h1>@(Model.IsNew ? "Thêm câu hỏi" : "Sửa câu hỏi")</h1>
-        <p>Đáp án đúng được chấm điểm ở phía máy chủ.</p>
     </div>
     <div class="actions">
         <a class="btn btn-ghost" asp-page="/Admin/Questions" asp-route-subjectId="@Model.Input.SubjectId">Về danh sách</a>

@@ -1,140 +1,117 @@
 @page
 @model IndexModel
 @{
-    ViewData["Title"] = "Môn học";
+    ViewData["Title"] = "Luyện tập";
     ViewData["Active"] = "subjects";
 }
 
-<div class="page-head">
-    <div>
-        <h1>Môn học</h1>
-        <p>Chọn môn, đặt số câu và bắt đầu làm bài.</p>
-    </div>
+<div class="page-head study-heading">
+    <div><span class="eyebrow">GÓC HỌC TẬP</span><h1>Luyện tập</h1></div>
+    <div class="study-summary"><span class="library-count">@Model.Subjects.Count môn <span aria-hidden="true">/</span> @Model.Subjects.Sum(s => s.QuestionCount) câu hỏi</span>
+    @if (Model.PendingAttempts.FirstOrDefault() is { } pending)
+    {
+        <a class="resume-shortcut" asp-page="/Test/Take" asp-route-id="@pending.Id">Tiếp tục bài gần nhất <span aria-hidden="true">→</span></a>
+    }</div>
 </div>
 
 @if (Model.Subjects.Count == 0)
 {
-    <div class="empty">
-        <strong>Chưa có môn học nào.</strong>
-        <p class="mt-sm">Vào <a asp-page="/Admin/Index">Quản trị</a> để thêm môn học và câu hỏi.</p>
-    </div>
+    <div class="empty"><strong>Chưa có môn học.</strong><p class="mt-sm"><a asp-page="/Admin/Index">Thêm môn và câu hỏi</a> để bắt đầu.</p></div>
 }
 else
 {
-    <form method="post" class="card mb-lg">
-        <h2 class="mt-0">Bắt đầu làm bài</h2>
-
-        <div asp-validation-summary="ModelOnly"></div>
-
-        <div class="form-grid">
-            <div class="field">
-                <label asp-for="Input.SubjectId">Môn học</label>
-                <select asp-for="Input.SubjectId" class="input" id="subject-select">
-                    <partial name="_SubjectOptions" model="SubjectOptionsView.FromSummaries(Model.Subjects, Model.Input.SubjectId)" />
-                </select>
-                <span asp-validation-for="Input.SubjectId" class="field-error"></span>
-            </div>
-
-            <div class="form-row-2">
-                <div class="field">
-                    <label asp-for="Input.QuestionCount">Số câu hỏi</label>
-                    <div class="preset-row" role="group" aria-label="Chọn nhanh số câu hỏi">
-                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="10">10</button>
-                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="20">20</button>
-                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="30">30</button>
-                        <button type="button" class="btn btn-secondary btn-sm preset" data-value="50">50</button>
+    <div class="study-dashboard">
+        <section class="card create-panel" id="create-quiz" aria-labelledby="create-title">
+            <div class="panel-heading"><h2 id="create-title">Tạo đề</h2><span class="badge badge-primary">Ngẫu nhiên</span></div>
+            <form method="post" id="start-form">
+                <div asp-validation-summary="ModelOnly" role="alert"></div>
+                <div class="form-grid">
+                    <div class="field">
+                        <label asp-for="Input.SubjectId">Môn học</label>
+                        <select asp-for="Input.SubjectId" class="input" id="subject-select" aria-describedby="count-hint">
+                            <partial name="_SubjectOptions" model="SubjectOptionsView.FromSummaries(Model.Subjects, Model.Input.SubjectId)" />
+                        </select>
+                        <span class="hint" id="count-hint">@Model.Subjects.FirstOrDefault(s => s.Id == Model.Input.SubjectId)?.QuestionCount câu trong ngân hàng</span>
+                        <span asp-validation-for="Input.SubjectId" class="field-error"></span>
                     </div>
-                    <input asp-for="Input.QuestionCount" type="number" min="1" max="200" class="input mt-sm" />
-                    <span class="hint" id="count-hint"></span>
-                    <span class="hint">Môn có bài đọc sẽ lấy trọn bộ câu của bài, nên số câu thực tế có thể nhiều hơn.</span>
-                    <span asp-validation-for="Input.QuestionCount" class="field-error"></span>
-                </div>
-
-                <div class="field">
-                    <label asp-for="Input.TimeLimitMinutes">Thời gian (phút)</label>
-                    <input asp-for="Input.TimeLimitMinutes" type="number" min="1" max="240" class="input" placeholder="Để trống nếu không giới hạn" />
-                    <span asp-validation-for="Input.TimeLimitMinutes" class="field-error"></span>
-                </div>
-            </div>
-
-            <div>
-                <button type="submit" class="btn btn-accent btn-lg">Bắt đầu làm bài</button>
-            </div>
-        </div>
-    </form>
-
-    @if (Model.Folders.Count > 0)
-    {
-        <h2>Thư mục</h2>
-        <div class="grid grid-subjects @(Model.LooseSubjects.Count > 0 ? "mb-lg" : null)">
-            @foreach (var folder in Model.Folders)
-            {
-                <a class="card folder-card" asp-page="/Folder/Index" asp-route-id="@folder.Id">
-                    <div class="folder-head">
-                        <span class="folder-icon" aria-hidden="true">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z" />
-                            </svg>
-                        </span>
-                        <div>
-                            <h3>@folder.Name</h3>
-                            <p class="small muted mb-0">@folder.SubjectCount bài học · @folder.QuestionCount câu hỏi</p>
+                    <div class="form-row-2 setup-fields">
+                        <div class="field">
+                            <label asp-for="Input.QuestionCount">Số câu</label>
+                            <input asp-for="Input.QuestionCount" type="number" min="1" max="200" class="input" inputmode="numeric" />
+                            <div class="preset-row mt-sm" role="group" aria-label="Số câu chọn nhanh">
+                                @foreach (var count in new[] { 10, 20, 30, 50 })
+                                {
+                                    <button type="button" class="preset-chip" data-count-preset="@count" aria-pressed="false">@count</button>
+                                }
+                            </div>
+                            <span asp-validation-for="Input.QuestionCount" class="field-error"></span>
+                        </div>
+                        <div class="field">
+                            <label asp-for="Input.TimeLimitMinutes">Thời gian <span class="label-unit">(phút)</span></label>
+                            <input asp-for="Input.TimeLimitMinutes" type="number" min="1" max="240" class="input" placeholder="Tự do" inputmode="numeric" />
+                            <div class="preset-row mt-sm" role="group" aria-label="Thời gian chọn nhanh">
+                                <button type="button" class="preset-chip" data-time-preset="" aria-pressed="true">Tự do</button>
+                                @foreach (var minutes in new[] { 15, 30, 60 })
+                                {
+                                    <button type="button" class="preset-chip" data-time-preset="@minutes" aria-pressed="false">@minutes</button>
+                                }
+                            </div>
+                            <span asp-validation-for="Input.TimeLimitMinutes" class="field-error"></span>
                         </div>
                     </div>
-                    @if (folder.WrongCount > 0)
-                    {
-                        <p class="small mb-0 mt-sm"><span class="badge badge-danger">@folder.WrongCount câu còn sai</span></p>
-                    }
+                    <details class="setup-help"><summary>Cách lấy câu hỏi</summary><p>Đề được chọn ngẫu nhiên và ưu tiên đủ số câu bạn chọn. Các câu chung bài đọc luôn đi cùng nhau; số câu thực tế có thể thay đổi, tối đa 200 câu.</p></details>
+                    <div class="create-footer"><span id="setup-summary" class="small muted" aria-live="polite">Chọn cấu hình đề</span><button type="submit" class="btn btn-accent" id="start-practice">Tạo đề &amp; làm bài <span aria-hidden="true">→</span></button></div>
+                </div>
+            </form>
+        </section>
+        <aside class="study-activity" aria-label="Bài làm gần đây">
+            <section class="card pending-panel" aria-labelledby="pending-title">
+                <div class="panel-heading"><h2 id="pending-title">Đang làm</h2><span class="badge badge-muted">@Model.PendingAttempts.Count</span></div>
+                @if (Model.PendingAttempts.Count == 0)
+                {
+                    <div class="activity-empty"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M9 5H5v15h14V5h-4M9 3h6v4H9zM8 12h8M8 16h5" /></svg><p>Chưa có bài đang làm.</p></div>
+                }
+                @foreach (var attempt in Model.PendingAttempts)
+                {
+                    var expired = attempt.TimeLimitMinutes is int limit && attempt.StartedAt.AddMinutes(limit) <= DateTime.Now;
+                    <a class="pending-item activity-item" asp-page="/Test/Take" asp-route-id="@attempt.Id">
+                        <span class="activity-main"><strong>@attempt.SubjectName</strong><span class="small muted">@attempt.AnsweredCount/@attempt.TotalQuestions câu đã lưu · @(expired ? "Đã hết giờ" : attempt.TimeLimitMinutes is int minutes ? $"{minutes} phút" : "Tự do")</span></span>
+                        <span class="activity-arrow">@(expired ? "Kết quả" : "Tiếp tục") <span aria-hidden="true">↗</span></span>
+                    </a>
+                }
+            </section>
+            <section class="card recent-panel" aria-labelledby="recent-title">
+                <div class="panel-heading"><h2 id="recent-title">Vừa hoàn thành</h2><a class="text-link small" asp-page="/History/Index">Lịch sử <span aria-hidden="true">↗</span></a></div>
+                @if (Model.RecentAttempts.Count == 0)
+                {
+                    <p class="small muted mb-0">Kết quả sẽ xuất hiện sau khi nộp bài.</p>
+                }
+                @foreach (var attempt in Model.RecentAttempts)
+                {
+                    <a class="activity-item" asp-page="/Test/Result" asp-route-id="@attempt.Id"><span class="activity-main"><strong>@attempt.Subject?.Name</strong><span class="small muted">@attempt.SubmittedAt?.ToString("HH:mm · dd/MM")</span></span><span class="result-fraction">@attempt.CorrectCount<span>/@attempt.TotalQuestions</span></span></a>
+                }
+            </section>
+        </aside>
+    </div>
+    <section class="subject-library" aria-labelledby="library-title">
+        <div class="page-head library-heading"><h2 id="library-title">Thư viện môn học</h2><div class="library-search" data-enhanced hidden><label class="visually-hidden" for="library-search">Tìm môn, thư mục</label><input type="search" class="input" id="library-search" placeholder="Tìm môn, thư mục…" /></div></div>
+        <div class="grid grid-subjects" id="subject-library">
+            @foreach (var folder in Model.Folders)
+            {
+                var names = string.Join(" ", Model.Subjects.Where(s => s.FolderId == folder.Id).Select(s => s.Name));
+                <a class="card folder-card library-item" asp-page="/Folder/Index" asp-route-id="@folder.Id" data-search="@folder.Name @names">
+                    <span class="folder-icon" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 7V5a2 2 0 0 1 2-2h5l3 3h6a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7z" /></svg></span>
+                    <h3>@folder.Name</h3><p class="small muted mb-0">@folder.SubjectCount môn · @folder.QuestionCount câu</p>
+                    <span class="folder-action">Mở thư mục <span aria-hidden="true">↗</span></span>
+                    @if (folder.WrongCount > 0) { <span class="badge badge-danger mt-sm">@folder.WrongCount câu cần ôn</span> }
                 </a>
             }
-        </div>
-    }
-
-    @if (Model.LooseSubjects.Count > 0)
-    {
-        <h2>@(Model.Folders.Count > 0 ? "Môn học khác" : "Danh sách môn")</h2>
-        <div class="grid grid-subjects">
             @foreach (var subject in Model.LooseSubjects)
             {
-                <partial name="_SubjectCard" model="subject" />
+                <div class="library-item" data-search="@subject.Name"><partial name="_SubjectCard" model="subject" /></div>
             }
         </div>
-    }
+        <p id="library-empty" class="empty" hidden>Không tìm thấy môn hoặc thư mục phù hợp.</p>
+    </section>
 }
-
-@section Scripts {
-    <script>
-        (function () {
-            var select = document.getElementById('subject-select');
-            var count = document.getElementById('@Html.IdFor(m => m.Input.QuestionCount)');
-            var hint = document.getElementById('count-hint');
-            if (!select || !count) { return; }
-
-            function available() {
-                var option = select.options[select.selectedIndex];
-                return parseInt(option.getAttribute('data-count') || '0', 10);
-            }
-
-            function refreshHint() {
-                var max = available();
-                var value = parseInt(count.value || '0', 10);
-                if (value > max) { count.value = max; value = max; }
-                hint.textContent = max > 0
-                    ? 'Môn này có ' + max + ' câu hỏi.'
-                    : 'Môn này chưa có câu hỏi nào.';
-            }
-
-            select.addEventListener('change', refreshHint);
-            document.querySelectorAll('.preset').forEach(function (button) {
-                button.addEventListener('click', function () {
-                    var max = available();
-                    var value = parseInt(button.getAttribute('data-value'), 10);
-                    count.value = Math.max(1, Math.min(value, max));
-                    refreshHint();
-                });
-            });
-
-            refreshHint();
-        })();
-    </script>
-}
+@section Scripts { <script src="~/js/dashboard.js" asp-append-version="true" defer></script> }

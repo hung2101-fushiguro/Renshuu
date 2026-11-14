@@ -22,7 +22,7 @@
     </div>
 </div>
 
-<div class="grid grid-stats mb-lg">
+<div class="grid grid-stats mb-lg result-summary">
     <div class="stat is-success">
         <div class="stat-value">@correct/@total</div>
         <div class="stat-label">Câu đúng</div>
@@ -37,7 +37,7 @@
     </div>
     <div class="stat is-danger">
         <div class="stat-value">@Model.WrongCount</div>
-        <div class="stat-label">Câu sai (@Model.BlankCount bỏ trống)</div>
+        <div class="stat-label">Chưa đúng · @Model.BlankCount bỏ trống</div>
     </div>
 </div>
 
@@ -137,6 +137,7 @@
 @section Scripts {
     <script>
         (function () {
+            try { localStorage.removeItem('quiz_draft_v2:' + @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Page("/Test/Take", new { id = attempt.Id })))); } catch (_) { }
             var toggle = document.getElementById('only-wrong');
             var list = document.getElementById('review-list');
             if (!toggle || !list) { return; }
