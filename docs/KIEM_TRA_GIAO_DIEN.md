@@ -14,7 +14,7 @@ Ngày thực hiện: 10/11/2026. Mã gốc: `d1635b1`. Kiểm tra local trên Wi
 
 Hướng thiết kế: ứng dụng học tập, nền sáng và cobalt, Be Vietnam Pro với fallback tiếng Nhật trên hệ thống, sidebar, thẻ nội dung và CSS 3D nhiều lớp. Không có ảnh mẫu, giá, địa chỉ hoặc số liệu thành tích giả. Logo chữ dùng đúng tên repository Renshuu. Không cần bổ sung ảnh từ người dùng.
 
-Đã chụp và xem trên 1440×900, 1024×768, 820×1180, 768×1024 và 390×844. Bộ kiểm tra layout ghi nhận `overflowX: false` trên cả năm kích thước. Có ảnh reduced motion riêng cho điện thoại. Các nút số câu và bảng quản trị dùng chung hệ màu/typography.
+Đã chụp và xem trên 1440×900, 1024×768, 820×1180, 768×1024 và 390×844. Bộ kiểm tra layout ghi nhận `overflowX: false` trên cả năm kích thước. Có ảnh reduced motion riêng cho điện thoại. Các khối câu hỏi và bảng quản trị dùng chung hệ màu/typography.
 
 Ảnh và kết quả máy đọc nằm trong `artifacts/` (không theo dõi bởi Git); ảnh trước nâng cấp là `before-desktop.png`, ảnh bàn giao là `final-1440.png` và `final-390.png`.
 

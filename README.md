@@ -31,7 +31,7 @@ dotnet run --no-launch-profile --urls http://localhost:5186
 
 1. Chọn môn trong form hoặc mở thư mục để chọn môn học.
 2. Chọn số câu và thời gian; để trống thời gian để luyện không giới hạn.
-3. Trả lời các câu hỏi. Đợi trạng thái **Đã lưu trên máy chủ** trước khi rời trang; vào **Bài chưa nộp** trên tổng quan để tiếp tục. Các nút số câu cho biết câu đã trả lời và cho phép chuyển nhanh.
+3. Trả lời các câu hỏi. Đợi trạng thái **Đã lưu trên máy chủ** trước khi rời trang, hoặc dùng **Lưu & thoát**; vào **Bài chưa nộp** trên tổng quan để tiếp tục.
 4. Nộp bài để xem tỷ lệ đúng, đáp án và giải thích.
 5. Vào **Ôn lại câu sai** để làm lại; trả lời đúng sẽ gỡ câu khỏi danh sách.
 6. Vào **Quản lý nội dung** để quản lý thư mục, môn học, câu hỏi hoặc nhập CSV/JSON/văn bản/bài đọc.
@@ -48,6 +48,7 @@ Bản 11/11/2026 chuyển sang trắng–đen tối giản: chữ ngắn hơn, h
 - Tìm môn/thư mục không phân biệt dấu tiếng Việt; tìm tên môn trong thư mục sẽ hiện thư mục tương ứng.
 - Dùng chung màu, form, bảng và kiểu chữ trên các trang học tập và quản trị.
 - Sửa lỗi nộp toàn bộ đáp án trống và giữ bản nháp trong trình duyệt cho đến khi tải trang kết quả thành công.
+- **Thẻ ghi nhớ Flashcard** tại `Ôn lại câu sai` và trang **Thống kê & Tiến độ** với biểu đồ điểm, xu hướng và tỷ lệ khắc phục câu sai.
 
 ### Scroll Craft
 
@@ -65,6 +66,8 @@ Nâng cấp nghiệp vụ giữ nguyên Razor Pages → Service → EF Core: t�
 dotnet build --nologo
 node --check wwwroot/js/workspace.js
 node --check wwwroot/js/dashboard.js
+node --check wwwroot/js/quiz.js
+dotnet run --project tests/Renshuu.IntegrationTests -- "SATORU\SQLEXPRESS"
 ```
 
 Kiểm thử luồng HTTP phải dùng database riêng và chưa có bài làm để không ảnh hưởng danh sách câu sai:
