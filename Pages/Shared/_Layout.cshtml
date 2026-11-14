@@ -1,12 +1,21 @@
+@inject TracNghiemWeb.Services.CurrentUser UserSession
 @{
     var active = ViewData["Active"] as string ?? "subjects";
-    var navigation = new[] {
-        (Page: "/Index", Key: "subjects", Icon: "grid", Text: "Tổng quan"),
-        (Page: "/Wrong/Index", Key: "wrong", Icon: "retry", Text: "Ôn lại câu sai"),
-        (Page: "/History/Index", Key: "history", Icon: "history", Text: "Lịch sử luyện tập"),
-        (Page: "/History/Analytics", Key: "analytics", Icon: "chart", Text: "Thống kê & Tiến độ"),
-        (Page: "/Admin/Index", Key: "admin", Icon: "settings", Text: "Quản lý nội dung")
+    var isAdmin = UserSession.IsAdmin;
+    var accountName = UserSession.DisplayName;
+    var modelInitial = string.IsNullOrWhiteSpace(accountName) ? "?" : accountName.Trim()[0].ToString().ToUpperInvariant();
+    var navigation = new List<(string Page, string Key, string Icon, string Text)>
+    {
+        ("/Index", "subjects", "grid", "Tổng quan"),
+        ("/Wrong/Index", "wrong", "retry", "Ôn lại câu sai"),
+        ("/History/Index", "history", "history", "Lịch sử luyện tập"),
+        ("/History/Analytics", "analytics", "chart", "Thống kê & Tiến độ"),
+        ("/Admin/Index", "admin", "settings", "Quản lý nội dung")
     };
+    if (isAdmin)
+    {
+        navigation.Add(("/Admin/Accounts", "accounts", "sliders", "Quản lý tài khoản"));
+    }
 }
 <!DOCTYPE html>
 <html lang="vi" class="no-js" data-type="software" data-radius="soft" data-buttons="solid" data-motion>
@@ -51,7 +60,19 @@
             }
         </nav>
         <div class="sidebar-bottom">
-            <div class="workspace-signature"><span class="signature-mark">r.</span><div><strong>Renshuu</strong><span>Luyện tập mỗi ngày.</span></div></div>
+            <div class="account-chip">
+                <span class="workspace-avatar" aria-hidden="true">@modelInitial</span>
+                <div>
+                    <strong>@accountName</strong>
+                    <span>@(isAdmin ? "Quản trị viên" : "Người học")</span>
+                </div>
+            </div>
+            <form method="post" asp-page="/Account/Logout" class="signout-form">
+                <button type="submit" class="signout-button">
+                    <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#logout" /></svg>
+                    Đăng xuất
+                </button>
+            </form>
         </div>
     </aside>
     <div class="mobile-scrim" id="mobile-scrim" hidden></div>

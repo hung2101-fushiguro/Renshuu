@@ -11,5 +11,10 @@ public class SubjectFolder
     [Display(Name = "Tên thư mục")]
     public string Name { get; set; } = string.Empty;
 
+    public string? OwnerId { get; set; }
+    public ApplicationUser? Owner { get; set; }
+
+    public DateTime CreatedAt { get; set; } = DateTime.Now;
+
     public ICollection<Subject> Subjects { get; set; } = new List<Subject>();
 }

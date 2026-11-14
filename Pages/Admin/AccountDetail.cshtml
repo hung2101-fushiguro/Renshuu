@@ -1,0 +1,118 @@
+@page "{id}"
+@model TracNghiemWeb.Pages.Admin.AccountDetailModel
+@{
+    ViewData["Title"] = "Tài khoản " + Model.Account.DisplayName;
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "accounts";
+}
+
+<div class="page-head">
+    <div>
+        <h1>@Model.Account.DisplayName</h1>
+        <p>
+            @Model.Account.Email ·
+            @(Model.Account.IsAdmin ? "Quản trị viên" : "Người học") ·
+            tạo @Model.Account.CreatedAt.ToString("dd/MM/yyyy")
+        </p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-ghost" asp-page="/Admin/Accounts">Về danh sách</a>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<div class="grid grid-admin-forms mb-lg">
+    <div class="card">
+        <h2 class="mt-0">Quyền và trạng thái</h2>
+        <dl class="account-facts">
+            <div><dt>Vai trò</dt><dd>@(Model.Account.IsAdmin ? "Quản trị viên" : "Người học")</dd></div>
+            <div><dt>Trạng thái</dt><dd>@(Model.Account.IsLocked ? "Đang khóa" : "Hoạt động")</dd></div>
+            <div><dt>Thư mục đã tạo</dt><dd>@Model.Account.FolderCount</dd></div>
+            <div><dt>Môn học đã tạo</dt><dd>@Model.Account.SubjectCount</dd></div>
+            <div><dt>Lượt làm bài</dt><dd>@Model.Account.AttemptCount</dd></div>
+        </dl>
+
+        <div class="account-actions">
+            <form method="post" asp-page-handler="ToggleAdmin" asp-route-id="@Model.Account.Id">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    @(Model.Account.IsAdmin ? "Thu hồi quyền quản trị" : "Cấp quyền quản trị")
+                </button>
+            </form>
+            <form method="post" asp-page-handler="ToggleLock" asp-route-id="@Model.Account.Id">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    @(Model.Account.IsLocked ? "Mở khóa tài khoản" : "Khóa tài khoản")
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2 class="mt-0">Đặt lại mật khẩu</h2>
+        <p class="muted">Đặt mật khẩu tạm mới rồi gửi cho người dùng. Không hiển thị mật khẩu hiện tại.</p>
+        <form method="post" asp-page-handler="ResetPassword" asp-route-id="@Model.Account.Id">
+            <div asp-validation-summary="ModelOnly" role="alert"></div>
+            <div class="field">
+                <label asp-for="NewPassword">Mật khẩu mới</label>
+                <input asp-for="NewPassword" class="input" type="password" maxlength="128" autocomplete="new-password" />
+                <span class="hint">Từ 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt.</span>
+                <span asp-validation-for="NewPassword" class="field-error"></span>
+            </div>
+            <button type="submit" class="btn btn-primary mt-md">Đặt lại mật khẩu</button>
+        </form>
+
+        <hr class="account-divider" />
+
+        <h2>Xóa tài khoản</h2>
+        <p class="muted">Thư mục và môn học của tài khoản sẽ được giữ lại làm nội dung dùng chung. Lịch sử làm bài bị xóa theo tài khoản.</p>
+        <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Account.Id"
+              onsubmit="return confirm('Xóa tài khoản @Model.Account.Email? Hành động này không thể hoàn tác.');">
+            <button type="submit" class="btn btn-danger btn-sm">Xóa tài khoản</button>
+        </form>
+    </div>
+</div>
+
+<h2>Thư mục và môn học của tài khoản</h2>
+
+@if (Model.ContentRows.Count == 0)
+{
+    <div class="empty">
+        <strong>Tài khoản này chưa tạo nội dung nào.</strong>
+        <p class="mt-sm">Thư mục và môn học người dùng tạo sẽ hiện ở đây.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Loại</th>
+                    <th scope="col">Tên</th>
+                    <th scope="col" class="num">Số mục con</th>
+                    <th scope="col">Ngày tạo</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.ContentRows)
+                {
+                    <tr>
+                        <td>
+                            @if (item.Kind == "Thư mục")
+                            {
+                                <span class="badge badge-accent">Thư mục</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-primary">Môn học</span>
+                            }
+                        </td>
+                        <td>@item.Name</td>
+                        <td class="num">@item.ItemCount @(item.Kind == "Thư mục" ? "môn" : "câu")</td>
+                        <td class="small muted">@item.CreatedAt.ToString("dd/MM/yyyy")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

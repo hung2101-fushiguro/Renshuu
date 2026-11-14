@@ -1,9 +1,10 @@
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Models;
 
 namespace TracNghiemWeb.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -18,10 +19,17 @@ public class AppDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         modelBuilder.Entity<SubjectFolder>(entity =>
         {
             entity.Property(f => f.Name).IsRequired().HasMaxLength(200);
-            entity.HasIndex(f => f.Name).IsUnique();
+            entity.HasIndex(f => new { f.OwnerId, f.Name }).IsUnique();
+
+            entity.HasOne(f => f.Owner)
+                .WithMany(u => u.Folders)
+                .HasForeignKey(f => f.OwnerId)
+                .OnDelete(DeleteBehavior.SetNull);
 
             entity.HasMany(f => f.Subjects)
                 .WithOne(s => s.Folder)
@@ -33,6 +41,12 @@ public class AppDbContext : DbContext
         {
             entity.Property(s => s.Name).IsRequired().HasMaxLength(200);
             entity.HasIndex(s => s.FolderId);
+            entity.HasIndex(s => s.OwnerId);
+
+            entity.HasOne(s => s.Owner)
+                .WithMany(u => u.Subjects)
+                .HasForeignKey(s => s.OwnerId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<ReadingPassage>(entity =>
@@ -77,6 +91,12 @@ public class AppDbContext : DbContext
         {
             entity.HasIndex(a => new { a.SubjectId, a.StartedAt });
             entity.HasIndex(a => new { a.SubmittedAt, a.Id });
+            entity.HasIndex(a => a.OwnerId);
+
+            entity.HasOne(a => a.Owner)
+                .WithMany(u => u.Attempts)
+                .HasForeignKey(a => a.OwnerId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(a => a.Subject)
                 .WithMany(s => s.Attempts)

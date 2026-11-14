@@ -346,12 +346,12 @@ else
                         </p>
                     </div>
                     <div class="spotlight-action">
-                        <a class="btn btn-primary btn-sm" asp-page="/Wrong/Flashcard" asp-route-subjectId="@weakness.SubjectId">
-                            <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
-                            Ôn Flashcard môn này
-                        </a>
-                        <a class="btn btn-secondary btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@weakness.SubjectId">
+                        <a class="btn btn-primary btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@weakness.SubjectId">
+                            <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#retry" /></svg>
                             Làm lại câu sai
+                        </a>
+                        <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@weakness.SubjectId">
+                            Luyện tập môn này
                         </a>
                     </div>
                 </div>
@@ -422,9 +422,9 @@ else
                                         </a>
                                         @if (s.CurrentWrongCount > 0)
                                         {
-                                            <a class="btn btn-accent btn-sm" asp-page="/Wrong/Flashcard" asp-route-subjectId="@s.SubjectId" title="Ôn bằng thẻ ghi nhớ Flashcard">
-                                                <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
-                                                Flashcard
+                                            <a class="btn btn-accent btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@s.SubjectId" title="Luyện lại các câu còn sai">
+                                                <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#retry" /></svg>
+                                                Câu sai
                                             </a>
                                         }
                                     </div>

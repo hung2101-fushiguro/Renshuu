@@ -1,6 +1,6 @@
+@inject TracNghiemWeb.Services.CurrentUser UserSession
 @{
     var active = ViewData["AdminTab"] as string ?? "subjects";
-    var isAdmin = ViewData["Active"] as string == "admin";
 }
 <nav class="subnav" aria-label="Quản trị">
     <a asp-page="/Admin/Index" class="@(active == "subjects" ? "active" : null)">Môn &amp; thư mục</a>
@@ -8,4 +8,8 @@
     <a asp-page="/Admin/AddMany" class="@(active == "addmany" ? "active" : null)">Thêm nhiều câu</a>
     <a asp-page="/Admin/Paste" class="@(active == "paste" ? "active" : null)">Dán câu hỏi</a>
     <a asp-page="/Admin/Readings" class="@(active == "readings" ? "active" : null)">Nhập bài đọc</a>
+    @if (UserSession.IsAdmin)
+    {
+        <a asp-page="/Admin/Accounts" class="@(active == "accounts" ? "active" : null)">Tài khoản</a>
+    }
 </nav>

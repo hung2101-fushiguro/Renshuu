@@ -3,14 +3,20 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
+using TracNghiemWeb.Services;
 
 namespace TracNghiemWeb.Pages.Admin;
 
 public class QuestionEditModel : PageModel
 {
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public QuestionEditModel(AppDbContext db) => _db = db;
+    public QuestionEditModel(AppDbContext db, CurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public List<Subject> Subjects { get; private set; } = new();
     public bool IsNew { get; private set; }
@@ -20,11 +26,7 @@ public class QuestionEditModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int? id, int? subjectId)
     {
-        Subjects = await _db.Subjects
-            .Include(s => s.Folder)
-            .OrderBy(s => s.Name)
-            .AsNoTracking()
-            .ToListAsync();
+        await LoadSubjectsAsync();
         if (Subjects.Count == 0)
         {
             TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
@@ -33,7 +35,9 @@ public class QuestionEditModel : PageModel
 
         if (id is int questionId)
         {
-            var question = await _db.Questions.AsNoTracking().FirstOrDefaultAsync(q => q.Id == questionId);
+            var question = await _db.Questions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(q => q.Id == questionId && q.Subject!.OwnerId == _currentUser.UserId);
             if (question is null)
             {
                 return NotFound();
@@ -56,11 +60,7 @@ public class QuestionEditModel : PageModel
 
     public async Task<IActionResult> OnPostAsync()
     {
-        Subjects = await _db.Subjects
-            .Include(s => s.Folder)
-            .OrderBy(s => s.Name)
-            .AsNoTracking()
-            .ToListAsync();
+        await LoadSubjectsAsync();
         IsNew = Input.Id == 0;
 
         if (!Subjects.Any(s => s.Id == Input.SubjectId))
@@ -102,7 +102,8 @@ public class QuestionEditModel : PageModel
         }
         else
         {
-            var question = await _db.Questions.FindAsync(Input.Id);
+            var question = await _db.Questions
+                .FirstOrDefaultAsync(q => q.Id == Input.Id && q.Subject!.OwnerId == _currentUser.UserId);
             if (question is null)
             {
                 return NotFound();
@@ -123,4 +124,12 @@ public class QuestionEditModel : PageModel
         await _db.SaveChangesAsync();
         return RedirectToPage("/Admin/Questions", new { subjectId = Input.SubjectId });
     }
+
+    private async Task LoadSubjectsAsync() =>
+        Subjects = await _db.Subjects
+            .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
+            .OrderBy(s => s.Name)
+            .AsNoTracking()
+            .ToListAsync();
 }

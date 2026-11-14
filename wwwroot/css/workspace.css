@@ -64,6 +64,15 @@ p { text-wrap: pretty; }
 .workspace-signature { border-top: 1px solid var(--color-border); margin-top: 24px; padding: 20px 0 0; display: flex; gap: 10px; align-items: center; }
 .signature-mark { width: 32px; height: 32px; background: var(--color-muted); border-radius: 9px; display: grid; place-items: center; color: var(--color-muted-foreground); font-weight: 700; }
 .workspace-signature strong, .workspace-signature div > span { display: block; font-size: 11px; font-weight: 500; }
+/* Signed-in account chip + sign-out */
+.account-chip { display: flex; align-items: center; gap: 10px; padding: 12px; border: 1px solid var(--color-border); border-radius: 12px; background: var(--color-muted); }
+.account-chip > div { min-width: 0; }
+.account-chip strong { display: block; font-size: 12px; font-weight: 500; color: var(--color-foreground); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-chip div > span { display: block; font-size: 10px; color: var(--color-muted-foreground); margin-top: 3px; }
+.signout-form { margin-top: 8px; }
+.signout-button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 10px 14px; border: 1px solid transparent; border-radius: 9px; background: transparent; color: var(--color-muted-foreground); font: inherit; font-size: 12px; cursor: pointer; transition: background-color 180ms, color 180ms; }
+.signout-button .icon { width: 16px; height: 16px; }
+.signout-button:hover { background: #DBEAFE; color: var(--color-primary-hover); }
 .workspace-signature div > span { color: var(--color-muted-foreground); font-size: 10px; margin-top: 3px; font-weight: 400; }
 .app-shell { margin-left: var(--sidebar); min-height: 100vh; display: flex; flex-direction: column; }
 .topbar { height: var(--topbar); flex: none; background: #ffffff; border-bottom: 1px solid var(--color-border); padding: 0 var(--page-gutter); display: flex; align-items: center; justify-content: space-between; gap: 16px; }
@@ -236,6 +245,11 @@ select.input { cursor: pointer; }
 .empty { border: 1px dashed var(--color-border-strong); border-radius: 12px; padding: 40px 24px; background: #ffffff; text-align: center; }
 .empty strong { display: block; font-weight: 500; }.empty p { color: var(--color-muted-foreground); font-size: 13px; margin: 8px 0 20px; }
 .empty-icon { width: 40px; height: 40px; color: var(--color-muted-foreground); fill: none; stroke: currentColor; stroke-width: 1.5; display: block; margin: 0 auto 16px; }
+.account-facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin: 0 0 20px; }
+.account-facts dt { font-size: 11px; color: var(--color-muted-foreground); margin-bottom: 4px; }
+.account-facts dd { margin: 0; font-size: 14px; font-weight: 500; }
+.account-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.account-divider { border: 0; border-top: 1px solid var(--color-border); margin: 24px 0; }
 .practice-panel .empty { border: 0; padding: 20px 0; }.breadcrumb { font-size: 12px; margin-bottom: 24px; }
 .quiz-bar { top: 16px; border: 1px solid var(--color-border-strong); border-radius: 12px; box-shadow: var(--shadow-md); margin-bottom: 24px; padding: 18px 24px; gap: 16px; background: #ffffff; }
 .quiz-title { margin-bottom: 20px; }.quiz-title h1 { margin: 4px 0 8px; }.quiz-title p { color: var(--color-muted-foreground); font-size: 13px; }

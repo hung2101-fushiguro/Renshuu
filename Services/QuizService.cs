@@ -14,11 +14,13 @@ public class QuizService
 
     private readonly AppDbContext _db;
     private readonly TimeProvider _time;
+    private readonly CurrentUser _currentUser;
 
-    public QuizService(AppDbContext db, TimeProvider time)
+    public QuizService(AppDbContext db, TimeProvider time, CurrentUser currentUser)
     {
         _db = db;
         _time = time;
+        _currentUser = currentUser;
     }
 
     private DateTime Now => _time.GetLocalNow().DateTime;
@@ -27,7 +29,7 @@ public class QuizService
 
     public Task<List<PendingAttemptSummary>> GetPendingAttemptsAsync(int take = 5) =>
         _db.Attempts.AsNoTracking()
-            .Where(a => a.SubmittedAt == null)
+            .Where(a => a.OwnerId == _currentUser.UserId && a.SubmittedAt == null)
             .OrderByDescending(a => a.StartedAt).ThenByDescending(a => a.Id)
             .Take(Math.Clamp(take, 1, 20))
             .Select(a => new PendingAttemptSummary(a.Id, a.Subject!.Name, a.TotalQuestions,
@@ -37,7 +39,7 @@ public class QuizService
     public async Task<PracticeSummary> GetPracticeSummaryAsync()
     {
         var summary = await _db.Attempts.AsNoTracking()
-            .Where(a => a.SubmittedAt != null)
+            .Where(a => a.OwnerId == _currentUser.UserId && a.SubmittedAt != null)
             .GroupBy(a => 1)
             .Select(g => new { Count = g.Count(), Correct = g.Sum(a => a.CorrectCount), Total = g.Sum(a => a.TotalQuestions) })
             .OrderBy(s => s.Count)
@@ -46,8 +48,14 @@ public class QuizService
         return summary is null ? new(0, 0, 0) : new(summary.Count, summary.Correct, summary.Total);
     }
 
+    /// <summary>
+    /// Subjects the signed-in account may practise: everything it owns plus shared
+    /// library content that has no owner (seed data and admin-managed content).
+    /// </summary>
     public async Task<List<SubjectSummary>> GetSubjectSummariesAsync()
     {
+        var userId = _currentUser.UserId;
+
         var wrongBySubject = await LatestAnswers()
             .Where(a => !a.IsCorrect)
             .Join(_db.Questions, a => a.QuestionId, q => q.Id, (a, q) => q.SubjectId)
@@ -55,7 +63,7 @@ public class QuizService
             .Select(g => new { SubjectId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.SubjectId, x => x.Count);
 
-        var subjects = await _db.Subjects
+        var subjects = await VisibleSubjects(includeAllWhenAdmin: false)
             .OrderBy(s => s.Name)
             .Select(s => new
             {
@@ -88,10 +96,12 @@ public class QuizService
             return StartResult.Fail(error);
         }
 
-        var subject = await _db.Subjects.AsNoTracking().FirstOrDefaultAsync(s => s.Id == subjectId);
+        var subject = await VisibleSubjects(includeAllWhenAdmin: false)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == subjectId);
         if (subject is null)
         {
-            return StartResult.Fail("Môn học không tồn tại.");
+            return StartResult.Fail("Môn học không tồn tại hoặc bạn không có quyền truy cập.");
         }
 
         var rows = await _db.Questions
@@ -141,10 +151,12 @@ public class QuizService
             return StartResult.Fail($"Thời gian làm bài phải từ 1 đến {MaxTimeLimitMinutes} phút.");
         }
 
-        var subject = await _db.Subjects.AsNoTracking().FirstOrDefaultAsync(s => s.Id == subjectId);
+        var subject = await VisibleSubjects(includeAllWhenAdmin: false)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == subjectId);
         if (subject is null)
         {
-            return StartResult.Fail("Môn học không tồn tại.");
+            return StartResult.Fail("Môn học không tồn tại hoặc bạn không có quyền truy cập.");
         }
 
         var questionIds = await LatestAnswers()
@@ -166,7 +178,8 @@ public class QuizService
     {
         var now = Now;
         await using var transaction = await _db.Database.BeginTransactionAsync();
-        var attempt = await _db.Attempts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == attemptId);
+        var attempt = await _db.Attempts.AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == attemptId && a.OwnerId == _currentUser.UserId);
         if (attempt is null) return new(false, 0, null, "Bài làm không tồn tại.");
         if (attempt.IsSubmitted || attempt.Deadline is DateTime deadline && now >= deadline)
         {
@@ -175,7 +188,8 @@ public class QuizService
 
         // The conditional update holds the attempt's write lock until answers commit.
         // Submission claims the same row, so an in-flight draft cannot rewrite a grade.
-        var claimed = await _db.Attempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
+        var claimed = await _db.Attempts
+            .Where(a => a.Id == attemptId && a.OwnerId == _currentUser.UserId && a.SubmittedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.DraftSavedAt, (DateTime?)now));
         if (claimed == 0) return new(false, 0, null, "Bài đã được nộp.", true);
         var rows = await _db.AttemptAnswers.Where(a => a.AttemptId == attemptId).ToListAsync();
@@ -193,11 +207,12 @@ public class QuizService
         var now = Now;
         await using var transaction = await _db.Database.BeginTransactionAsync();
         // Claim once, inside the same transaction as grading. Concurrent POSTs cannot both grade.
-        var claimed = await _db.Attempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
+        var claimed = await _db.Attempts
+            .Where(a => a.Id == attemptId && a.OwnerId == _currentUser.UserId && a.SubmittedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.SubmittedAt, (DateTime?)now));
         if (claimed == 0)
         {
-            return await _db.Attempts.AnyAsync(a => a.Id == attemptId)
+            return await _db.Attempts.AnyAsync(a => a.Id == attemptId && a.OwnerId == _currentUser.UserId)
                 ? SubmitResult.Ok(attemptId) : SubmitResult.Fail("Bài làm không tồn tại.");
         }
         var attempt = await _db.Attempts.AsNoTracking().SingleAsync(a => a.Id == attemptId);
@@ -227,13 +242,13 @@ public class QuizService
             .Include(a => a.Answers.OrderBy(ans => ans.Id))
                 .ThenInclude(ans => ans.Question)
                 .ThenInclude(q => q!.Passage)
-            .FirstOrDefaultAsync(a => a.Id == attemptId);
+            .FirstOrDefaultAsync(a => a.Id == attemptId && a.OwnerId == _currentUser.UserId);
 
     public async Task<List<Attempt>> GetHistoryAsync(int take = 100) =>
         await _db.Attempts
             .AsNoTracking()
             .Include(a => a.Subject)
-            .Where(a => a.SubmittedAt != null)
+            .Where(a => a.OwnerId == _currentUser.UserId && a.SubmittedAt != null)
             .OrderByDescending(a => a.SubmittedAt).ThenByDescending(a => a.Id)
             .Take(take)
             .ToListAsync();
@@ -260,7 +275,7 @@ public class QuizService
     public async Task<bool> DeleteAttemptAsync(int attemptId)
     {
         var attempt = await _db.Attempts
-            .FirstOrDefaultAsync(a => a.Id == attemptId && a.SubmittedAt != null);
+            .FirstOrDefaultAsync(a => a.Id == attemptId && a.OwnerId == _currentUser.UserId && a.SubmittedAt != null);
 
         if (attempt is null)
         {
@@ -275,7 +290,7 @@ public class QuizService
     public async Task<int> ClearHistoryAsync()
     {
         var attempts = await _db.Attempts
-            .Where(a => a.SubmittedAt != null)
+            .Where(a => a.OwnerId == _currentUser.UserId && a.SubmittedAt != null)
             .ToListAsync();
 
         _db.Attempts.RemoveRange(attempts);
@@ -287,7 +302,7 @@ public class QuizService
     {
         var submittedQuery = _db.Attempts
             .AsNoTracking()
-            .Where(a => a.SubmittedAt != null);
+            .Where(a => a.OwnerId == _currentUser.UserId && a.SubmittedAt != null);
 
         if (subjectId.HasValue && subjectId.Value > 0)
         {
@@ -326,7 +341,8 @@ public class QuizService
 
         // Tỷ lệ khắc phục câu sai (Bao nhiêu câu từng sai nay đã làm lại đúng)
         var everWrongQuery = _db.AttemptAnswers
-            .Where(a => a.Attempt!.SubmittedAt != null && !a.IsCorrect);
+            .Where(a => a.Attempt!.OwnerId == _currentUser.UserId
+                && a.Attempt.SubmittedAt != null && !a.IsCorrect);
 
         if (subjectId.HasValue && subjectId.Value > 0)
         {
@@ -472,19 +488,41 @@ public class QuizService
         );
     }
 
-    private IQueryable<AttemptAnswer> LatestAnswers() =>
-        _db.AttemptAnswers.Where(a =>
-            a.Attempt!.SubmittedAt != null
+    private IQueryable<Subject> VisibleSubjects(bool includeAllWhenAdmin)
+    {
+        if (includeAllWhenAdmin && _currentUser.IsAdmin)
+        {
+            return _db.Subjects.AsQueryable();
+        }
+
+        return _db.VisibleSubjects(_currentUser.UserId);
+    }
+
+    private IQueryable<AttemptAnswer> LatestAnswers()
+    {
+        var userId = _currentUser.UserId;
+
+        return _db.AttemptAnswers.Where(a =>
+            a.Attempt!.OwnerId == userId
+            && a.Attempt.SubmittedAt != null
             && !_db.AttemptAnswers.Any(other => other.QuestionId == a.QuestionId
-                && other.Attempt!.SubmittedAt != null
+                && other.Attempt!.OwnerId == userId
+                && other.Attempt.SubmittedAt != null
                 && (other.Attempt.SubmittedAt.Value > a.Attempt.SubmittedAt.Value
                     || other.Attempt.SubmittedAt.Value == a.Attempt.SubmittedAt.Value && other.Id > a.Id)));
+    }
 
     private async Task<StartResult> CreateAttemptAsync(int subjectId, List<int> questionIds, int? timeLimitMinutes)
     {
+        if (_currentUser.UserId is not string ownerId)
+        {
+            return StartResult.Fail("Vui lòng đăng nhập để bắt đầu luyện tập.");
+        }
+
         var attempt = new Attempt
         {
             SubjectId = subjectId,
+            OwnerId = ownerId,
             StartedAt = Now,
             TimeLimitMinutes = timeLimitMinutes,
             TotalQuestions = questionIds.Count,

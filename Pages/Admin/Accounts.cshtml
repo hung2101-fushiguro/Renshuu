@@ -1,0 +1,127 @@
+@page
+@model TracNghiemWeb.Pages.Admin.AccountsModel
+@{
+    ViewData["Title"] = "Quản lý tài khoản";
+    ViewData["Active"] = "admin";
+    ViewData["AdminTab"] = "accounts";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Quản lý tài khoản</h1>
+        <p>@Model.Accounts.Count tài khoản hiển thị · @Model.AdminCount tài khoản quản trị</p>
+    </div>
+</div>
+
+<partial name="_AdminNav" />
+
+<div class="grid grid-admin-forms mb-lg">
+    <div class="card">
+        <h2 class="mt-0">Tạo tài khoản</h2>
+        <p class="muted">Mật khẩu tạm do bạn đặt. Người dùng có thể đổi sau khi được cấp quyền đăng nhập.</p>
+        <form method="post" asp-page-handler="Create">
+            <div asp-validation-summary="ModelOnly" role="alert"></div>
+            <div class="form-grid">
+                <div class="field">
+                    <label asp-for="NewEmail">Email đăng nhập</label>
+                    <input asp-for="NewEmail" class="input" type="email" maxlength="256" autocomplete="off" />
+                    <span asp-validation-for="NewEmail" class="field-error"></span>
+                </div>
+                <div class="form-row-2">
+                    <div class="field">
+                        <label asp-for="NewDisplayName">Tên hiển thị</label>
+                        <input asp-for="NewDisplayName" class="input" maxlength="120" placeholder="Ví dụ: Trần Hồng Sơn" />
+                        <span asp-validation-for="NewDisplayName" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="NewPassword">Mật khẩu tạm</label>
+                        <input asp-for="NewPassword" class="input" type="password" maxlength="128" autocomplete="new-password" />
+                        <span class="hint">Từ 8 ký tự, có chữ hoa, chữ thường, số và ký tự đặc biệt.</span>
+                        <span asp-validation-for="NewPassword" class="field-error"></span>
+                    </div>
+                </div>
+                <label class="checkbox-row">
+                    <input asp-for="NewIsAdmin" />
+                    <span>Cấp quyền quản trị viên</span>
+                </label>
+                <div>
+                    <button type="submit" class="btn btn-primary">Tạo tài khoản</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 class="mt-0">Tìm tài khoản</h2>
+        <form method="get" class="toolbar mb-0">
+            <div class="field">
+                <label for="account-search">Email hoặc tên hiển thị</label>
+                <input id="account-search" type="search" name="search" value="@Model.Search" class="input" placeholder="Nhập từ khóa…" />
+            </div>
+            <button type="submit" class="btn btn-secondary">Tìm</button>
+            @if (!string.IsNullOrEmpty(Model.Search))
+            {
+                <a class="btn btn-ghost" asp-page="/Admin/Accounts">Xóa lọc</a>
+            }
+        </form>
+        <p class="small muted mt-md mb-0">Trang này chỉ dành cho quản trị viên. Người dùng thường không truy cập được.</p>
+    </div>
+</div>
+
+@if (Model.Accounts.Count == 0)
+{
+    <div class="empty">
+        <strong>Không tìm thấy tài khoản phù hợp.</strong>
+        <p class="mt-sm">Thử từ khóa khác hoặc tạo tài khoản mới ở khung phía trên.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Tài khoản</th>
+                    <th scope="col">Vai trò</th>
+                    <th scope="col" class="num">Thư mục</th>
+                    <th scope="col" class="num">Môn học</th>
+                    <th scope="col" class="num">Lượt làm</th>
+                    <th scope="col">Ngày tạo</th>
+                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var account in Model.Accounts)
+                {
+                    <tr>
+                        <td>
+                            <strong>@account.DisplayName</strong>
+                            <span class="small muted" style="display:block">@account.Email</span>
+                            @if (account.IsLocked)
+                            {
+                                <span class="badge badge-danger">Đang khóa</span>
+                            }
+                        </td>
+                        <td>
+                            @if (account.IsAdmin)
+                            {
+                                <span class="badge badge-primary">Quản trị</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-muted">Người học</span>
+                            }
+                        </td>
+                        <td class="num">@account.FolderCount</td>
+                        <td class="num">@account.SubjectCount</td>
+                        <td class="num">@account.AttemptCount</td>
+                        <td class="small muted">@account.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td class="num">
+                            <a class="btn btn-secondary btn-sm" asp-page="/Admin/AccountDetail" asp-route-id="@account.Id">Xem &amp; quản lý</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

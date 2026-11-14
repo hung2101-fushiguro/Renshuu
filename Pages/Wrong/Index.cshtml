@@ -13,17 +13,6 @@
     </div>
 </div>
 
-<nav class="subnav mb-lg" aria-label="Chế độ ôn tập">
-    <a asp-page="/Wrong/Index" asp-route-subjectId="@Model.SubjectId" class="active" aria-current="page">
-        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#retry" /></svg>
-        Danh sách câu sai
-    </a>
-    <a asp-page="/Wrong/Flashcard" asp-route-subjectId="@Model.SubjectId">
-        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
-        Thẻ ghi nhớ Flashcard
-    </a>
-</nav>
-
 @if (Model.Subjects.Count == 0)
 {
     <div class="empty">
@@ -70,10 +59,6 @@ else
                     </svg>
                     Làm lại các câu sai (@Math.Min(Model.Questions.Count, QuizService.MaxQuestionsPerAttempt) câu)
                 </button>
-                <a class="btn btn-secondary" asp-page="/Wrong/Flashcard" asp-route-subjectId="@Model.SubjectId">
-                    <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
-                    Ôn nhanh bằng Flashcard
-                </a>
             </form>
         </div>
 

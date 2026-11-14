@@ -12,11 +12,13 @@ public class PasteModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly ImportService _import;
+    private readonly CurrentUser _currentUser;
 
-    public PasteModel(AppDbContext db, ImportService import)
+    public PasteModel(AppDbContext db, ImportService import, CurrentUser currentUser)
     {
         _db = db;
         _import = import;
+        _currentUser = currentUser;
     }
 
     public List<Subject> Subjects { get; private set; } = new();
@@ -92,6 +94,7 @@ public class PasteModel : PageModel
     private async Task LoadAsync() =>
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();

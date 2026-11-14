@@ -10,11 +10,13 @@ public class TakeModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly QuizService _quiz;
+    private readonly CurrentUser _currentUser;
 
-    public TakeModel(AppDbContext db, QuizService quiz)
+    public TakeModel(AppDbContext db, QuizService quiz, CurrentUser currentUser)
     {
         _db = db;
         _quiz = quiz;
+        _currentUser = currentUser;
     }
 
     public int AttemptId { get; private set; }
@@ -34,7 +36,7 @@ public class TakeModel : PageModel
         var attempt = await _db.Attempts
             .AsNoTracking()
             .Include(a => a.Subject)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .FirstOrDefaultAsync(a => a.Id == id && a.OwnerId == _currentUser.UserId);
 
         if (attempt is null)
         {
