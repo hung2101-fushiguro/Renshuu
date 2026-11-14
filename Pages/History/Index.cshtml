@@ -8,12 +8,29 @@
     <h1>Lịch sử làm bài</h1>
     @if (Model.Attempts.Count > 0)
     {
-        <form method="post" asp-page-handler="Clear" class="inline-form"
-              onsubmit="return confirm('Xóa toàn bộ lịch sử làm bài? Hành động này không thể hoàn tác.');">
-            <button type="submit" class="btn btn-quiet">Xóa lịch sử</button>
-        </form>
+        <div class="actions">
+            <a asp-page="/History/Analytics" class="btn btn-secondary">
+                <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#chart" /></svg>
+                Xem phân tích tiến độ
+            </a>
+            <form method="post" asp-page-handler="Clear" class="inline-form"
+                  onsubmit="return confirm('Xóa toàn bộ lịch sử làm bài? Hành động này không thể hoàn tác.');">
+                <button type="submit" class="btn btn-quiet">Xóa lịch sử</button>
+            </form>
+        </div>
     }
 </div>
+
+<nav class="subnav mb-lg" aria-label="Điều hướng lịch sử">
+    <a asp-page="/History/Index" class="active" aria-current="page">
+        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#history" /></svg>
+        Danh sách bài làm
+    </a>
+    <a asp-page="/History/Analytics">
+        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#chart" /></svg>
+        Thống kê &amp; Phân tích
+    </a>
+</nav>
 @if (Model.Attempts.Count == 0)
 {
     <div class="empty">

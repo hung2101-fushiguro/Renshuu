@@ -1,0 +1,494 @@
+@page "/History/Analytics"
+@model TracNghiemWeb.Pages.History.AnalyticsModel
+@{
+    ViewData["Title"] = "Thống kê & Phân tích tiến độ";
+    ViewData["Active"] = "analytics";
+
+    var attempts = Model.Analytics.RecentAttempts;
+    var count = attempts.Count;
+    const double marginLeft = 60;
+    const double marginRight = 40;
+    const double marginTop = 30;
+    const double marginBottom = 50;
+    const double plotWidth = 840 - marginLeft - marginRight; // 740
+    const double plotHeight = 300 - marginTop - marginBottom; // 220
+
+    var points = new List<(double X, double Y, RecentAttemptData Attempt)>();
+    if (count > 0)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            var att = attempts[i];
+            var x = count == 1 ? marginLeft + plotWidth / 2.0 : marginLeft + (i * plotWidth / (count - 1));
+            var y = marginTop + plotHeight * (1.0 - (Math.Clamp(att.Percentage, 0.0, 100.0) / 100.0));
+            points.Add((x, y, att));
+        }
+    }
+
+    var polylinePoints = count > 1 ? string.Join(" ", points.Select(p => $"{p.X:F1},{p.Y:F1}")) : string.Empty;
+    var areaPath = count > 1
+        ? $"M {points[0].X:F1},{marginTop + plotHeight} " +
+          string.Join(" ", points.Select(p => $"L {p.X:F1},{p.Y:F1}")) +
+          $" L {points[^1].X:F1},{marginTop + plotHeight} Z"
+        : string.Empty;
+
+    // Benchmark line at 80% (Giỏi)
+    var benchY80 = marginTop + plotHeight * (1.0 - 0.80);
+
+    // Identify top strength and weakness
+    var strength = Model.Analytics.SubjectPerformances.FirstOrDefault(s => s.Accuracy >= 65.0)
+                   ?? Model.Analytics.SubjectPerformances.FirstOrDefault();
+    var weakness = Model.Analytics.SubjectPerformances
+                   .Where(s => s.CurrentWrongCount > 0 || s.Accuracy < 70.0)
+                   .OrderBy(s => s.Accuracy)
+                   .ThenByDescending(s => s.CurrentWrongCount)
+                   .FirstOrDefault();
+    if (weakness != null && strength != null && weakness.SubjectId == strength.SubjectId && Model.Analytics.SubjectPerformances.Count > 1)
+    {
+        // Pick the actual lowest
+        weakness = Model.Analytics.SubjectPerformances.LastOrDefault();
+    }
+}
+
+<div class="page-head">
+    <div>
+        <h1>Thống kê &amp; Phân tích tiến độ học tập</h1>
+        <p>Theo dõi biểu đồ tiến bộ, tỷ lệ khắc phục câu sai và đánh giá điểm mạnh - điểm yếu theo từng môn học.</p>
+    </div>
+</div>
+
+<nav class="subnav analytics-nav" aria-label="Điều hướng lịch sử">
+    <a asp-page="/History/Index">
+        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#history" /></svg>
+        Danh sách bài làm
+    </a>
+    <a asp-page="/History/Analytics" class="active" aria-current="page">
+        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#chart" /></svg>
+        Thống kê &amp; Phân tích
+    </a>
+</nav>
+
+<form method="get" class="toolbar mb-lg">
+    <div class="field" style="max-width: 320px;">
+        <label for="subjectId">Phạm vi môn học</label>
+        <select id="subjectId" name="subjectId" class="input" onchange="this.form.submit()">
+            <option value="">Tất cả môn học (@Model.Subjects.Count môn)</option>
+            @foreach (var s in Model.Subjects)
+            {
+                <option value="@s.Id" selected="@(Model.SubjectId == s.Id ? "selected" : null)">
+                    @s.Name (@s.QuestionCount câu@(s.WrongCount > 0 ? $" · {s.WrongCount} câu sai" : ""))
+                </option>
+            }
+        </select>
+    </div>
+    <noscript><button type="submit" class="btn btn-secondary">Xem</button></noscript>
+</form>
+
+@if (Model.Analytics.TotalAttempts == 0)
+{
+    <div class="empty">
+        <svg class="icon" style="width: 48px; height: 48px; color: var(--color-muted-foreground); margin-bottom: 12px;" aria-hidden="true">
+            <use href="/images/icons.svg#chart" />
+        </svg>
+        <p><strong>Chưa có dữ liệu bài làm nào @(Model.SelectedSubject != null ? $"ở môn \"{Model.SelectedSubject.Name}\"" : "").</strong></p>
+        <p>Hãy làm bài tập đầu tiên để hệ thống phân tích biểu đồ tiến độ và chỉ số ôn tập của bạn.</p>
+        <a class="btn btn-primary mt-md" asp-page="/Index" asp-route-subjectId="@Model.SubjectId">Bắt đầu luyện tập ngay</a>
+    </div>
+}
+else
+{
+    <!-- Chỉ số ôn tập tổng quan -->
+    <section class="analytics-metrics" aria-label="Các chỉ số ôn tập cốt lõi">
+        <!-- Card 1: ⭐ Tỷ lệ khắc phục câu sai -->
+        <div class="metric-card metric-card-highlight">
+            <div>
+                <div class="metric-header">
+                    <span class="metric-title">Khắc phục câu sai ⭐</span>
+                    <div class="metric-icon-wrap" title="Tỷ lệ câu từng sai nay đã làm lại đúng">
+                        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
+                    </div>
+                </div>
+                <div class="metric-value">@Display.Percentage(Model.Analytics.RecoveryRate)</div>
+                <p class="metric-sub">
+                    <strong>@Model.Analytics.TotalRecoveredWrong</strong> / @Model.Analytics.TotalEverWrong câu từng sai đã làm lại đúng
+                </p>
+            </div>
+            <div class="metric-bar-wrap" title="@Display.Percentage(Model.Analytics.RecoveryRate) đã sửa đúng">
+                <div class="metric-bar-fill fill-accent" style="width: @Math.Clamp(Model.Analytics.RecoveryRate, 0, 100)%;"></div>
+            </div>
+        </div>
+
+        <!-- Card 2: Tổng câu đã làm -->
+        <div class="metric-card">
+            <div>
+                <div class="metric-header">
+                    <span class="metric-title">Tổng câu đã làm</span>
+                    <div class="metric-icon-wrap">
+                        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#check-circle" /></svg>
+                    </div>
+                </div>
+                <div class="metric-value">@Model.Analytics.TotalQuestionsAnswered</div>
+                <p class="metric-sub">Lượt câu hỏi qua @Model.Analytics.TotalAttempts bài thi nộp</p>
+            </div>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-fill" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Card 3: Tổng thời gian học -->
+        <div class="metric-card">
+            <div>
+                <div class="metric-header">
+                    <span class="metric-title">Thời gian học tập</span>
+                    <div class="metric-icon-wrap">
+                        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#history" /></svg>
+                    </div>
+                </div>
+                <div class="metric-value" style="font-size: 1.65rem;">@Display.Duration(Model.Analytics.TotalStudyTime)</div>
+                <p class="metric-sub">Tổng thời gian làm bài thực tế</p>
+            </div>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-fill" style="width: 100%; background: #64748B;"></div>
+            </div>
+        </div>
+
+        <!-- Card 4: Tỷ lệ đúng trung bình -->
+        <div class="metric-card">
+            <div>
+                <div class="metric-header">
+                    <span class="metric-title">Độ chính xác chung</span>
+                    <div class="metric-icon-wrap">
+                        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#sliders" /></svg>
+                    </div>
+                </div>
+                <div class="metric-value">@Display.Percentage(Model.Analytics.AverageAccuracy)</div>
+                <p class="metric-sub">Tỷ lệ trả lời đúng qua các bài thi</p>
+            </div>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-fill" style="width: @Math.Clamp(Model.Analytics.AverageAccuracy, 0, 100)%;"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Biểu đồ tiến bộ (Progress Chart) -->
+    <section class="chart-panel" aria-label="Biểu đồ tiến bộ điểm số">
+        <div class="chart-head">
+            <div class="chart-title-area">
+                <h2>Biểu đồ tiến bộ (Progress Chart)</h2>
+                <p>Biến động điểm số qua @count lần làm bài gần đây (điểm đang tăng hay giảm).</p>
+            </div>
+            <div>
+                @if (Model.Analytics.Trend.Direction == "up")
+                {
+                    <span class="trend-badge trend-up">
+                        <svg class="icon" style="width: 16px; height: 16px;" aria-hidden="true"><use href="/images/icons.svg#arrow-up" /></svg>
+                        Xu hướng: Đang tăng (+@Model.Analytics.Trend.Difference%)
+                    </span>
+                }
+                else if (Model.Analytics.Trend.Direction == "down")
+                {
+                    <span class="trend-badge trend-down">
+                        <svg class="icon" style="width: 16px; height: 16px; transform: rotate(90deg);" aria-hidden="true"><use href="/images/icons.svg#arrow" /></svg>
+                        Xu hướng: Đang giảm (-@Model.Analytics.Trend.Difference%)
+                    </span>
+                }
+                else
+                {
+                    <span class="trend-badge trend-stable">
+                        <svg class="icon" style="width: 16px; height: 16px;" aria-hidden="true"><use href="/images/icons.svg#arrow" /></svg>
+                        Xu hướng: Ổn định
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (!string.IsNullOrWhiteSpace(Model.Analytics.Trend.Summary))
+        {
+            <p class="muted" style="font-size: 0.9rem; margin-top: -8px; margin-bottom: 16px;">
+                @Model.Analytics.Trend.Summary
+            </p>
+        }
+
+        <div class="chart-svg-wrap" id="chart-wrapper">
+            <svg class="chart-svg" viewBox="0 0 840 300" role="img" aria-label="Biểu đồ đường thể hiện điểm số qua các lần làm bài gần đây">
+                <defs>
+                    <linearGradient id="chartAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#2563EB" stop-opacity="0.28" />
+                        <stop offset="100%" stop-color="#2563EB" stop-opacity="0.01" />
+                    </linearGradient>
+                </defs>
+
+                <!-- Grid lines & Y labels -->
+                <line x1="@marginLeft" y1="30" x2="@(840 - marginRight)" y2="30" class="chart-grid-line" />
+                <text x="@(marginLeft - 10)" y="34" class="chart-axis-label">100%</text>
+
+                <!-- Benchmark 80% line -->
+                <line x1="@marginLeft" y1="@benchY80" x2="@(840 - marginRight)" y2="@benchY80" class="chart-benchmark-line" />
+                <text x="@(840 - marginRight)" y="@(benchY80 - 6)" fill="#10B981" font-size="10" font-weight="600" text-anchor="end">Mục tiêu 80% (Giỏi)</text>
+
+                <line x1="@marginLeft" y1="85" x2="@(840 - marginRight)" y2="85" class="chart-grid-line" />
+                <text x="@(marginLeft - 10)" y="89" class="chart-axis-label">75%</text>
+
+                <line x1="@marginLeft" y1="140" x2="@(840 - marginRight)" y2="140" class="chart-grid-line" />
+                <text x="@(marginLeft - 10)" y="144" class="chart-axis-label">50%</text>
+
+                <line x1="@marginLeft" y1="195" x2="@(840 - marginRight)" y2="195" class="chart-grid-line" />
+                <text x="@(marginLeft - 10)" y="199" class="chart-axis-label">25%</text>
+
+                <line x1="@marginLeft" y1="250" x2="@(840 - marginRight)" y2="250" class="chart-grid-line" style="stroke: var(--color-border-strong);" />
+                <text x="@(marginLeft - 10)" y="254" class="chart-axis-label">0%</text>
+
+                @if (count > 1)
+                {
+                    <!-- Area under curve -->
+                    <path d="@areaPath" class="chart-area" />
+                    <!-- Curve line -->
+                    <polyline points="@polylinePoints" class="chart-line" />
+                }
+
+                <!-- Data point dots -->
+                @for (var i = 0; i < points.Count; i++)
+                {
+                    var p = points[i];
+                    <circle cx="@p.X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
+                            cy="@p.Y.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)"
+                            r="5"
+                            class="chart-dot"
+                            tabindex="0"
+                            role="button"
+                            aria-label="Bài @(i + 1): @p.Attempt.SubjectName, @Display.Percentage(p.Attempt.Percentage)"
+                            data-subject="@p.Attempt.SubjectName"
+                            data-percentage="@Display.Percentage(p.Attempt.Percentage)"
+                            data-score="@p.Attempt.CorrectCount/@p.Attempt.TotalQuestions câu"
+                            data-date="@p.Attempt.SubmittedAt.ToString("dd/MM/yyyy · HH:mm")"
+                            data-duration="@Display.Duration(p.Attempt.Duration)"
+                            data-attempt-id="@p.Attempt.Id" />
+                }
+
+                <!-- X Axis Labels (first and last) -->
+                @if (points.Count > 0)
+                {
+                    <g class="chart-x-labels">
+                        @Html.Raw($"<text x=\"{points[0].X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}\" y=\"275\" fill=\"var(--color-muted-foreground)\" font-size=\"11\" text-anchor=\"middle\">{(points.Count > 1 ? "Trước" : "Gần nhất")}</text>")
+                        @if (points.Count > 1)
+                        {
+                            @Html.Raw($"<text x=\"{points[^1].X.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)}\" y=\"275\" fill=\"var(--color-muted-foreground)\" font-size=\"11\" text-anchor=\"middle\">Gần nhất</text>")
+                        }
+                    </g>
+                }
+            </svg>
+
+            <div class="chart-tooltip-bubble" id="chart-tooltip" role="tooltip" aria-hidden="true"></div>
+        </div>
+
+        <div class="chart-summary-pills">
+            <div class="summary-pill">
+                <span>Bài gần nhất:</span>
+                <strong>@(attempts.Count > 0 ? Display.Percentage(attempts[^1].Percentage) : "0%")</strong>
+            </div>
+            <div class="summary-pill">
+                <span>Điểm cao nhất:</span>
+                <strong>@(attempts.Count > 0 ? Display.Percentage(attempts.Max(a => a.Percentage)) : "0%")</strong>
+            </div>
+            <div class="summary-pill">
+                <span>Điểm thấp nhất:</span>
+                <strong>@(attempts.Count > 0 ? Display.Percentage(attempts.Min(a => a.Percentage)) : "0%")</strong>
+            </div>
+            <div class="summary-pill">
+                <span>Số bài phân tích:</span>
+                <strong>@attempts.Count bài</strong>
+            </div>
+        </div>
+    </section>
+
+    <!-- Điểm mạnh & Điểm yếu (Strengths & Weaknesses) -->
+    @if (Model.Analytics.SubjectPerformances.Count > 0)
+    {
+        <div class="spotlight-grid">
+            <!-- Điểm mạnh -->
+            @if (strength != null)
+            {
+                <div class="spotlight-card spotlight-strength">
+                    <div>
+                        <div class="spotlight-head">
+                            <span class="spotlight-tag">
+                                <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#check-circle" /></svg>
+                                Điểm mạnh nổi bật
+                            </span>
+                            <span class="badge badge-success">@strength.Level (@Display.Percentage(strength.Accuracy))</span>
+                        </div>
+                        <h3 class="spotlight-subject">@strength.SubjectName</h3>
+                        <p class="spotlight-desc">
+                            Bạn đạt độ chính xác <strong>@Display.Percentage(strength.Accuracy)</strong> qua @strength.QuestionsAnswered câu đã làm. Nắm rất vững lý thuyết và thực hành của môn học này!
+                        </p>
+                    </div>
+                    <div class="spotlight-action">
+                        <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@strength.SubjectId">Luyện tiếp để giữ phong độ</a>
+                    </div>
+                </div>
+            }
+
+            <!-- Điểm yếu / Cần cải thiện -->
+            @if (weakness != null)
+            {
+                <div class="spotlight-card spotlight-weakness">
+                    <div>
+                        <div class="spotlight-head">
+                            <span class="spotlight-tag">
+                                <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#retry" /></svg>
+                                Cần cải thiện
+                            </span>
+                            <span class="badge badge-@weakness.LevelClass">@weakness.Level (@Display.Percentage(weakness.Accuracy))</span>
+                        </div>
+                        <h3 class="spotlight-subject">@weakness.SubjectName</h3>
+                        <p class="spotlight-desc">
+                            Độ chính xác hiện tại là <strong>@Display.Percentage(weakness.Accuracy)</strong>@(weakness.CurrentWrongCount > 0 ? $" và còn {weakness.CurrentWrongCount} câu đang làm sai chưa sửa." : ". Cần luyện tập thêm để nâng cao điểm số.")
+                        </p>
+                    </div>
+                    <div class="spotlight-action">
+                        <a class="btn btn-primary btn-sm" asp-page="/Wrong/Flashcard" asp-route-subjectId="@weakness.SubjectId">
+                            <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
+                            Ôn Flashcard môn này
+                        </a>
+                        <a class="btn btn-secondary btn-sm" asp-page="/Wrong/Index" asp-route-subjectId="@weakness.SubjectId">
+                            Làm lại câu sai
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Thống kê chi tiết theo từng môn học -->
+        <section class="performance-card" aria-label="Bảng thống kê tỷ lệ đúng theo từng môn học">
+            <div class="performance-header">
+                <div>
+                    <h2>Chi tiết năng lực &amp; tỷ lệ đúng theo môn học</h2>
+                    <p class="muted" style="margin: 4px 0 0; font-size: 0.875rem;">Phân loại đánh giá: Giỏi (&ge;80%), Khá (65–79%), Trung bình (50–64%), Cần cải thiện (&lt;50%).</p>
+                </div>
+            </div>
+
+            <div class="perf-table-wrap">
+                <table class="perf-table" aria-label="Danh sách năng lực từng môn học">
+                    <thead>
+                        <tr>
+                            <th>Môn học</th>
+                            <th>Tỷ lệ đúng</th>
+                            <th>Xếp loại</th>
+                            <th class="num">Đã làm</th>
+                            <th class="num">Câu sai tồn</th>
+                            <th>Hành động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var s in Model.Analytics.SubjectPerformances)
+                        {
+                            <tr>
+                                <td class="perf-subject-cell">
+                                    <strong>@s.SubjectName</strong>
+                                    @if (!string.IsNullOrWhiteSpace(s.FolderName))
+                                    {
+                                        <small>Thư mục: @s.FolderName</small>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="perf-rate-bar">
+                                        <div class="perf-bar-bg" title="@Display.Percentage(s.Accuracy)">
+                                            <div class="perf-bar-val bar-@s.LevelClass" style="width: @Math.Clamp(s.Accuracy, 0, 100)%;"></div>
+                                        </div>
+                                        <span class="perf-rate-text">@Display.Percentage(s.Accuracy)</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge badge-@s.LevelClass">@s.Level</span>
+                                </td>
+                                <td class="num">
+                                    <strong>@s.CorrectAnswers</strong>/@s.QuestionsAnswered câu
+                                    <small class="muted" style="display: block;">(@s.AttemptCount bài)</small>
+                                </td>
+                                <td class="num">
+                                    @if (s.CurrentWrongCount > 0)
+                                    {
+                                        <span class="badge badge-danger">@s.CurrentWrongCount câu</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-success">0 câu</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="table-actions">
+                                        <a class="btn btn-secondary btn-sm" asp-page="/Index" asp-route-subjectId="@s.SubjectId" title="Làm bài mới">
+                                            Luyện tập
+                                        </a>
+                                        @if (s.CurrentWrongCount > 0)
+                                        {
+                                            <a class="btn btn-accent btn-sm" asp-page="/Wrong/Flashcard" asp-route-subjectId="@s.SubjectId" title="Ôn bằng thẻ ghi nhớ Flashcard">
+                                                <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
+                                                Flashcard
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/analytics.css" asp-append-version="true" />
+}
+
+@section Scripts {
+    <script>
+        (() => {
+            const wrapper = document.getElementById('chart-wrapper');
+            const tooltip = document.getElementById('chart-tooltip');
+            if (!wrapper || !tooltip) return;
+
+            const dots = wrapper.querySelectorAll('.chart-dot');
+            const showTooltip = (dot) => {
+                const subject = dot.dataset.subject || '';
+                const percentage = dot.dataset.percentage || '';
+                const score = dot.dataset.score || '';
+                const date = dot.dataset.date || '';
+                const duration = dot.dataset.duration || '';
+
+                tooltip.innerHTML = `
+                    <strong>${subject}</strong>
+                    <div>Kết quả: <b style="color: #60A5FA;">${percentage}</b> (${score})</div>
+                    <div style="color: #94A3B8; font-size: 0.75rem;">Thời gian: ${date} · ${duration}</div>
+                `;
+
+                const wrapRect = wrapper.getBoundingClientRect();
+                const dotRect = dot.getBoundingClientRect();
+                const left = dotRect.left - wrapRect.left + (dotRect.width / 2);
+                const top = dotRect.top - wrapRect.top;
+
+                tooltip.style.left = `${left}px`;
+                tooltip.style.top = `${top}px`;
+                tooltip.classList.add('is-visible');
+            };
+
+            const hideTooltip = () => {
+                tooltip.classList.remove('is-visible');
+            };
+
+            dots.forEach(dot => {
+                dot.addEventListener('mouseenter', () => showTooltip(dot));
+                dot.addEventListener('focus', () => showTooltip(dot));
+                dot.addEventListener('mouseleave', hideTooltip);
+                dot.addEventListener('blur', hideTooltip);
+                dot.addEventListener('click', () => {
+                    const id = dot.dataset.attemptId;
+                    if (id) {
+                        window.location.href = `/Test/Result?id=${id}`;
+                    }
+                });
+            });
+        })();
+    </script>
+}

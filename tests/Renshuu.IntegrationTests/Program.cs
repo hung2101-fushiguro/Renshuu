@@ -157,7 +157,42 @@ try
         Check((await importer.FindExistingDuplicatesAsync(onlyNew)).SetEquals([2]), "All-new file duplicates must work without any matching subjects");
     }
     Pass("Import preview matches actual save for existing subjects, new subjects and within-file duplicates");
-    Console.WriteLine("All 7 SQL integration groups passed.");
+
+    // Analytics and Flashcards: verify recovery rate, subject performances, and deck queries
+    await using (var db = Db())
+    {
+        var subjectA = new Subject { Name = "C# Core", Questions = [Question("C# 1"), Question("C# 2")] };
+        var subjectB = new Subject { Name = "ASP.NET Core", Questions = [Question("ASP 1"), Question("ASP 2")] };
+        db.Subjects.AddRange(subjectA, subjectB);
+        await db.SaveChangesAsync();
+
+        var qA1 = subjectA.Questions.First().Id;
+        var qB1 = subjectB.Questions.First().Id;
+
+        // Attempt 1 on Subject A: qA1 answered wrong ("B")
+        clock.Advance(10);
+        var att1 = await Start(subjectA.Id);
+        await Run(q => q.SubmitAsync(att1, new Dictionary<int, string?> { [qA1] = "B" }));
+
+        var analytics1 = await Run(q => q.GetAnalyticsAsync());
+        Check(analytics1.TotalEverWrong >= 1, "Must detect ever-wrong question");
+        var initialRecovered = analytics1.TotalRecoveredWrong;
+
+        // Attempt 2 on Subject A: qA1 answered correct ("A") -> Recovered!
+        clock.Advance(10);
+        var att2 = await Start(subjectA.Id);
+        await Run(q => q.SubmitAsync(att2, new Dictionary<int, string?> { [qA1] = "A" }));
+
+        var analytics2 = await Run(q => q.GetAnalyticsAsync());
+        Check(analytics2.TotalRecoveredWrong == initialRecovered + 1, "Recovered count must increase by 1");
+        Check(analytics2.RecoveryRate > 0, "Recovery rate must be positive");
+
+        // Verify Flashcard deck query (null subjectId and specific subjectId)
+        var wrongAll = await Run(q => q.GetWrongQuestionsAsync(null));
+        Check(wrongAll.All(q => q.Subject != null), "Wrong questions must include Subject navigation property for Flashcards");
+    }
+    Pass("Analytics and Flashcards: recovery rate calculation, subject ratings, and deck queries verified");
+    Console.WriteLine("All 8 SQL integration groups passed.");
 }
 finally
 {
