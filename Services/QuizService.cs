@@ -110,28 +110,27 @@ public class QuizService
             .OrderBy(_ => Guid.NewGuid())
             .ToList();
 
-        var questionIds = new List<int>();
+        // Shuffle whole groups, then prefer an exact-size combination. Reading questions
+        // must never be split just to reach the requested count.
+        var selections = new List<int>?[MaxQuestionsPerAttempt + 1];
+        selections[0] = new List<int>();
         foreach (var group in groups)
         {
-            if (questionIds.Count >= count)
-            {
-                break;
-            }
-
-            if (questionIds.Count + group.Count > MaxQuestionsPerAttempt)
-            {
-                continue;
-            }
-
-            questionIds.AddRange(group);
+            for (var size = MaxQuestionsPerAttempt; size >= group.Count; size--)
+                if (selections[size] is null && selections[size - group.Count] is { } previous)
+                    selections[size] = previous.Concat(group).ToList();
+            if (selections[count] is not null) break;
         }
-
-        if (questionIds.Count == 0)
+        var selectedSize = Enumerable.Range(count, MaxQuestionsPerAttempt - count + 1)
+            .FirstOrDefault(size => selections[size] is not null);
+        if (selectedSize == 0)
+            selectedSize = Enumerable.Range(1, count).Reverse().FirstOrDefault(size => selections[size] is not null);
+        if (selectedSize == 0)
         {
             return StartResult.Fail("Không có nhóm câu hỏi phù hợp. Một bài đọc không được vượt quá 200 câu; vui lòng tách bài đọc trước khi luyện tập.");
         }
 
-        return await CreateAttemptAsync(subjectId, questionIds, timeLimitMinutes);
+        return await CreateAttemptAsync(subjectId, selections[selectedSize]!, timeLimitMinutes);
     }
 
     public async Task<StartResult> StartWrongAsync(int subjectId, int? timeLimitMinutes)

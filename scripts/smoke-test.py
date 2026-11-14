@@ -58,8 +58,11 @@ try:
     attempt_id = int(path.rsplit("/", 1)[1]); created.append(attempt_id)
     ids = list(dict.fromkeys(re.findall(r'name="Answers\[(\d+)\]"', take)))
     assert len(ids) >= 2 and 'id="timer"' in take and 'class="question-jump"' not in take
+    assert 'id="leave-quiz"' in take
     assert "CorrectOption" not in take
-    passed.append("Start creates an attempt with a timer and no question-jump nav")
+    state, _ = fetch(f"/Test/Take/{attempt_id}?handler=State")
+    assert '"closed":false' in state and '"remainingSeconds"' in state
+    passed.append("Start creates a timed attempt with state sync and no question-jump nav")
     result, path = post(path, take, {"id": attempt_id})
     assert path == "/Test/Result/" + str(attempt_id) and "score-ring" in result
     assert 'class="question is-wrong"' in result

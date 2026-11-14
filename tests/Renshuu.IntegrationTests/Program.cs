@@ -27,9 +27,9 @@ void Check(bool condition, string message)
 void Pass(string message) => Console.WriteLine("PASS " + message);
 Dictionary<int, string?> Answer(int id, string value) => new() { [id] = value };
 Question Question(string content) => new() { Content = content, OptionA = "A", OptionB = "B", OptionC = "C", OptionD = "D", CorrectOption = "A" };
-async Task<int> Start(int subject, int? minutes = null)
+async Task<int> Start(int subject, int? minutes = null, int count = 1)
 {
-    var result = await Run(q => q.StartAsync(subject, 1, minutes));
+    var result = await Run(q => q.StartAsync(subject, count, minutes));
     Check(result.Success, result.Error ?? "Start failed");
     return result.AttemptId!.Value;
 }
@@ -143,6 +143,43 @@ try
 
     await using (var db = Db())
     {
+        var grouped = new Subject { Name = "Exact group combinations" };
+        foreach (var size in new[] { 2, 3 })
+        {
+            var passage = new ReadingPassage
+            {
+                Subject = grouped, Content = "Group " + size,
+                Questions = Enumerable.Range(1, size).Select(i => Question($"Group {size} question {i}")).ToList()
+            };
+            foreach (var question in passage.Questions) question.Subject = grouped;
+            db.ReadingPassages.Add(passage);
+        }
+        await db.SaveChangesAsync();
+        for (var i = 0; i < 10; i++)
+        {
+            var selected = await Run(q => q.StartAsync(grouped.Id, 3, null));
+            var result = (await Run(q => q.GetAttemptForResultAsync(selected.AttemptId!.Value)))!;
+            Check(result.TotalQuestions == 3 && result.Answers.Select(a => a.Question!.PassageId).Distinct().Count() == 1,
+                "Prefer an exact combination without splitting a reading group");
+        }
+        var singles = new Subject { Name = "Random singles", Questions = Enumerable.Range(1, 10).Select(i => Question("Random " + i)).ToList() };
+        db.Subjects.Add(singles);
+        await db.SaveChangesAsync();
+        var seen = new HashSet<int>();
+        for (var i = 0; i < 8; i++)
+        {
+            var selected = await Run(q => q.StartAsync(singles.Id, 4, null));
+            var result = (await Run(q => q.GetAttemptForResultAsync(selected.AttemptId!.Value)))!;
+            Check(result.TotalQuestions == 4 && result.Answers.Select(a => a.QuestionId).Distinct().Count() == 4, "Random exam count or duplicates");
+            Check(result.Answers.All(a => a.Question!.SubjectId == singles.Id), "Exam must stay within the chosen subject");
+            seen.UnionWith(result.Answers.Select(a => a.QuestionId));
+        }
+        Check(seen.Count > 4, "Random exams must vary");
+    }
+    Pass("Random exams stay in the selected subject and prefer an exact, complete-group combination");
+
+    await using (var db = Db())
+    {
         var importer = new ImportService(db);
         ParsedQuestion Item(int index, string subject, string content) => new(index, subject, content, "A", "B", "C", "D", "A", null, []);
         var items = new List<ParsedQuestion> {
@@ -171,7 +208,7 @@ try
 
         // Attempt 1 on Subject A: qA1 answered wrong ("B")
         clock.Advance(10);
-        var att1 = await Start(subjectA.Id);
+        var att1 = await Start(subjectA.Id, null, 2);
         await Run(q => q.SubmitAsync(att1, new Dictionary<int, string?> { [qA1] = "B" }));
 
         var analytics1 = await Run(q => q.GetAnalyticsAsync());
@@ -180,7 +217,7 @@ try
 
         // Attempt 2 on Subject A: qA1 answered correct ("A") -> Recovered!
         clock.Advance(10);
-        var att2 = await Start(subjectA.Id);
+        var att2 = await Start(subjectA.Id, null, 2);
         await Run(q => q.SubmitAsync(att2, new Dictionary<int, string?> { [qA1] = "A" }));
 
         var analytics2 = await Run(q => q.GetAnalyticsAsync());

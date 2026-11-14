@@ -7,6 +7,9 @@
     const status = document.getElementById('draft-status');
     const total = Number(form.dataset.total);
     let version = 0, savedVersion = 0, busy = false, submitting = false, closed = false, debounce;
+    let syncing = false, autoSubmitted = false;
+    let initialRemaining = form.dataset.remainingSeconds === '' ? null : Number(form.dataset.remainingSeconds);
+    let syncMono = performance.now(), syncWall = Date.now();
 
     const snapshot = () => Object.fromEntries(radios.filter(r => r.checked).map(r => [r.name.match(/\d+/)[0], r.value]));
     function cache(pending) {
@@ -17,6 +20,17 @@
         document.getElementById('progress-text').textContent = `${count}/${total} câu`;
         document.getElementById('progress').setAttribute('aria-valuenow', count);
         document.getElementById('progress-bar').style.width = `${total ? count / total * 100 : 0}%`;
+    }
+    function closeAttempt(text) {
+        closed = true;
+        clearTimeout(debounce);
+        radios.forEach(radio => { radio.disabled = true; });
+        document.querySelectorAll('#quiz-form button, button[form="quiz-form"]').forEach(button => { button.disabled = true; });
+        status.textContent = text || 'Bài đã kết thúc.';
+        const link = document.createElement('a');
+        link.href = form.dataset.resultUrl;
+        link.textContent = 'Xem kết quả';
+        status.append(' ', link);
     }
     async function save() {
         if (busy || submitting || closed || savedVersion === version) return;
@@ -33,14 +47,7 @@
             const response = await fetch(url, { method: 'POST', body, signal: controller.signal, credentials: 'same-origin' });
             const result = await response.json();
             if (response.status === 409 && result.closed) {
-                closed = true;
-                status.textContent = result.error;
-                const link = document.createElement('a');
-                link.href = form.dataset.resultUrl;
-                link.textContent = 'Xem kết quả';
-                status.append(' ', link);
-                radios.forEach(radio => { radio.disabled = true; });
-                document.querySelectorAll('#quiz-form button[type="submit"], button[form="quiz-form"]').forEach(button => { button.disabled = true; });
+                closeAttempt(result.error);
                 return;
             }
             if (!response.ok || !result.success) throw new Error('save failed');
@@ -90,20 +97,47 @@
     progress();
 
     const timer = document.getElementById('timer');
-    if (timer) {
-        const initialRemaining = Number(form.dataset.remainingSeconds);
-        const opened = performance.now();
-        function tick() {
-            if (submitting || closed) return;
-            const remaining = Math.max(0, initialRemaining - (performance.now() - opened) / 1000);
-            const seconds = Math.ceil(remaining);
-            document.getElementById('timer-text').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
-            timer.classList.toggle('is-warning', remaining <= 300);
-            timer.classList.toggle('is-danger', remaining <= 60);
-            if (!remaining) form.requestSubmit();
+    function tick() {
+        if (!timer || initialRemaining === null || closed || submitting) return;
+        const elapsed = Math.max(performance.now() - syncMono, Date.now() - syncWall) / 1000;
+        const remaining = Math.max(0, initialRemaining - elapsed);
+        const seconds = Math.ceil(remaining);
+        document.getElementById('timer-text').textContent = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`;
+        timer.classList.toggle('is-warning', remaining <= 300);
+        timer.classList.toggle('is-danger', remaining <= 60);
+        if (!remaining && !autoSubmitted) {
+            autoSubmitted = true;
+            form.requestSubmit();
         }
-        tick();
-        setInterval(tick, 1000);
-        document.addEventListener('visibilitychange', tick);
     }
+    async function syncState() {
+        if (closed || submitting || syncing || document.hidden) return;
+        syncing = true;
+        const url = new URL(form.action);
+        url.searchParams.set('handler', 'State');
+        try {
+            const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+            if (!response.ok) return;
+            const state = await response.json();
+            if (submitting || closed) return;
+            if (state.closed) {
+                closeAttempt('Bài đã kết thúc.');
+                return;
+            }
+            if (typeof state.remainingSeconds === 'number') {
+                initialRemaining = state.remainingSeconds;
+                syncMono = performance.now();
+                syncWall = Date.now();
+                tick();
+            }
+        } catch (_) { /* Keep the local countdown while offline. */ }
+        finally { syncing = false; }
+    }
+    if (timer) {
+        tick();
+        setInterval(tick, 250);
+    }
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); syncState(); } });
+    window.addEventListener('focus', syncState);
+    setInterval(syncState, 30000);
 })();

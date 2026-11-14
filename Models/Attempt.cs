@@ -25,7 +25,15 @@ public class Attempt
 
     public DateTime? Deadline => TimeLimitMinutes is int minutes ? StartedAt.AddMinutes(minutes) : null;
 
-    public TimeSpan Duration => (SubmittedAt ?? DateTime.Now) - StartedAt;
+    public TimeSpan Duration
+    {
+        get
+        {
+            var end = SubmittedAt ?? DateTime.Now;
+            if (Deadline is DateTime deadline && end > deadline) end = deadline;
+            return end - StartedAt;
+        }
+    }
 
     public double Percentage => TotalQuestions == 0 ? 0 : CorrectCount * 100.0 / TotalQuestions;
 }

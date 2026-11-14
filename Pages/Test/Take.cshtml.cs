@@ -107,6 +107,8 @@ public class TakeModel : PageModel
 
     public async Task<IActionResult> OnPostSaveDraftAsync(int id)
     {
+        if (!ModelState.IsValid)
+            return new JsonResult(new { success = false, error = "Lựa chọn không hợp lệ. Vui lòng tải lại bài." }) { StatusCode = 400 };
         var result = await _quiz.SaveDraftAsync(id, Answers);
         return new JsonResult(new { result.Success, result.SavedCount, result.SavedAt, result.Error, result.Closed })
         { StatusCode = result.Success ? 200 : result.Closed ? 409 : 404 };
@@ -114,6 +116,11 @@ public class TakeModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(int id)
     {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Chưa thể nộp bài. Vui lòng kiểm tra lại lựa chọn.";
+            return RedirectToPage(new { id });
+        }
         var result = await _quiz.SubmitAsync(id, Answers);
 
         if (!result.Success)
@@ -126,6 +133,33 @@ public class TakeModel : PageModel
             TempData["Warning"] = "Bài đã quá hạn nộp. Máy chủ chỉ chấm các đáp án đã được lưu trước khi hết giờ.";
 
         return RedirectToPage("/Test/Result", new { id });
+    }
+
+    public async Task<IActionResult> OnGetStateAsync(int id)
+    {
+        var attempt = await _db.Attempts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        if (attempt is null) return NotFound();
+        Response.Headers.CacheControl = "no-store";
+        return new JsonResult(new { closed = attempt.IsSubmitted, remainingSeconds = _quiz.GetRemainingTime(attempt)?.TotalSeconds });
+    }
+
+    public async Task<IActionResult> OnPostSaveAndExitAsync(int id)
+    {
+        if (!ModelState.IsValid)
+        {
+            TempData["Error"] = "Chưa lưu được lựa chọn. Vui lòng kiểm tra lại bài.";
+            return RedirectToPage(new { id });
+        }
+        var result = await _quiz.SaveDraftAsync(id, Answers);
+        if (result.Closed)
+        {
+            await _quiz.SubmitAsync(id, new Dictionary<int, string?>(), savedOnly: true);
+            TempData["Warning"] = "Bài đã kết thúc. Kết quả dùng các lựa chọn đã lưu trước khi hết giờ.";
+            return RedirectToPage("/Test/Result", new { id });
+        }
+        if (!result.Success) return NotFound();
+        TempData["Success"] = "Đã lưu bài. Bạn có thể tiếp tục bất cứ lúc nào trước khi hết giờ.";
+        return RedirectToPage("/Index");
     }
 
     private static List<TakeGroup> BuildGroups(IReadOnlyList<TakeQuestion> questions)

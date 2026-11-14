@@ -29,6 +29,7 @@
 
     <div class="quiz-meta">
         <span id="progress-text" aria-live="polite">@answered/@Model.Questions.Count câu</span>
+        <button type="submit" form="quiz-form" asp-page="/Test/Take" asp-route-id="@Model.AttemptId" asp-page-handler="SaveAndExit" class="btn btn-quiet" id="leave-quiz">Lưu &amp; thoát</button>
         <button type="submit" form="quiz-form" class="btn btn-accent">Nộp bài</button>
     </div>
 
