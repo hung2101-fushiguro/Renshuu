@@ -48,7 +48,9 @@ public class IndexModel : PageModel
         }
         else if (Subjects.Count > 0)
         {
-            Input.SubjectId = Subjects[0].Id;
+            var subject = Subjects.FirstOrDefault(s => s.QuestionCount > 0) ?? Subjects[0];
+            Input.SubjectId = subject.Id;
+            Input.QuestionCount = Math.Clamp(10, 1, Math.Max(1, subject.QuestionCount));
         }
     }
 
