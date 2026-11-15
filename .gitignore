@@ -42,3 +42,6 @@ appsettings.*.local.json
 ## Local visual QA / browser profiles
 artifacts/
 .taste-skill/
+
+## Local QA reports, screenshots and scratch output
+output/

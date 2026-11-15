@@ -11,11 +11,13 @@ public class IndexModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly QuizService _quiz;
+    private readonly CurrentUser _currentUser;
 
-    public IndexModel(AppDbContext db, QuizService quiz)
+    public IndexModel(AppDbContext db, QuizService quiz, CurrentUser currentUser)
     {
         _db = db;
         _quiz = quiz;
+        _currentUser = currentUser;
     }
 
     public SubjectFolder Folder { get; private set; } = new();
@@ -25,7 +27,7 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnGetAsync(int id)
     {
-        var folder = await _db.SubjectFolders
+        var folder = await _db.VisibleFolders(_currentUser.UserId)
             .AsNoTracking()
             .FirstOrDefaultAsync(f => f.Id == id);
 

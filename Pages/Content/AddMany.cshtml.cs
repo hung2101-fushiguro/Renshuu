@@ -5,7 +5,7 @@ using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
 
-namespace TracNghiemWeb.Pages.Admin;
+namespace TracNghiemWeb.Pages.Content;
 
 public class AddManyModel : PageModel
 {
@@ -13,11 +13,13 @@ public class AddManyModel : PageModel
 
     private readonly AppDbContext _db;
     private readonly ImportService _import;
+    private readonly CurrentUser _currentUser;
 
-    public AddManyModel(AppDbContext db, ImportService import)
+    public AddManyModel(AppDbContext db, ImportService import, CurrentUser currentUser)
     {
         _db = db;
         _import = import;
+        _currentUser = currentUser;
     }
 
     public List<Subject> Subjects { get; private set; } = new();
@@ -52,13 +54,14 @@ public class AddManyModel : PageModel
     {
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();
         if (Subjects.Count == 0)
         {
             TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
-            return RedirectToPage("/Admin/Index");
+            return RedirectToPage("/Content/Index");
         }
 
         SubjectId = subjectId is int sid && Subjects.Any(s => s.Id == sid) ? sid : Subjects[0].Id;
@@ -74,6 +77,7 @@ public class AddManyModel : PageModel
     {
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();
@@ -117,6 +121,6 @@ public class AddManyModel : PageModel
         var result = await _import.SaveAsync(drafts);
         TempData["Success"] =
             $"Đã thêm {result.Added} câu hỏi, bỏ qua {result.Duplicates} câu trùng với câu đã có.";
-        return RedirectToPage("/Admin/Questions", new { subjectId = SubjectId });
+        return RedirectToPage("/Content/Questions", new { subjectId = SubjectId });
     }
 }

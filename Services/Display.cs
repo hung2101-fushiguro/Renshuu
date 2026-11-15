@@ -6,6 +6,9 @@ namespace TracNghiemWeb.Services;
 
 public static class Display
 {
+    public static string Initial(string? value) => string.IsNullOrWhiteSpace(value) ? "U" : System.Globalization.StringInfo.GetNextTextElement(value.Trim()).ToUpperInvariant();
+    public static string FileSize(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / (1024d * 1024):0.#} MB" : bytes >= 1024 ? $"{bytes / 1024d:0.#} KB" : $"{bytes} B";
+    public static string LocalDate(DateTime utc) => DateTime.SpecifyKind(utc, DateTimeKind.Utc).ToLocalTime().ToString("dd/MM/yyyy · HH:mm");
     private static readonly Regex UnderlineMarkup = new(@"&lt;(/?)[uU]&gt;", RegexOptions.Compiled);
     private static readonly Regex StarMarkup = new(
         @"&lt;star\s*/?&gt;\s*(?:&lt;/star\s*&gt;)?",

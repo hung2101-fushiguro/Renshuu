@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -6,17 +7,19 @@ using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
 
-namespace TracNghiemWeb.Pages.Admin;
+namespace TracNghiemWeb.Pages.Content;
 
 public class ReadingsModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly ImportService _import;
+    private readonly CurrentUser _currentUser;
 
-    public ReadingsModel(AppDbContext db, ImportService import)
+    public ReadingsModel(AppDbContext db, ImportService import, CurrentUser currentUser)
     {
         _db = db;
         _import = import;
+        _currentUser = currentUser;
     }
 
     public List<Subject> Subjects { get; private set; } = new();
@@ -26,18 +29,16 @@ public class ReadingsModel : PageModel
     public int SubjectId { get; set; }
 
     [BindProperty]
+    [StringLength(200, ErrorMessage = "Tên môn học tối đa 200 ký tự.")]
+    public string? NewSubjectName { get; set; }
+
+    [BindProperty]
     public string? Text { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
         await LoadAsync();
-        if (Subjects.Count == 0)
-        {
-            TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
-            return RedirectToPage("/Admin/Index");
-        }
-
-        SubjectId = Subjects[0].Id;
+        SubjectId = Subjects.FirstOrDefault()?.Id ?? 0;
         return Page();
     }
 
@@ -45,9 +46,20 @@ public class ReadingsModel : PageModel
     {
         await LoadAsync();
 
-        if (!Subjects.Any(s => s.Id == SubjectId))
+        var newSubjectName = NewSubjectName?.Trim();
+        string? subjectName = null;
+        if (!string.IsNullOrEmpty(newSubjectName))
         {
-            ModelState.AddModelError(string.Empty, "Hãy chọn môn học.");
+            subjectName = Subjects.FirstOrDefault(s => string.Equals(s.Name, newSubjectName, StringComparison.OrdinalIgnoreCase))?.Name
+                ?? newSubjectName;
+        }
+        else
+        {
+            subjectName = Subjects.FirstOrDefault(s => s.Id == SubjectId)?.Name;
+            if (subjectName is null)
+            {
+                ModelState.AddModelError(string.Empty, "Hãy chọn môn học hoặc nhập tên môn mới.");
+            }
         }
 
         if (string.IsNullOrWhiteSpace(Text))
@@ -60,8 +72,7 @@ public class ReadingsModel : PageModel
             return Page();
         }
 
-        var subject = Subjects.First(s => s.Id == SubjectId);
-        var passages = ImportService.ParseReadingPassages(subject.Name, Text);
+        var passages = ImportService.ParseReadingPassages(subjectName, Text);
         if (passages.Count == 0)
         {
             ModelState.AddModelError(
@@ -90,12 +101,13 @@ public class ReadingsModel : PageModel
         TempData["Success"] =
             $"Đã thêm {result.PassagesAdded} bài đọc với {result.QuestionsAdded} câu hỏi, " +
             $"bỏ qua {result.Duplicates} câu trùng, {result.Invalid} câu lỗi.";
-        return RedirectToPage("/Admin/Questions");
+        return RedirectToPage("/Content/Questions");
     }
 
     private async Task LoadAsync() =>
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();

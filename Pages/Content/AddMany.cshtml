@@ -1,9 +1,9 @@
 @page
-@model TracNghiemWeb.Pages.Admin.AddManyModel
+@model TracNghiemWeb.Pages.Content.AddManyModel
 @{
     ViewData["Title"] = "Thêm nhiều câu hỏi";
-    ViewData["Active"] = "admin";
-    ViewData["AdminTab"] = "addmany";
+    ViewData["Active"] = "content";
+    ViewData["ContentTab"] = "addmany";
 }
 
 <div class="page-head">
@@ -13,7 +13,7 @@
     </div>
 </div>
 
-<partial name="_AdminNav" />
+<partial name="_ContentNav" />
 
 @if (Model.RowErrors.Count > 0)
 {

@@ -1,0 +1,230 @@
+@page
+@model TracNghiemWeb.Pages.Content.IndexModel
+@{
+    ViewData["Title"] = "Nội dung của tôi";
+    ViewData["Active"] = "content";
+    ViewData["ContentTab"] = "subjects";
+}
+
+<div class="page-head">
+    <div>
+        <h1>Nội dung của tôi</h1>
+        <p>Thư mục, môn học và câu hỏi do bạn tạo. Mặc định chỉ tài khoản của bạn nhìn thấy.</p>
+    </div>
+    <div class="actions">
+        <a class="btn btn-primary" asp-page="/Content/Paste">Dán tài liệu</a>
+    </div>
+</div>
+
+<partial name="_ContentNav" />
+
+<div class="grid grid-admin-forms mb-lg">
+    <div class="card">
+        <h2 class="mt-0">Thêm thư mục</h2>
+        <p class="muted">Thư mục giúp gom các môn cùng bộ, ví dụ JLPT N3 hoặc PRN222.</p>
+        <form method="post" asp-page-handler="CreateFolder" class="toolbar mb-0">
+            <div class="field">
+                <label asp-for="NewFolderName">Tên thư mục</label>
+                <input asp-for="NewFolderName" class="input" maxlength="200" placeholder="Ví dụ: JLPT N3" />
+                <span asp-validation-for="NewFolderName" class="field-error"></span>
+            </div>
+            <button type="submit" class="btn btn-primary">Thêm thư mục</button>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2 class="mt-0">Thêm môn học</h2>
+        <form method="post" asp-page-handler="Create">
+            <div class="form-grid">
+                <div class="field">
+                    <label asp-for="NewSubjectName">Tên môn học</label>
+                    <input asp-for="NewSubjectName" class="input" maxlength="200" />
+                    <span asp-validation-for="NewSubjectName" class="field-error"></span>
+                </div>
+                <div class="form-row-2">
+                    <div class="field">
+                        <label asp-for="NewSubjectFolderId">Thư mục</label>
+                        <select asp-for="NewSubjectFolderId" class="input">
+                            <option value="">— Không thuộc thư mục —</option>
+                            @foreach (var folder in Model.Folders)
+                            {
+                                <option value="@folder.Id">@folder.Name</option>
+                            }
+                        </select>
+                        <span asp-validation-for="NewSubjectFolderId" class="field-error"></span>
+                    </div>
+                    <div class="field">
+                        <label asp-for="NewSubjectNewFolderName">Hoặc tạo thư mục mới</label>
+                        <input asp-for="NewSubjectNewFolderName" class="input" maxlength="200"
+                               placeholder="Nhập tên thư mục mới" />
+                        <span class="hint">Nếu nhập, thư mục mới sẽ được tạo và môn này được xếp vào đó.</span>
+                        <span asp-validation-for="NewSubjectNewFolderName" class="field-error"></span>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="btn btn-primary">Thêm môn</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<h2>Thư mục</h2>
+
+@if (Model.Folders.Count == 0)
+{
+    <div class="empty mb-lg">
+        <strong>Chưa có thư mục nào.</strong>
+        <p class="mt-sm">Tạo thư mục ở khung phía trên, sau đó gán môn học vào thư mục.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap mb-lg">
+        <table class="table content-table content-table-folders">
+            <thead>
+                <tr>
+                    <th scope="col">Thư mục</th>
+                    <th scope="col" class="num">Số môn</th>
+                    <th scope="col" class="col-actions">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var folder in Model.Folders)
+                {
+                    <tr>
+                        <td class="cell-name">@folder.Name</td>
+                        <td class="num">@folder.SubjectCount</td>
+                        <td class="col-actions">
+                            <div class="row-actions">
+                                <input class="row-edit-toggle visually-hidden" type="checkbox" id="edit-folder-@folder.Id"
+                                       aria-label="Mở form đổi tên thư mục @folder.Name" />
+                                <label class="btn btn-secondary btn-sm" for="edit-folder-@folder.Id">Sửa</label>
+                                <form method="post" asp-page-handler="DeleteFolder"
+                                      onsubmit="return confirm('Xóa thư mục &quot;@folder.Name&quot;? Các môn bên trong sẽ được chuyển ra ngoài.');">
+                                    <input type="hidden" name="id" value="@folder.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="row-edit">
+                        <td colspan="3">
+                            <form method="post" asp-page-handler="RenameFolder" class="row-edit-form">
+                                <input type="hidden" name="id" value="@folder.Id" />
+                                <div class="field">
+                                    <label for="folder-name-@folder.Id">Tên thư mục</label>
+                                    <input id="folder-name-@folder.Id" type="text" name="name" value="@folder.Name"
+                                           class="input" maxlength="200" />
+                                </div>
+                                <div class="row-edit-actions">
+                                    <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                                    <label class="btn btn-secondary btn-sm" for="edit-folder-@folder.Id">Hủy</label>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+<h2>Danh sách môn học</h2>
+
+@if (Model.Subjects.Count == 0)
+{
+    <div class="empty">
+        <strong>Chưa có môn học nào.</strong>
+        <p class="mt-sm">Thêm môn học ở khung phía trên, hoặc <a asp-page="/Content/Paste">dán tài liệu</a> để tạo môn và câu hỏi cùng lúc.</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="table content-table content-table-subjects">
+            <thead>
+                <tr>
+                    <th scope="col">Môn học</th>
+                    <th scope="col">Thư mục</th>
+                    <th scope="col" class="num">Số câu</th>
+                    <th scope="col" class="num">Lượt làm</th>
+                    <th scope="col">Hiển thị</th>
+                    <th scope="col" class="col-actions">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var subject in Model.Subjects)
+                {
+                    <tr>
+                        <td class="cell-name">@subject.Name</td>
+                        <td>
+                            @if (subject.FolderName is not null)
+                            {
+                                <span class="badge badge-muted">@subject.FolderName</span>
+                            }
+                            else
+                            {
+                                <span class="muted">—</span>
+                            }
+                        </td>
+                        <td class="num">
+                            <a asp-page="/Content/Questions" asp-route-subjectId="@subject.Id">@subject.QuestionCount</a>
+                        </td>
+                        <td class="num">@subject.AttemptCount</td>
+                        <td>
+                            <span class="badge @(subject.IsPublic ? "badge-primary" : "badge-muted")">
+                                @(subject.IsPublic ? "Công khai" : "Riêng tư")
+                            </span>
+                        </td>
+                        <td class="col-actions">
+                            <div class="row-actions">
+                                <input class="row-edit-toggle visually-hidden" type="checkbox" id="edit-subject-@subject.Id"
+                                       aria-label="Mở form sửa môn @subject.Name" />
+                                <label class="btn btn-secondary btn-sm" for="edit-subject-@subject.Id">Sửa</label>
+                                <form method="post" asp-page-handler="TogglePublic">
+                                    <input type="hidden" name="id" value="@subject.Id" />
+                                    <button type="submit" class="btn btn-secondary btn-sm"
+                                            title="@(subject.IsPublic ? $"Chuyển môn {subject.Name} về riêng tư" : $"Đặt môn {subject.Name} thành công khai")">
+                                        @(subject.IsPublic ? "Riêng tư" : "Công khai")
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Delete"
+                                      onsubmit="return confirm('Xóa môn &quot;@subject.Name&quot; và toàn bộ câu hỏi của môn này?');">
+                                    <input type="hidden" name="id" value="@subject.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="row-edit">
+                        <td colspan="6">
+                            <form method="post" asp-page-handler="Rename" class="row-edit-form">
+                                <input type="hidden" name="EditId" value="@subject.Id" />
+                                <div class="field">
+                                    <label for="subject-name-@subject.Id">Tên môn học</label>
+                                    <input id="subject-name-@subject.Id" type="text" name="EditName" value="@subject.Name"
+                                           class="input" maxlength="200" />
+                                </div>
+                                <div class="field">
+                                    <label for="subject-folder-@subject.Id">Thư mục</label>
+                                    <select id="subject-folder-@subject.Id" name="EditFolderId" class="input">
+                                        <option value="">— Không thư mục —</option>
+                                        @foreach (var folder in Model.Folders)
+                                        {
+                                            <option value="@folder.Id" selected="@(folder.Id == subject.FolderId)">@folder.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="row-edit-actions">
+                                    <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                                    <label class="btn btn-secondary btn-sm" for="edit-subject-@subject.Id">Hủy</label>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

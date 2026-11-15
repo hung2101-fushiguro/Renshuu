@@ -1,0 +1,15 @@
+@page
+@model TracNghiemWeb.Pages.Account.DeniedModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Không đủ quyền";
+}
+
+<section class="auth-panel">
+    <h2>Không đủ quyền truy cập</h2>
+    <p class="muted">Trang này chỉ dành cho quản trị viên. Tài khoản của bạn vẫn có thể luyện tập và xem lịch sử của mình.</p>
+    <a class="btn btn-primary btn-block" asp-page="/Index">Về không gian luyện tập</a>
+    <form method="post" asp-page="/Account/Logout" class="mt-md">
+        <button type="submit" class="btn btn-secondary btn-block">Đăng nhập tài khoản khác</button>
+    </form>
+</section>
