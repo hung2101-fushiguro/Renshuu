@@ -9,10 +9,12 @@
         ("/Index", "subjects", "grid", "Tổng quan"),
         ("/Wrong/Index", "wrong", "retry", "Ôn lại câu sai"),
         ("/History/Index", "history", "history", "Lịch sử luyện tập"),
-        ("/History/Analytics", "analytics", "chart", "Thống kê & Tiến độ"),
-        ("/Documents/Index", "documents", "file", "Tài liệu của tôi"),
-        ("/Admin/Index", "admin", "settings", "Quản lý nội dung")
+        ("/History/Analytics", "analytics", "chart", "Thống kê & Tiến độ")
     };
+    if (!isAdmin)
+    {
+        navigation.Add(("/Content/Index", "content", "layers", "Nội dung của tôi"));
+    }
     if (isAdmin)
     {
         navigation.Add(("/Admin/Accounts", "accounts", "sliders", "Quản lý tài khoản"));
@@ -39,10 +41,6 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/motion/motion.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
-    @if (active == "documents")
-    {
-        <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" />
-    }
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>

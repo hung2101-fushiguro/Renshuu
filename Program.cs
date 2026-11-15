@@ -1,11 +1,9 @@
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
-using TracNghiemWeb.Services.Documents;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,7 +12,7 @@ builder.Services.AddRazorPages(options =>
     options.Conventions.AuthorizeFolder("/");
     options.Conventions.AllowAnonymousToFolder("/Account");
     options.Conventions.AllowAnonymousToPage("/Error");
-    options.Conventions.AuthorizePage("/Admin/Accounts", Security.AdminPolicy);
+    options.Conventions.AuthorizeFolder("/Admin", Security.AdminPolicy);
 }).AddSessionStateTempDataProvider();
 builder.Services.AddDistributedMemoryCache();
 builder.Services.AddSession(options =>
@@ -29,9 +27,6 @@ builder.Services.AddScoped<QuizService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<AccountAdminService>();
-builder.Services.AddScoped<DocumentService>();
-builder.Services.AddSingleton<DocumentStorage>();
-builder.Services.Configure<FormOptions>(options => options.MultipartBodyLengthLimit = DocumentStorage.MaxFileBytes + 131072);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));

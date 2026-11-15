@@ -17,6 +17,12 @@ public class Subject
     public string? OwnerId { get; set; }
     public ApplicationUser? Owner { get; set; }
 
+    /// <summary>
+    /// Public content can be read and practised by every signed-in account.
+    /// Content created by a learner starts private and only its owner may edit it.
+    /// </summary>
+    public bool IsPublic { get; set; }
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public ICollection<Question> Questions { get; set; } = new List<Question>();

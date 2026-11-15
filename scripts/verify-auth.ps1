@@ -146,8 +146,11 @@ try {
     $learnerAdmin = Get-Page '/Admin/Accounts'
     Assert-True ($learnerAdmin.Status -eq 302 -and $learnerAdmin.Location -like '/Account/Denied*') 'Người học bị chặn khỏi trang quản lý tài khoản'
 
-    $learnerContent = Get-Page '/Admin/Index'
-    Assert-True ($learnerContent.Status -eq 200) 'Người học vẫn dùng được trang quản lý nội dung của mình'
+    $learnerContent = Get-Page '/Content/Index'
+    Assert-True ($learnerContent.Status -eq 200 -and $learnerContent.Body -match 'Nội dung của tôi') 'Người học dùng được khu nội dung riêng của mình'
+
+    $learnerAdminContent = Get-Page '/Admin/Index'
+    Assert-True ($learnerAdminContent.Status -eq 302 -and $learnerAdminContent.Location -like '/Account/Denied*') 'Người học bị chặn khỏi toàn bộ khu quản trị'
 }
 finally {
     Remove-Item -Recurse -Force $work -ErrorAction SilentlyContinue

@@ -29,8 +29,25 @@ public class AccountDetailModel : PageModel
         return loaded is null ? NotFound() : Page();
     }
 
+    public IActionResult OnPostPing() => Content("pong");
+
+    public async Task<IActionResult> OnPostPingAsync()
+    {
+        await Task.CompletedTask;
+        return Content("pong-async");
+    }
+
+    public IActionResult OnPostPingId(string id) => Content("pong-id-" + id);
+
+    public async Task<IActionResult> OnPostPingIdAsync(string id)
+    {
+        await Task.CompletedTask;
+        return Content("pong-id-async-" + id);
+    }
+
     public async Task<IActionResult> OnPostToggleAdminAsync(string id)
     {
+        Console.WriteLine($"[AccountDetail] ToggleAdmin id={id}");
         var account = await FindAsync(id);
         if (account is null)
         {
@@ -44,6 +61,7 @@ public class AccountDetailModel : PageModel
 
     public async Task<IActionResult> OnPostToggleLockAsync(string id)
     {
+        Console.WriteLine($"[AccountDetail] ToggleLock id={id}");
         var account = await FindAsync(id);
         if (account is null)
         {
@@ -75,6 +93,7 @@ public class AccountDetailModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(string id)
     {
+        Console.WriteLine($"[AccountDetail] Delete id={id}");
         var result = await _accounts.DeleteAsync(id, _currentUser.UserId ?? string.Empty);
         if (result.Success)
         {

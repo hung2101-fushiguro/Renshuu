@@ -30,8 +30,8 @@
             <div><dt>Trạng thái</dt><dd>@(Model.Account.IsLocked ? "Đang khóa" : "Hoạt động")</dd></div>
             <div><dt>Thư mục đã tạo</dt><dd>@Model.Account.FolderCount</dd></div>
             <div><dt>Môn học đã tạo</dt><dd>@Model.Account.SubjectCount</dd></div>
+            <div><dt>Môn đang công khai</dt><dd>@Model.Account.PublicSubjectCount</dd></div>
             <div><dt>Lượt làm bài</dt><dd>@Model.Account.AttemptCount</dd></div>
-            <div><dt>Tài liệu riêng</dt><dd>@Model.Account.DocumentCount</dd></div>
         </dl>
 
         <div class="account-actions">
@@ -65,7 +65,7 @@
         <hr class="account-divider" />
 
         <h2>Xóa tài khoản</h2>
-        <p class="muted">Thư mục và môn học của tài khoản sẽ được giữ lại làm nội dung dùng chung. Lịch sử làm bài và tài liệu riêng bị xóa theo tài khoản.</p>
+        <p class="muted">Lịch sử làm bài bị xóa theo tài khoản. Thư mục và môn học riêng được lưu trữ ẩn, không còn hiển thị với bất kỳ ai.</p>
         <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Account.Id"
               onsubmit="return confirm('Xóa tài khoản @Model.Account.Email? Hành động này không thể hoàn tác.');">
             <button type="submit" class="btn btn-danger btn-sm">Xóa tài khoản</button>

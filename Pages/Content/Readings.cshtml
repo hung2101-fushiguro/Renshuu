@@ -1,9 +1,9 @@
 @page
-@model TracNghiemWeb.Pages.Admin.ReadingsModel
+@model TracNghiemWeb.Pages.Content.ReadingsModel
 @{
     ViewData["Title"] = "Nhập bài đọc";
-    ViewData["Active"] = "admin";
-    ViewData["AdminTab"] = "readings";
+    ViewData["Active"] = "content";
+    ViewData["ContentTab"] = "readings";
 }
 
 <div class="page-head">
@@ -13,18 +13,28 @@
     </div>
 </div>
 
-<partial name="_AdminNav" />
+<partial name="_ContentNav" />
 
 <form method="post" asp-page-handler="Preview">
     <div asp-validation-summary="All"></div>
 
     <div class="card">
         <div class="form-grid">
-            <div class="field">
-                <label asp-for="SubjectId">Môn học</label>
-                <select asp-for="SubjectId" class="input">
-                    <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
-                </select>
+            <div class="form-row-2">
+                <div class="field">
+                    <label asp-for="SubjectId">Môn học có sẵn</label>
+                    <select asp-for="SubjectId" class="input">
+                        <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label asp-for="NewSubjectName">Hoặc tạo môn mới</label>
+                    <input asp-for="NewSubjectName" class="input" maxlength="200"
+                           placeholder="Ví dụ: JLPT N3 — Đọc hiểu" />
+                    <span class="hint">Nhập tên môn mới để tạo môn từ bài đọc này. Để trống để dùng môn đã chọn.</span>
+                    <span asp-validation-for="NewSubjectName" class="field-error"></span>
+                </div>
             </div>
 
             <div class="field">
@@ -36,7 +46,7 @@
                     Các câu cách nhau bằng dòng trống; đáp án có thể là <code>1–4</code> hoặc <code>A–D</code>.
                     Dùng <code>&lt;star&gt;&lt;/star&gt;</code> cho ngôi sao và
                     <code>&lt;blank&gt;&lt;/blank&gt;</code> cho chỗ trống.
-                    Bài đọc chỉ có 1 câu thì dùng mục <a asp-page="/Admin/Paste">Dán câu hỏi</a>.
+                    Bài đọc chỉ có 1 câu thì dùng mục <a asp-page="/Content/Paste">Dán câu hỏi</a>.
                 </div></details>
             </div>
         </div>

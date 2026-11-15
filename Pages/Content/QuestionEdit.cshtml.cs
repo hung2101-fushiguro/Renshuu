@@ -5,7 +5,7 @@ using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
 
-namespace TracNghiemWeb.Pages.Admin;
+namespace TracNghiemWeb.Pages.Content;
 
 public class QuestionEditModel : PageModel
 {
@@ -30,7 +30,7 @@ public class QuestionEditModel : PageModel
         if (Subjects.Count == 0)
         {
             TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
-            return RedirectToPage("/Admin/Index");
+            return RedirectToPage("/Content/Index");
         }
 
         if (id is int questionId)
@@ -122,7 +122,7 @@ public class QuestionEditModel : PageModel
         }
 
         await _db.SaveChangesAsync();
-        return RedirectToPage("/Admin/Questions", new { subjectId = Input.SubjectId });
+        return RedirectToPage("/Content/Questions", new { subjectId = Input.SubjectId });
     }
 
     private async Task LoadSubjectsAsync() =>

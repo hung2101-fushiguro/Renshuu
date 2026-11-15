@@ -2,6 +2,10 @@
 <article class="card subject-card library-item" data-search="@Model.Name">
     <div class="subject-card-top"><span class="subject-icon"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#book" /></svg></span><span class="badge badge-muted">@Model.QuestionCount câu hỏi</span></div>
     <h3>@Model.Name</h3>
+    @if (Model.IsPublic)
+    {
+        <p class="small muted mb-0">Công khai@(Model.OwnerName is null ? string.Empty : $" · {Model.OwnerName}")</p>
+    }
     @if (Model.WrongCount > 0)
     { <p class="subject-status"><span class="status-dot needs-review" aria-hidden="true"></span>@Model.WrongCount câu cần ôn lại</p> }
     else

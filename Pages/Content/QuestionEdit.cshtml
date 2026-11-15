@@ -1,9 +1,9 @@
 @page
-@model TracNghiemWeb.Pages.Admin.QuestionEditModel
+@model TracNghiemWeb.Pages.Content.QuestionEditModel
 @{
     ViewData["Title"] = Model.IsNew ? "Thêm câu hỏi" : "Sửa câu hỏi";
-    ViewData["Active"] = "admin";
-    ViewData["AdminTab"] = "questions";
+    ViewData["Active"] = "content";
+    ViewData["ContentTab"] = "questions";
 }
 
 <div class="page-head">
@@ -11,11 +11,11 @@
         <h1>@(Model.IsNew ? "Thêm câu hỏi" : "Sửa câu hỏi")</h1>
     </div>
     <div class="actions">
-        <a class="btn btn-ghost" asp-page="/Admin/Questions" asp-route-subjectId="@Model.Input.SubjectId">Về danh sách</a>
+        <a class="btn btn-ghost" asp-page="/Content/Questions" asp-route-subjectId="@Model.Input.SubjectId">Về danh sách</a>
     </div>
 </div>
 
-<partial name="_AdminNav" />
+<partial name="_ContentNav" />
 
 <form method="post" class="card">
     <div asp-validation-summary="All"></div>
@@ -89,7 +89,7 @@
 
         <div class="page-head actions mt-0">
             <button type="submit" class="btn btn-primary">@(Model.IsNew ? "Thêm câu hỏi" : "Lưu thay đổi")</button>
-            <a class="btn btn-ghost" asp-page="/Admin/Questions" asp-route-subjectId="@Model.Input.SubjectId">Hủy</a>
+            <a class="btn btn-ghost" asp-page="/Content/Questions" asp-route-subjectId="@Model.Input.SubjectId">Hủy</a>
         </div>
     </div>
 </form>

@@ -1,0 +1,10 @@
+@{
+    var active = ViewData["ContentTab"] as string ?? "subjects";
+}
+<nav class="subnav" aria-label="Nội dung của tôi">
+    <a asp-page="/Content/Index" class="@(active == "subjects" ? "active" : null)">Môn &amp; thư mục</a>
+    <a asp-page="/Content/Paste" class="@(active == "paste" ? "active" : null)">Dán tài liệu</a>
+    <a asp-page="/Content/Questions" class="@(active == "questions" ? "active" : null)">Câu hỏi</a>
+    <a asp-page="/Content/AddMany" class="@(active == "addmany" ? "active" : null)">Thêm nhiều câu</a>
+    <a asp-page="/Content/Readings" class="@(active == "readings" ? "active" : null)">Nhập bài đọc</a>
+</nav>

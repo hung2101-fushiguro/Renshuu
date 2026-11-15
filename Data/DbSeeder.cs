@@ -13,8 +13,8 @@ public static class DbSeeder
         }
 
         var programming = new SubjectFolder { Name = "Lập trình" };
-        var csharp = new Subject { Name = "Lập trình C# cơ bản", Folder = programming };
-        var aspnet = new Subject { Name = "ASP.NET Core", Folder = programming };
+        var csharp = new Subject { Name = "Lập trình C# cơ bản", Folder = programming, IsPublic = true };
+        var aspnet = new Subject { Name = "ASP.NET Core", Folder = programming, IsPublic = true };
 
         csharp.Questions = new List<Question>
         {

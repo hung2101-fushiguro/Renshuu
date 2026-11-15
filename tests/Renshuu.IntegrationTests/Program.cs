@@ -1,16 +1,10 @@
 using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Logging.Abstractions;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
-using TracNghiemWeb.Services.Documents;
 
 // SQL Server is required: transaction/locking tests must run against the production provider.
 // A unique temporary database is created and only that database is removed in finally.
@@ -142,7 +136,7 @@ try
 
     await using (var db = Db())
     {
-        var oversized = new Subject { Name = "Oversized reading" };
+        var oversized = new Subject { Name = "Oversized reading", OwnerId = TestUserId };
         var passage = new ReadingPassage { Subject = oversized, Content = "Reading", Questions = Enumerable.Range(1, 201).Select(i => Question("Reading " + i)).ToList() };
         foreach (var question in passage.Questions) question.Subject = oversized;
         db.ReadingPassages.Add(passage);
@@ -152,14 +146,14 @@ try
         await db.SaveChangesAsync();
         var selected = await Run(q => q.StartAsync(oversized.Id, 1, null));
         Check(selected.Success && (await Run(q => q.GetAttemptForResultAsync(selected.AttemptId!.Value)))!.TotalQuestions == 1, "Valid standalone should remain usable");
-        var boundary = new Subject { Name = "Boundary reading" };
+        var boundary = new Subject { Name = "Boundary reading", OwnerId = TestUserId };
         var boundaryPassage = new ReadingPassage { Subject = boundary, Content = "Boundary", Questions = Enumerable.Range(1, 200).Select(i => Question("Boundary " + i)).ToList() };
         foreach (var question in boundaryPassage.Questions) question.Subject = boundary;
         db.ReadingPassages.Add(boundaryPassage);
         await db.SaveChangesAsync();
         var fullGroup = await Run(q => q.StartAsync(boundary.Id, 1, null));
         Check(fullGroup.Success && (await Run(q => q.GetAttemptForResultAsync(fullGroup.AttemptId!.Value)))!.TotalQuestions == 200, "A 200-question reading must remain whole");
-        var wrongSubject = new Subject { Name = "Many wrong", Questions = Enumerable.Range(1, 205).Select(i => Question("Wrong " + i)).ToList() };
+        var wrongSubject = new Subject { Name = "Many wrong", OwnerId = TestUserId, Questions = Enumerable.Range(1, 205).Select(i => Question("Wrong " + i)).ToList() };
         db.Subjects.Add(wrongSubject);
         await db.SaveChangesAsync();
         db.Attempts.Add(new Attempt { SubjectId = wrongSubject.Id, OwnerId = TestUserId, StartedAt = clock.GetLocalNow().DateTime, SubmittedAt = clock.GetLocalNow().DateTime, TotalQuestions = 205, Answers = wrongSubject.Questions.Select(q => new AttemptAnswer { QuestionId = q.Id }).ToList() });
@@ -171,7 +165,7 @@ try
 
     await using (var db = Db())
     {
-        var grouped = new Subject { Name = "Exact group combinations" };
+        var grouped = new Subject { Name = "Exact group combinations", OwnerId = TestUserId };
         foreach (var size in new[] { 2, 3 })
         {
             var passage = new ReadingPassage
@@ -190,7 +184,7 @@ try
             Check(result.TotalQuestions == 3 && result.Answers.Select(a => a.Question!.PassageId).Distinct().Count() == 1,
                 "Prefer an exact combination without splitting a reading group");
         }
-        var singles = new Subject { Name = "Random singles", Questions = Enumerable.Range(1, 10).Select(i => Question("Random " + i)).ToList() };
+        var singles = new Subject { Name = "Random singles", OwnerId = TestUserId, Questions = Enumerable.Range(1, 10).Select(i => Question("Random " + i)).ToList() };
         db.Subjects.Add(singles);
         await db.SaveChangesAsync();
         var seen = new HashSet<int>();
@@ -226,8 +220,8 @@ try
     // Analytics: verify recovery rate, subject performances, and wrong-question queries
     await using (var db = Db())
     {
-        var subjectA = new Subject { Name = "C# Core", Questions = [Question("C# 1"), Question("C# 2")] };
-        var subjectB = new Subject { Name = "ASP.NET Core", Questions = [Question("ASP 1"), Question("ASP 2")] };
+        var subjectA = new Subject { Name = "C# Core", OwnerId = TestUserId, Questions = [Question("C# 1"), Question("C# 2")] };
+        var subjectB = new Subject { Name = "ASP.NET Core", OwnerId = TestUserId, Questions = [Question("ASP 1"), Question("ASP 2")] };
         db.Subjects.AddRange(subjectA, subjectB);
         await db.SaveChangesAsync();
 
@@ -258,45 +252,52 @@ try
     }
     Pass("Analytics: recovery rate calculation, subject ratings, and wrong-question queries verified");
 
-    // Private documents: only the owner may read, update or delete a file; an admin
-    // has no special access and the stored file is removed with the row.
+    // Content ownership: a learner's subject is private by default, may be published
+    // explicitly, and the Admin role never bypasses the visibility rule.
     await using (var db = Db())
     {
         const string otherId = "other-user";
-        db.Users.Add(new ApplicationUser { Id = otherId, UserName = "other@local", Email = "other@local", EmailConfirmed = true });
+        const string adminId = "admin-user";
+        db.Users.AddRange(
+            new ApplicationUser { Id = otherId, UserName = "other@local", Email = "other@local", EmailConfirmed = true },
+            new ApplicationUser { Id = adminId, UserName = "admin@local", Email = "admin@local", EmailConfirmed = true });
         await db.SaveChangesAsync();
 
-        var root = Path.Combine(Path.GetTempPath(), "RenshuuDocs_" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        try
+        var folder = new SubjectFolder { Name = "Private folder", OwnerId = TestUserId };
+        var subject = new Subject
         {
-            var storage = new DocumentStorage(
-                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Documents:StoragePath"] = root }).Build(),
-                new TestWebHostEnvironment(AppContext.BaseDirectory),
-                NullLogger<DocumentStorage>.Instance);
-            var content = Encoding.UTF8.GetBytes("private study note");
-            var file = new FormFile(new MemoryStream(content), 0, content.Length, "Upload", "note.txt");
-            var owner = new DocumentService(db, currentUser, storage, clock);
-            var uploaded = await owner.UploadAsync(new("Ghi chú", null, null), file);
-            Check(uploaded.Success && uploaded.Id is int id, uploaded.Error ?? "Document upload failed");
-            var storedKey = db.Documents.Single(d => d.Id == uploaded.Id).StorageKey;
-            Check(File.Exists(Path.Combine(root, storedKey)), "Document file was not stored outside the app");
+            Name = "Private subject",
+            OwnerId = TestUserId,
+            Folder = folder,
+            Questions = [Question("Private question")]
+        };
+        db.Subjects.Add(subject);
+        await db.SaveChangesAsync();
 
-            var intruder = new DocumentService(db, ForUser(otherId, admin: true), storage, clock);
-            Check(await intruder.FindAsync(uploaded.Id!.Value) is null, "Admin must not read another user's document");
-            Check(!(await intruder.DeleteAsync(uploaded.Id.Value, null)).Success, "Admin must not delete another user's document");
+        var otherQuiz = new QuizService(db, clock, ForUser(otherId));
+        var adminQuiz = new QuizService(db, clock, ForUser(adminId, admin: true));
 
-            var version = Convert.ToBase64String(db.Documents.Single(d => d.Id == uploaded.Id).RowVersion);
-            var removed = await owner.DeleteAsync(uploaded.Id.Value, version);
-            Check(removed.Success, removed.Error ?? "Document delete failed");
-            Check(!File.Exists(Path.Combine(root, storedKey)), "Document file was not removed with the row");
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
+        Check(!(await otherQuiz.GetSubjectSummariesAsync()).Any(s => s.Id == subject.Id),
+            "Another learner must not see private subjects");
+        Check(!(await otherQuiz.StartAsync(subject.Id, 1, null)).Success,
+            "Another learner must not start a private subject");
+        Check(!(await adminQuiz.GetSubjectSummariesAsync()).Any(s => s.Id == subject.Id),
+            "Admin must not see a learner's private subject");
+        Check(await db.VisibleFolders(otherId).AllAsync(f => f.Id != folder.Id),
+            "Another learner must not see a private folder");
+
+        subject.IsPublic = true;
+        db.Subjects.Update(subject);
+        await db.SaveChangesAsync();
+
+        var shared = (await otherQuiz.GetSubjectSummariesAsync()).Single(s => s.Id == subject.Id);
+        Check(!shared.IsOwned && shared.IsPublic, "Published content must be marked as another account's public content");
+        Check((await otherQuiz.StartAsync(subject.Id, 1, null)).Success,
+            "Published content must be usable by other learners");
+        Check(await db.VisibleFolders(otherId).AnyAsync(f => f.Id == folder.Id),
+            "A folder containing published content must be reachable");
     }
-    Pass("Private documents are owner-scoped, admins cannot read them, and files are cleaned up");
+    Pass("Learner content is private by default, public only when shared, and admin has no content bypass");
 
     Console.WriteLine("All 10 SQL integration groups passed.");
 }
@@ -313,16 +314,6 @@ finally
 sealed class TestHttpContextAccessor : IHttpContextAccessor
 {
     public HttpContext? HttpContext { get; set; }
-}
-
-sealed class TestWebHostEnvironment(string root) : IWebHostEnvironment
-{
-    public string ApplicationName { get; set; } = "TracNghiemWeb.Tests";
-    public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
-    public string WebRootPath { get; set; } = root;
-    public string EnvironmentName { get; set; } = "Development";
-    public string ContentRootPath { get; set; } = root;
-    public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
 }
 
 sealed class TestClock : TimeProvider

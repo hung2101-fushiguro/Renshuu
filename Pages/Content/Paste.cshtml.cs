@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -6,7 +7,7 @@ using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
 
-namespace TracNghiemWeb.Pages.Admin;
+namespace TracNghiemWeb.Pages.Content;
 
 public class PasteModel : PageModel
 {
@@ -28,18 +29,16 @@ public class PasteModel : PageModel
     public int SubjectId { get; set; }
 
     [BindProperty]
+    [StringLength(200, ErrorMessage = "Tên môn học tối đa 200 ký tự.")]
+    public string? NewSubjectName { get; set; }
+
+    [BindProperty]
     public string? Text { get; set; }
 
     public async Task<IActionResult> OnGetAsync()
     {
         await LoadAsync();
-        if (Subjects.Count == 0)
-        {
-            TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
-            return RedirectToPage("/Admin/Index");
-        }
-
-        SubjectId = Subjects[0].Id;
+        SubjectId = Subjects.FirstOrDefault()?.Id ?? 0;
         return Page();
     }
 
@@ -47,10 +46,20 @@ public class PasteModel : PageModel
     {
         await LoadAsync();
 
-        var subject = Subjects.FirstOrDefault(s => s.Id == SubjectId);
-        if (subject is null)
+        var newSubjectName = NewSubjectName?.Trim();
+        string? subjectName = null;
+        if (!string.IsNullOrEmpty(newSubjectName))
         {
-            ModelState.AddModelError(string.Empty, "Hãy chọn môn học.");
+            subjectName = Subjects.FirstOrDefault(s => string.Equals(s.Name, newSubjectName, StringComparison.OrdinalIgnoreCase))?.Name
+                ?? newSubjectName;
+        }
+        else
+        {
+            subjectName = Subjects.FirstOrDefault(s => s.Id == SubjectId)?.Name;
+            if (subjectName is null)
+            {
+                ModelState.AddModelError(string.Empty, "Hãy chọn môn học hoặc nhập tên môn mới.");
+            }
         }
 
         if (string.IsNullOrWhiteSpace(Text))
@@ -63,7 +72,7 @@ public class PasteModel : PageModel
             return Page();
         }
 
-        var drafts = ImportService.ParsePaste(subject!.Name, Text);
+        var drafts = ImportService.ParsePaste(subjectName, Text);
         if (drafts.Count == 0)
         {
             ModelState.AddModelError(string.Empty, "Không tìm thấy câu hỏi nào trong nội dung đã dán.");
@@ -88,7 +97,7 @@ public class PasteModel : PageModel
         var result = await _import.SaveAsync(drafts);
         TempData["Success"] =
             $"Đã thêm {result.Added} câu hỏi, bỏ qua {result.Duplicates} câu trùng, {result.Invalid} câu lỗi.";
-        return RedirectToPage("/Admin/Questions");
+        return RedirectToPage("/Content/Questions");
     }
 
     private async Task LoadAsync() =>

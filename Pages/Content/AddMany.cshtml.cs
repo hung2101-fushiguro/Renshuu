@@ -5,7 +5,7 @@ using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
 
-namespace TracNghiemWeb.Pages.Admin;
+namespace TracNghiemWeb.Pages.Content;
 
 public class AddManyModel : PageModel
 {
@@ -61,7 +61,7 @@ public class AddManyModel : PageModel
         if (Subjects.Count == 0)
         {
             TempData["Error"] = "Hãy tạo ít nhất một môn học trước.";
-            return RedirectToPage("/Admin/Index");
+            return RedirectToPage("/Content/Index");
         }
 
         SubjectId = subjectId is int sid && Subjects.Any(s => s.Id == sid) ? sid : Subjects[0].Id;
@@ -121,6 +121,6 @@ public class AddManyModel : PageModel
         var result = await _import.SaveAsync(drafts);
         TempData["Success"] =
             $"Đã thêm {result.Added} câu hỏi, bỏ qua {result.Duplicates} câu trùng với câu đã có.";
-        return RedirectToPage("/Admin/Questions", new { subjectId = SubjectId });
+        return RedirectToPage("/Content/Questions", new { subjectId = SubjectId });
     }
 }

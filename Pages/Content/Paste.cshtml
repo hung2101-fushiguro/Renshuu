@@ -1,30 +1,40 @@
 @page
-@model TracNghiemWeb.Pages.Admin.PasteModel
+@model TracNghiemWeb.Pages.Content.PasteModel
 @{
-    ViewData["Title"] = "Dán câu hỏi";
-    ViewData["Active"] = "admin";
-    ViewData["AdminTab"] = "paste";
+    ViewData["Title"] = "Dán tài liệu";
+    ViewData["Active"] = "content";
+    ViewData["ContentTab"] = "paste";
 }
 
 <div class="page-head">
     <div>
-        <h1>Dán câu hỏi</h1>
-        <p>Dán nội dung · xem trước rồi lưu.</p>
+        <h1>Dán tài liệu</h1>
+        <p>Dán câu hỏi · xem trước rồi lưu. Nội dung mặc định chỉ tài khoản của bạn nhìn thấy.</p>
     </div>
 </div>
 
-<partial name="_AdminNav" />
+<partial name="_ContentNav" />
 
 <form method="post" asp-page-handler="Preview">
     <div asp-validation-summary="All"></div>
 
     <div class="card">
         <div class="form-grid">
-            <div class="field">
-                <label asp-for="SubjectId">Môn học</label>
-                <select asp-for="SubjectId" class="input">
-                    <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
-                </select>
+            <div class="form-row-2">
+                <div class="field">
+                    <label asp-for="SubjectId">Môn học có sẵn</label>
+                    <select asp-for="SubjectId" class="input">
+                        <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label asp-for="NewSubjectName">Hoặc tạo môn mới</label>
+                    <input asp-for="NewSubjectName" class="input" maxlength="200"
+                           placeholder="Ví dụ: JLPT N3 — Tuần 1" />
+                    <span class="hint">Nhập tên môn mới để tạo môn từ tài liệu này. Để trống để dùng môn đã chọn.</span>
+                    <span asp-validation-for="NewSubjectName" class="field-error"></span>
+                </div>
             </div>
 
             <div class="field">

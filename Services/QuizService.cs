@@ -49,8 +49,8 @@ public class QuizService
     }
 
     /// <summary>
-    /// Subjects the signed-in account may practise: everything it owns plus shared
-    /// library content that has no owner (seed data and admin-managed content).
+    /// Subjects the signed-in account may practise: everything it owns plus content
+    /// other accounts explicitly published. Ownership never grants admin access.
     /// </summary>
     public async Task<List<SubjectSummary>> GetSubjectSummariesAsync()
     {
@@ -72,6 +72,9 @@ public class QuizService
                 s.FolderId,
                 FolderName = s.Folder != null ? s.Folder.Name : null,
                 QuestionCount = s.Questions.Count,
+                s.OwnerId,
+                s.IsPublic,
+                OwnerName = s.Owner != null ? (s.Owner.DisplayName ?? s.Owner.Email) : null,
             })
             .ToListAsync();
 
@@ -84,6 +87,9 @@ public class QuizService
             {
                 FolderId = s.FolderId,
                 FolderName = s.FolderName,
+                IsOwned = s.OwnerId == userId,
+                IsPublic = s.IsPublic,
+                OwnerName = s.OwnerId == userId ? null : s.OwnerName,
             })
             .ToList();
     }
@@ -561,6 +567,9 @@ public record SubjectSummary(int Id, string Name, int QuestionCount, int WrongCo
 {
     public int? FolderId { get; init; }
     public string? FolderName { get; init; }
+    public bool IsOwned { get; init; }
+    public bool IsPublic { get; init; }
+    public string? OwnerName { get; init; }
 }
 
 public record FolderSummary(int Id, string Name, int SubjectCount, int QuestionCount, int WrongCount);

@@ -14,6 +14,7 @@ public class AccountsModel : PageModel
     public List<AccountRow> Accounts { get; private set; } = new();
 
     public int AdminCount => Accounts.Count(a => a.IsAdmin);
+    public int LockedCount => Accounts.Count(a => a.IsLocked);
 
     [BindProperty(SupportsGet = true)]
     public string? Search { get; set; }
