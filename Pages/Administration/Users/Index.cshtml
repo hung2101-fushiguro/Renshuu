@@ -1,0 +1,22 @@
+@page
+@model TracNghiemWeb.Pages.Administration.Users.IndexModel
+@{ ViewData["Title"] = "Người dùng"; ViewData["Active"] = "users"; }
+<div class="page-head workspace-heading"><div><span class="eyebrow">QUẢN TRỊ</span><h1>Người dùng</h1><p>@Model.Total tài khoản</p></div><a class="btn btn-accent" asp-page="Edit"><span aria-hidden="true">+</span> Tạo tài khoản</a></div>
+<nav class="workspace-tabs" aria-label="Quản trị"><a asp-page="Index" aria-current="page">Người dùng</a><a asp-page="/Documents/Index" asp-route-scope="all">Tài liệu người dùng <span aria-hidden="true">↗</span></a></nav>
+<section class="card user-directory">
+    <form method="get" class="document-filters" role="search"><div class="field search-field"><label asp-for="Q" class="visually-hidden">Tìm người dùng</label><input asp-for="Q" type="search" class="input" placeholder="Tìm tên hoặc email…" maxlength="200" /></div><div class="field"><label asp-for="Role" class="visually-hidden">Vai trò</label><select asp-for="Role" class="input"><option value="">Mọi vai trò</option><option value="User">User</option><option value="Admin">Admin</option></select></div><div class="field"><label asp-for="State" class="visually-hidden">Trạng thái</label><select asp-for="State" class="input"><option value="">Mọi trạng thái</option><option value="active">Đang hoạt động</option><option value="inactive">Đã ngừng</option></select></div><button type="submit" class="btn btn-secondary">Tìm</button></form>
+    @if (Model.Items.Count == 0) { <div class="workspace-empty"><h2>Không tìm thấy tài khoản</h2><p>Thử tên khác hoặc thay đổi bộ lọc.</p></div> }
+    else
+    {
+        <div class="directory-table-wrap"><table class="table directory-table"><thead><tr><th scope="col">Người dùng</th><th scope="col">Vai trò</th><th scope="col">Trạng thái</th><th scope="col" class="num">Tài liệu</th><th scope="col"><span class="visually-hidden">Thao tác</span></th></tr></thead><tbody>
+        @foreach (var account in Model.Items)
+        {
+            <tr><td><div class="directory-person"><span class="user-avatar" aria-hidden="true">@Display.Initial(account.Name)</span><div><strong>@account.Name @if (account.Id == Model.CurrentId) { <span class="self-label">Bạn</span> }</strong><span>@account.Email</span></div></div></td><td data-label="Vai trò"><span class="badge @(account.Role == "Admin" ? "badge-accent" : "badge-primary")">@account.Role</span></td><td data-label="Trạng thái"><span class="status-label @(account.Active ? "status-active" : null)">@(account.Active ? account.LockoutEnd > DateTimeOffset.UtcNow ? "Tạm khóa đăng nhập" : "Đang hoạt động" : "Đã ngừng")</span></td><td data-label="Tài liệu" class="num">@account.Documents</td><td class="directory-action"><a class="btn btn-secondary btn-sm" asp-page="Edit" asp-route-id="@account.Id">Quản lý</a></td></tr>
+        }
+        </tbody></table></div>
+    }
+</section>
+@if (Model.PageCount > 1)
+{
+    <nav class="pagination" aria-label="Phân trang">@if (Model.PageNumber > 1) { <a class="btn btn-secondary btn-sm" asp-route-Q="@Model.Q" asp-route-Role="@Model.Role" asp-route-State="@Model.State" asp-route-PageNumber="@(Model.PageNumber - 1)">Trang trước</a> }<span>Trang @Model.PageNumber / @Model.PageCount</span>@if (Model.PageNumber < Model.PageCount) { <a class="btn btn-secondary btn-sm" asp-route-Q="@Model.Q" asp-route-Role="@Model.Role" asp-route-State="@Model.State" asp-route-PageNumber="@(Model.PageNumber + 1)">Trang sau</a> }</nav>
+}

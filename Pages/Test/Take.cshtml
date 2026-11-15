@@ -49,7 +49,7 @@
         <noscript><p class="small muted">Chọn “Lưu &amp; thoát” để lưu lựa chọn, hoặc “Nộp bài” để chấm điểm. Tự lưu và đồng hồ cần JavaScript; máy chủ vẫn kiểm tra thời hạn.</p></noscript>
     </aside>
     <form method="post" id="quiz-form" class="quiz-questions"
-          data-attempt-id="@Model.AttemptId" data-total="@total"
+          data-attempt-id="@Model.AttemptId" data-total="@total" data-draft-scope="@Model.DraftScope"
           data-remaining-seconds="@(Model.RemainingSeconds?.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))"
           data-result-url="@Url.Page("/Test/Result", new { id = Model.AttemptId })"
           data-home-url="@Url.Page("/Index")">

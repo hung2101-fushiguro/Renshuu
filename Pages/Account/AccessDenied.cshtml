@@ -1,0 +1,6 @@
+@page
+@{
+    ViewData["Title"] = "Không có quyền truy cập";
+    ViewContext.HttpContext.Response.StatusCode = 403;
+}
+<section class="card access-message"><span class="eyebrow">QUYỀN TRUY CẬP</span><h1>Trang dành cho admin</h1><p class="muted">Tài khoản hiện tại không có quyền mở trang này.</p><a class="btn btn-primary" asp-page="/Index">Về luyện tập</a></section>

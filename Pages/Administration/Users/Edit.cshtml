@@ -1,0 +1,19 @@
+@page "{id?}"
+@model TracNghiemWeb.Pages.Administration.Users.EditModel
+@{ ViewData["Title"] = Model.IsNew ? "Tạo tài khoản" : "Quản lý tài khoản"; ViewData["Active"] = "users"; }
+<nav class="breadcrumb" aria-label="Đường dẫn"><a asp-page="Index">Người dùng</a><span aria-hidden="true">/</span><span>@(Model.IsNew ? "Tạo mới" : "Chỉnh sửa")</span></nav>
+<div class="page-head"><div><span class="eyebrow">QUẢN TRỊ NGƯỜI DÙNG</span><h1>@ViewData["Title"]</h1></div></div>
+<div class="editor-layout">
+    <form method="post" class="card form-grid" data-busy="Đang lưu…"><input type="hidden" asp-for="Input.Version" /><div asp-validation-summary="ModelOnly" role="alert"></div>
+        <div class="field"><label asp-for="Input.DisplayName">Tên hiển thị</label><input asp-for="Input.DisplayName" class="input" autocomplete="off" maxlength="80" required /><span asp-validation-for="Input.DisplayName" class="field-error"></span></div>
+        <div class="field"><label asp-for="Input.Email">Email</label><input asp-for="Input.Email" class="input" type="email" autocomplete="off" required /><span asp-validation-for="Input.Email" class="field-error"></span></div>
+        <div class="form-row-2"><div class="field"><label asp-for="Input.Role">Vai trò</label><select asp-for="Input.Role" class="input"><option value="User">User</option><option value="Admin">Admin</option></select></div><div class="field"><span class="field-label">Trạng thái</span><label class="checkbox-row active-checkbox"><input asp-for="Input.IsActive" />Đang hoạt động</label></div></div>
+        <div class="field"><label asp-for="Input.Password">@(Model.IsNew ? "Mật khẩu" : "Mật khẩu mới (tùy chọn)")</label><div class="password-field"><input asp-for="Input.Password" class="input" autocomplete="new-password" minlength="10" maxlength="128" required="@Model.IsNew" aria-describedby="user-password-help" /><button type="button" class="password-toggle" data-password-toggle="Input_Password" aria-label="Hiện mật khẩu" aria-pressed="false">Hiện</button></div><span id="user-password-help" class="hint">Từ 10 ký tự, có chữ hoa, chữ thường và số.@(!Model.IsNew ? " Để trống để giữ mật khẩu hiện tại." : "")</span><span asp-validation-for="Input.Password" class="field-error"></span></div>
+        <div class="form-actions"><a class="btn btn-ghost" asp-page="Index">Hủy</a><button type="submit" class="btn btn-primary">@(Model.IsNew ? "Tạo tài khoản" : "Lưu thay đổi")</button></div>
+    </form>
+    <aside class="editor-note"><h2>Hai vai trò</h2><p><strong>User</strong> có thể học, làm bài và quản lý tài liệu của mình.</p><p><strong>Admin</strong> có thêm quyền quản lý người dùng và tài liệu của tất cả mọi người.</p>
+    @if (!Model.IsNew)
+    {
+        <div class="account-danger"><h3>Xóa tài khoản</h3><p>Người này sẽ không thể đăng nhập. Tài liệu và dữ liệu học được giữ lại.</p><form method="post" asp-page-handler="Delete" data-confirm="Xóa tài khoản này? Người này sẽ mất quyền đăng nhập; tài liệu và dữ liệu học được giữ lại."><input type="hidden" name="version" value="@Model.Input.Version" /><button type="submit" class="btn btn-danger btn-sm" disabled="@Model.IsSelf">Xóa tài khoản</button></form>@if (Model.IsSelf) { <span class="hint">Đây là tài khoản bạn đang sử dụng.</span> }</div>
+    }</aside>
+</div>

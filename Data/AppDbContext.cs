@@ -1,9 +1,10 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using TracNghiemWeb.Models;
 
 namespace TracNghiemWeb.Data;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityDbContext<ApplicationUser>
 {
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -15,9 +16,29 @@ public class AppDbContext : DbContext
     public DbSet<ReadingPassage> ReadingPassages => Set<ReadingPassage>();
     public DbSet<Attempt> Attempts => Set<Attempt>();
     public DbSet<AttemptAnswer> AttemptAnswers => Set<AttemptAnswer>();
+    public DbSet<UploadedDocument> Documents => Set<UploadedDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.Property(u => u.DisplayName).IsRequired().HasMaxLength(80);
+            entity.HasIndex(u => new { u.IsDeleted, u.CreatedAtUtc });
+        });
+        modelBuilder.Entity<UploadedDocument>(entity =>
+        {
+            entity.Property(d => d.Title).IsRequired().HasMaxLength(200);
+            entity.Property(d => d.Description).HasMaxLength(1000);
+            entity.Property(d => d.OriginalFileName).IsRequired().HasMaxLength(255);
+            entity.Property(d => d.StorageKey).IsRequired().HasMaxLength(80);
+            entity.Property(d => d.ContentType).IsRequired().HasMaxLength(100);
+            entity.Property(d => d.RowVersion).IsRowVersion();
+            entity.HasIndex(d => d.StorageKey).IsUnique();
+            entity.HasIndex(d => new { d.OwnerId, d.UpdatedAtUtc });
+            entity.HasOne(d => d.Owner).WithMany().HasForeignKey(d => d.OwnerId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasOne(d => d.Subject).WithMany().HasForeignKey(d => d.SubjectId).OnDelete(DeleteBehavior.SetNull);
+        });
         modelBuilder.Entity<SubjectFolder>(entity =>
         {
             entity.Property(f => f.Name).IsRequired().HasMaxLength(200);
@@ -75,6 +96,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Attempt>(entity =>
         {
+            entity.HasOne(a => a.User).WithMany().HasForeignKey(a => a.UserId).OnDelete(DeleteBehavior.Restrict);
+            entity.HasIndex(a => new { a.UserId, a.SubmittedAt, a.Id });
             entity.HasIndex(a => new { a.SubjectId, a.StartedAt });
             entity.HasIndex(a => new { a.SubmittedAt, a.Id });
 

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Services;
+using TracNghiemWeb.Services.Security;
 
 namespace TracNghiemWeb.Pages.Test;
 
@@ -10,14 +11,17 @@ public class TakeModel : PageModel
 {
     private readonly AppDbContext _db;
     private readonly QuizService _quiz;
+    private readonly ICurrentUser _current;
 
-    public TakeModel(AppDbContext db, QuizService quiz)
+    public TakeModel(AppDbContext db, QuizService quiz, ICurrentUser current)
     {
         _db = db;
         _quiz = quiz;
+        _current = current;
     }
 
     public int AttemptId { get; private set; }
+    public string DraftScope => _current.Id ?? string.Empty;
     public string SubjectName { get; private set; } = string.Empty;
     public int? TimeLimitMinutes { get; private set; }
     public DateTime StartedAt { get; private set; }
@@ -34,7 +38,7 @@ public class TakeModel : PageModel
         var attempt = await _db.Attempts
             .AsNoTracking()
             .Include(a => a.Subject)
-            .FirstOrDefaultAsync(a => a.Id == id);
+            .FirstOrDefaultAsync(a => a.Id == id && _current.Id != null && a.UserId == _current.Id);
 
         if (attempt is null)
         {
@@ -137,7 +141,7 @@ public class TakeModel : PageModel
 
     public async Task<IActionResult> OnGetStateAsync(int id)
     {
-        var attempt = await _db.Attempts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id);
+        var attempt = await _db.Attempts.AsNoTracking().FirstOrDefaultAsync(a => a.Id == id && _current.Id != null && a.UserId == _current.Id);
         if (attempt is null) return NotFound();
         Response.Headers.CacheControl = "no-store";
         return new JsonResult(new { closed = attempt.IsSubmitted, remainingSeconds = _quiz.GetRemainingTime(attempt)?.TotalSeconds });

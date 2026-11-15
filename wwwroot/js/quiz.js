@@ -2,7 +2,8 @@
     'use strict';
     const form = document.getElementById('quiz-form');
     if (!form) return;
-    const key = 'quiz_draft_v2:' + location.pathname;
+    const key = 'quiz_draft_v3:' + form.dataset.draftScope + ':' + location.pathname;
+    const requestHeaders = { 'X-Requested-With': 'XMLHttpRequest' };
     const radios = Array.from(form.querySelectorAll('input[type="radio"]'));
     const questions = Array.from(form.querySelectorAll('.question'));
     const jumps = Array.from(document.querySelectorAll('.question-jump a'));
@@ -10,7 +11,7 @@
     const total = Number(form.dataset.total);
     const dialog = document.getElementById('submit-dialog');
     let version = 0, savedVersion = 0, saving = false, submitting = false, closed = false, expired = false;
-    let debounce, retry, storageWorks = true, autoSubmitted = false;
+    let debounce, retry, storageWorks = true, autoSubmitted = false, authenticationLost = false;
     let initialRemaining = form.dataset.remainingSeconds === '' ? null : Number(form.dataset.remainingSeconds);
     let syncMono = performance.now(), syncWall = Date.now();
     const questionId = radio => radio.name.match(/\d+/)[0];
@@ -19,6 +20,19 @@
     function cache(pending) {
         try { localStorage.setItem(key, JSON.stringify({ answers: snapshot(), pending })); storageWorks = true; }
         catch (_) { storageWorks = false; }
+    }
+    function requireLogin() {
+        cache(true); authenticationLost = true; submitting = false;
+        clearTimeout(debounce); clearTimeout(retry);
+        radios.forEach(radio => { radio.disabled = true; });
+        document.querySelectorAll('button[form="quiz-form"], #quiz-form button[type="submit"]').forEach(button => { button.disabled = true; });
+        message(storageWorks ? 'Phiên đăng nhập đã hết. Lựa chọn được giữ tạm. ' : 'Phiên đăng nhập đã hết. Đăng nhập ở tab khác rồi quay lại trang này. ', 'error');
+        const link = document.createElement('a');
+        const login = new URL('/Account/Login', location.origin); login.searchParams.set('returnUrl', location.pathname);
+        link.href = login.href; link.textContent = 'Đăng nhập lại';
+        if (!storageWorks) { link.target = '_blank'; link.rel = 'noopener'; }
+        else link.addEventListener('click', () => { submitting = true; });
+        status.append(link);
     }
     function body() {
         const data = new FormData(form);
@@ -55,7 +69,7 @@
         progress();
     }
     async function save() {
-        if (saving || submitting || closed || expired || savedVersion === version) return;
+        if (saving || submitting || closed || expired || authenticationLost || savedVersion === version) return;
         saving = true;
         const sentVersion = version;
         const url = new URL(form.action);
@@ -65,7 +79,8 @@
         const timeout = setTimeout(() => controller.abort(), 10000);
         let success = false;
         try {
-            const response = await fetch(url, { method: 'POST', body: body(), credentials: 'same-origin', signal: controller.signal });
+            const response = await fetch(url, { method: 'POST', body: body(), headers: requestHeaders, credentials: 'same-origin', signal: controller.signal });
+            if (response.status === 401) { requireLogin(); return; }
             const result = await response.json();
             if (submitting) return;
             if (response.status === 409 && result.closed) { closeAttempt(); return; }
@@ -87,7 +102,7 @@
         }
     }
     function changed() {
-        if (closed || submitting || expired) return;
+        if (closed || submitting || expired || authenticationLost) return;
         version++;
         cache(true);
         progress();
@@ -125,7 +140,7 @@
     const submitButtons = Array.from(document.querySelectorAll('button[form="quiz-form"], #quiz-form button[type="submit"]'));
     const originalLabels = new Map(submitButtons.map(button => [button, button.innerHTML]));
     async function submit(leaving = false) {
-        if (submitting || closed) return;
+        if (submitting || closed || authenticationLost) return;
         dialog.close();
         submitting = true;
         clearTimeout(debounce);
@@ -140,7 +155,8 @@
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 15000);
         try {
-            const response = await fetch(url, { method: 'POST', body: payload, credentials: 'same-origin', signal: controller.signal });
+            const response = await fetch(url, { method: 'POST', body: payload, headers: requestHeaders, credentials: 'same-origin', signal: controller.signal });
+            if (response.status === 401) { requireLogin(); return; }
             const target = new URL(response.url);
             const resultPath = new URL(form.dataset.resultUrl, location.origin).pathname;
             const homePath = new URL(form.dataset.homeUrl, location.origin).pathname;
@@ -157,7 +173,7 @@
     }
     form.addEventListener('submit', event => {
         event.preventDefault();
-        if (submitting || closed) return;
+        if (submitting || closed || authenticationLost) return;
         if (event.submitter?.id === 'leave-quiz') { submit(true); return; }
         const count = radios.filter(radio => radio.checked).length;
         if (!expired && count < total) {
@@ -183,7 +199,7 @@
         const timer = document.getElementById('timer');
         timer.classList.toggle('is-warning', remaining <= 300);
         timer.classList.toggle('is-danger', remaining <= 60);
-        if (!remaining && !autoSubmitted) {
+        if (!remaining && !autoSubmitted && !authenticationLost) {
             autoSubmitted = true;
             expired = true;
             submit();
@@ -195,11 +211,18 @@
         syncing = true;
         const url = new URL(form.action); url.searchParams.set('handler', 'State');
         try {
-            const response = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(8000) });
+            const response = await fetch(url, { headers: requestHeaders, cache: 'no-store', signal: AbortSignal.timeout(8000) });
+            if (response.status === 401) { requireLogin(); return; }
             if (!response.ok) return;
             const state = await response.json();
             if (submitting || closed) return;
             if (state.closed) { closeAttempt(); return; }
+            if (authenticationLost) {
+                authenticationLost = false;
+                radios.forEach(radio => { radio.disabled = expired; });
+                submitButtons.forEach(button => { button.disabled = false; button.innerHTML = originalLabels.get(button); });
+                changed();
+            }
             initialRemaining = state.remainingSeconds;
             syncMono = performance.now(); syncWall = Date.now();
             tick();
@@ -209,6 +232,7 @@
     if (document.getElementById('timer')) { tick(); setInterval(tick, 250); }
     document.addEventListener('visibilitychange', () => { if (!document.hidden) { tick(); syncState(); } });
     window.addEventListener('focus', syncState);
+    window.addEventListener('account:changed', () => { closed = true; });
     setInterval(syncState, 30000);
     document.querySelectorAll('[data-enhanced]').forEach(element => { element.hidden = false; });
     if (matchMedia('(max-width: 700px)').matches) document.querySelector('.question-overview').open = false;

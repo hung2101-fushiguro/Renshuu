@@ -137,7 +137,7 @@
 @section Scripts {
     <script>
         (function () {
-            try { localStorage.removeItem('quiz_draft_v2:' + @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Page("/Test/Take", new { id = attempt.Id })))); } catch (_) { }
+            try { localStorage.removeItem('quiz_draft_v3:' + @Html.Raw(System.Text.Json.JsonSerializer.Serialize(attempt.UserId)) + ':' + @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Url.Page("/Test/Take", new { id = attempt.Id })))); } catch (_) { }
             var toggle = document.getElementById('only-wrong');
             var list = document.getElementById('review-list');
             if (!toggle || !list) { return; }

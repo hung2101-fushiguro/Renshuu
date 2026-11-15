@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
+using TracNghiemWeb.Services.Security;
 
 namespace TracNghiemWeb.Services;
 
@@ -14,11 +15,14 @@ public class QuizService
 
     private readonly AppDbContext _db;
     private readonly TimeProvider _time;
+    private readonly ICurrentUser _current;
+    private IQueryable<Attempt> OwnedAttempts => _db.Attempts.Where(a => _current.Id != null && a.UserId == _current.Id);
 
-    public QuizService(AppDbContext db, TimeProvider time)
+    public QuizService(AppDbContext db, TimeProvider time, ICurrentUser current)
     {
         _db = db;
         _time = time;
+        _current = current;
     }
 
     private DateTime Now => _time.GetLocalNow().DateTime;
@@ -26,7 +30,7 @@ public class QuizService
     public TimeSpan? GetRemainingTime(Attempt attempt) => attempt.Deadline is DateTime deadline ? deadline - Now : null;
 
     public Task<List<PendingAttemptSummary>> GetPendingAttemptsAsync(int take = 5) =>
-        _db.Attempts.AsNoTracking()
+        OwnedAttempts.AsNoTracking()
             .Where(a => a.SubmittedAt == null)
             .OrderByDescending(a => a.StartedAt).ThenByDescending(a => a.Id)
             .Take(Math.Clamp(take, 1, 20))
@@ -155,14 +159,14 @@ public class QuizService
         await using var transaction = await _db.Database.BeginTransactionAsync();
         // The conditional update holds the attempt's write lock until answers commit.
         // Submission claims the same row, so an in-flight draft cannot rewrite a grade.
-        var claimed = await _db.Attempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
+        var claimed = await OwnedAttempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.DraftSavedAt, (DateTime?)now));
         if (claimed == 0)
-            return await _db.Attempts.AnyAsync(a => a.Id == attemptId)
+            return await OwnedAttempts.AnyAsync(a => a.Id == attemptId)
                 ? new(false, 0, null, "Bài đã được nộp.", true)
                 : new(false, 0, null, "Bài làm không tồn tại.");
         // Recheck after obtaining the write lock; a queued request may cross the deadline.
-        var attempt = await _db.Attempts.AsNoTracking().SingleAsync(a => a.Id == attemptId);
+        var attempt = await OwnedAttempts.AsNoTracking().SingleAsync(a => a.Id == attemptId);
         now = Now;
         if (attempt.Deadline is DateTime deadline && now >= deadline)
             return new(false, 0, null, "Bài đã hết giờ. Vui lòng xem kết quả.", true);
@@ -181,16 +185,16 @@ public class QuizService
         var now = Now;
         await using var transaction = await _db.Database.BeginTransactionAsync();
         // Claim once, inside the same transaction as grading. Concurrent POSTs cannot both grade.
-        var claimed = await _db.Attempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
+        var claimed = await OwnedAttempts.Where(a => a.Id == attemptId && a.SubmittedAt == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.SubmittedAt, (DateTime?)now));
         if (claimed == 0)
         {
-            return await _db.Attempts.AnyAsync(a => a.Id == attemptId)
+            return await OwnedAttempts.AnyAsync(a => a.Id == attemptId)
                 ? SubmitResult.Ok(attemptId) : SubmitResult.Fail("Bài làm không tồn tại.");
         }
-        var attempt = await _db.Attempts.AsNoTracking().SingleAsync(a => a.Id == attemptId);
+        var attempt = await OwnedAttempts.AsNoTracking().SingleAsync(a => a.Id == attemptId);
         now = Now;
-        await _db.Attempts.Where(a => a.Id == attemptId)
+        await OwnedAttempts.Where(a => a.Id == attemptId)
             .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.SubmittedAt, (DateTime?)now));
         var useSaved = savedOnly || attempt.Deadline is DateTime deadline && now > deadline.AddSeconds(SubmissionGraceSeconds);
         var rows = await _db.AttemptAnswers.Where(a => a.AttemptId == attemptId).Include(a => a.Question).ToListAsync();
@@ -205,14 +209,14 @@ public class QuizService
 
         var correct = rows.Count(a => a.IsCorrect);
         await _db.SaveChangesAsync();
-        await _db.Attempts.Where(a => a.Id == attemptId)
+        await OwnedAttempts.Where(a => a.Id == attemptId)
             .ExecuteUpdateAsync(setters => setters.SetProperty(a => a.CorrectCount, correct));
         await transaction.CommitAsync();
         return SubmitResult.Ok(attemptId, useSaved);
     }
 
     public Task<Attempt?> GetAttemptForResultAsync(int attemptId) =>
-        _db.Attempts
+        OwnedAttempts
             .AsNoTracking()
             .Include(a => a.Subject)
             .Include(a => a.Answers.OrderBy(ans => ans.Id))
@@ -221,7 +225,7 @@ public class QuizService
             .FirstOrDefaultAsync(a => a.Id == attemptId);
 
     public async Task<List<Attempt>> GetHistoryAsync(int take = 100) =>
-        await _db.Attempts
+        await OwnedAttempts
             .AsNoTracking()
             .Include(a => a.Subject)
             .Where(a => a.SubmittedAt != null)
@@ -240,7 +244,7 @@ public class QuizService
 
     public async Task<bool> DeleteAttemptAsync(int attemptId)
     {
-        var attempt = await _db.Attempts
+        var attempt = await OwnedAttempts
             .FirstOrDefaultAsync(a => a.Id == attemptId && a.SubmittedAt != null);
 
         if (attempt is null)
@@ -255,7 +259,7 @@ public class QuizService
 
     public async Task<int> ClearHistoryAsync()
     {
-        var attempts = await _db.Attempts
+        var attempts = await OwnedAttempts
             .Where(a => a.SubmittedAt != null)
             .ToListAsync();
 
@@ -266,16 +270,18 @@ public class QuizService
 
     private IQueryable<AttemptAnswer> LatestAnswers() =>
         _db.AttemptAnswers.Where(a =>
-            a.Attempt!.SubmittedAt != null
+            _current.Id != null && a.Attempt!.UserId == _current.Id && a.Attempt.SubmittedAt != null
             && !_db.AttemptAnswers.Any(other => other.QuestionId == a.QuestionId
-                && other.Attempt!.SubmittedAt != null
+                && other.Attempt!.UserId == _current.Id && other.Attempt.SubmittedAt != null
                 && (other.Attempt.SubmittedAt.Value > a.Attempt.SubmittedAt.Value
                     || other.Attempt.SubmittedAt.Value == a.Attempt.SubmittedAt.Value && other.Id > a.Id)));
 
     private async Task<StartResult> CreateAttemptAsync(int subjectId, List<int> questionIds, int? timeLimitMinutes)
     {
+        if (_current.Id is null) return StartResult.Fail("Vui lòng đăng nhập để tạo bài.");
         var attempt = new Attempt
         {
+            UserId = _current.Id,
             SubjectId = subjectId,
             StartedAt = Now,
             TimeLimitMinutes = timeLimitMinutes,

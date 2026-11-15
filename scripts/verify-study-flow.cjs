@@ -4,10 +4,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 const { chromium } = require('playwright-core');
+const { fixture, authenticateContext } = require('./test-auth.cjs');
 const base = process.argv[2];
 const database = process.argv[3];
-if (!base || !['localhost', '127.0.0.1'].includes(new URL(base).hostname) || !/^TracNghiemWeb_UiTest_[a-f0-9]{32}$/.test(database || ''))
-    throw new Error('Usage: node scripts/verify-study-flow.cjs http://localhost:5081 TracNghiemWeb_UiTest_<32 hex chars>');
+const session = fixture(base, database);
+let userScope;
+const draftKey = path => 'quiz_draft_v3:' + userScope + ':' + path;
 const checks = [], errors = [];
 const sql = query => execFileSync('sqlcmd', ['-S', 'localhost', '-d', database, '-E', '-C', '-b', '-h', '-1', '-W', '-Q', 'SET NOCOUNT ON; ' + query], { encoding: 'utf8' }).trim();
 const correct = id => sql(`SELECT CorrectOption FROM dbo.Questions WHERE Id=${Number(id)}`);
@@ -31,6 +33,7 @@ async function main() {
     const browser = await chromium.launch({ executablePath: process.env.CHROME_PATH || 'C:/Program Files/Google/Chrome/Application/chrome.exe', headless: true });
     try {
         let context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+        await authenticateContext(context, base, session.Accounts.userA);
         let page = await context.newPage(); observe(page);
         await page.goto(base);
         assert(await page.locator('[data-count-preset="20"]').isDisabled());
@@ -43,6 +46,7 @@ async function main() {
         pass('Setup presets respect the bank size; library search ignores Vietnamese accents');
 
         const attempt = await start(page, 3, 10);
+        userScope = await page.locator('#quiz-form').getAttribute('data-draft-scope');
         let items = await radios(page);
         assert.equal(items.length, 3);
         assert(!await page.content().then(html => html.includes('CorrectOption')));
@@ -61,6 +65,7 @@ async function main() {
 
         await context.close();
         context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+        await authenticateContext(context, base, session.Accounts.userA);
         page = await context.newPage(); observe(page);
         await page.goto(base + attempt.path);
         assert(await radio(page, items[0], right).isChecked());
@@ -84,6 +89,7 @@ async function main() {
         pass('Offline choices survive reload, retry on reconnect, and can be cleared completely');
 
         const nojs = await browser.newContext({ javaScriptEnabled: false, viewport: { width: 390, height: 844 } });
+        await authenticateContext(nojs, base, session.Accounts.userA);
         const plain = await nojs.newPage(); observe(plain);
         await plain.goto(base + attempt.path);
         await radio(plain, items[0], right).check();
@@ -114,7 +120,7 @@ async function main() {
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
         await page.locator('#confirm-submit').click(); await page.waitForURL('**/Test/Result/*');
         assert.match(await page.locator('.result-summary').innerText(), /1\/3/);
-        assert.equal(await page.evaluate(key => localStorage.getItem(key), 'quiz_draft_v2:' + attempt.path), null);
+        assert.equal(await page.evaluate(key => localStorage.getItem(key), draftKey(attempt.path)), null);
         const summary = await page.locator('.result-summary').innerText();
         if (!await radio(stale, items[0], 'B').isDisabled()) await radio(stale, items[0], 'B').check();
         await stale.waitForFunction(() => !!document.querySelector('#draft-status a'));
@@ -137,7 +143,7 @@ async function main() {
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
         await page.waitForFunction(() => document.getElementById('draft-status').textContent.includes('Chưa gửi được'));
         assert.equal(await page.locator('.question input:checked').count(), 2);
-        assert(await page.evaluate(key => !!localStorage.getItem(key), 'quiz_draft_v2:' + failureAttempt.path));
+        assert(await page.evaluate(key => !!localStorage.getItem(key), draftKey(failureAttempt.path)));
         await page.unroute('**' + failureAttempt.path);
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
         await page.waitForURL('**/Test/Result/*');

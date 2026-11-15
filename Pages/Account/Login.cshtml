@@ -1,0 +1,16 @@
+@page
+@model TracNghiemWeb.Pages.Account.LoginModel
+@{ ViewData["Title"] = "Đăng nhập"; ViewData["AuthPage"] = true; }
+<section class="auth-card card" aria-labelledby="login-title">
+    <span class="auth-symbol" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3"/></svg></span>
+    <h1 id="login-title">Đăng nhập</h1><p class="auth-lead">Tiếp tục bài học và tài liệu của bạn.</p>
+    <form method="post" class="form-grid" data-busy="Đang đăng nhập…">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" role="alert"></div>
+        <div class="field"><label asp-for="Input.Email">Email</label><input asp-for="Input.Email" class="input" type="email" autocomplete="username" autofocus required /><span asp-validation-for="Input.Email" class="field-error"></span></div>
+        <div class="field"><label asp-for="Input.Password">Mật khẩu</label><div class="password-field"><input asp-for="Input.Password" class="input" autocomplete="current-password" required /><button type="button" class="password-toggle" data-password-toggle="Input_Password" aria-label="Hiện mật khẩu" aria-pressed="false">Hiện</button></div><span asp-validation-for="Input.Password" class="field-error"></span></div>
+        <label class="checkbox-row auth-remember"><input asp-for="Input.RememberMe" />Lưu đăng nhập</label>
+        <button type="submit" class="btn btn-accent btn-block">Đăng nhập <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="auth-switch">Chưa có tài khoản? <a asp-page="Register" asp-route-returnUrl="@Model.ReturnUrl">Tạo tài khoản</a></p>
+</section>

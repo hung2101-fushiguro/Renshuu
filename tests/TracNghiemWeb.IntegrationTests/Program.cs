@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
+using TracNghiemWeb.Services.Security;
 
 // SQL Server is required: transaction/locking tests must run against the production provider.
 // A unique temporary database is created and only that database is removed in finally.
@@ -16,11 +17,12 @@ var connection = new SqlConnectionStringBuilder
 };
 var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection.ConnectionString).Options;
 var clock = new TestClock();
+var actor = new TestUser();
 AppDbContext Db() => new(options);
 async Task<T> Run<T>(Func<QuizService, Task<T>> operation)
 {
     await using var db = Db();
-    return await operation(new QuizService(db, clock));
+    return await operation(new QuizService(db, clock, actor));
 }
 void Check(bool condition, string message)
 {
@@ -54,7 +56,9 @@ try
         await db.Database.OpenConnectionAsync();
         await using var tableCommand = db.Database.GetDbConnection().CreateCommand();
         tableCommand.CommandText = "SELECT COUNT(*) FROM sys.tables WHERE is_ms_shipped = 0";
-        Check((int)(await tableCommand.ExecuteScalarAsync())! == 7, "Upgrade must preserve the existing table structure");
+        Check((int)(await tableCommand.ExecuteScalarAsync())! == 15, "Upgrade must retain original tables and add Identity and document tables");
+        db.Users.Add(new ApplicationUser { Id = actor.Id!, UserName = "regression@example.test", Email = "regression@example.test", DisplayName = "Regression" });
+        await db.SaveChangesAsync();
     }
     Pass("Original schema upgrades without deleting questions, attempts or tables");
 
@@ -144,7 +148,7 @@ try
         var wrongSubject = new Subject { Name = "Many wrong", Questions = Enumerable.Range(1, 205).Select(i => Question("Wrong " + i)).ToList() };
         db.Subjects.Add(wrongSubject);
         await db.SaveChangesAsync();
-        db.Attempts.Add(new Attempt { SubjectId = wrongSubject.Id, StartedAt = clock.GetLocalNow().DateTime, SubmittedAt = clock.GetLocalNow().DateTime, TotalQuestions = 205, Answers = wrongSubject.Questions.Select(q => new AttemptAnswer { QuestionId = q.Id }).ToList() });
+        db.Attempts.Add(new Attempt { UserId = actor.Id, SubjectId = wrongSubject.Id, StartedAt = clock.GetLocalNow().DateTime, SubmittedAt = clock.GetLocalNow().DateTime, TotalQuestions = 205, Answers = wrongSubject.Questions.Select(q => new AttemptAnswer { QuestionId = q.Id }).ToList() });
         await db.SaveChangesAsync();
         var retry = await Run(q => q.StartWrongAsync(wrongSubject.Id, null));
         Check(retry.Success && (await Run(q => q.GetAttemptForResultAsync(retry.AttemptId!.Value)))!.TotalQuestions == 200, "Wrong retry must respect 200 cap");
@@ -197,7 +201,8 @@ try
     Check((await Run(q => q.GetAttemptForResultAsync(blank)))!.CorrectCount == 0, "Blank and foreign answers must not score");
     Pass("Invalid setup is rejected; clearing, blank submission and foreign answers are handled correctly");
 
-    Console.WriteLine("All 8 SQL integration groups passed.");
+    await AccessAndDocumentChecks.RunAsync(options, clock, actor);
+    Console.WriteLine("All 11 SQL integration groups passed.");
 }
 finally
 {
@@ -215,4 +220,10 @@ sealed class TestClock : TimeProvider
     public override DateTimeOffset GetUtcNow() => _now;
     public override TimeZoneInfo LocalTimeZone => TimeZoneInfo.Utc;
     public void Advance(int seconds) => _now = _now.AddSeconds(seconds);
+}
+
+sealed class TestUser : ICurrentUser
+{
+    public string? Id { get; set; } = "regression-user";
+    public bool IsAdmin { get; set; }
 }

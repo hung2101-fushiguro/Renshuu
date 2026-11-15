@@ -1,3 +1,11 @@
+@{
+    var authPage = ViewData["AuthPage"] as bool? == true;
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var focusMode = ViewData["FocusMode"] as bool? == true;
+    var displayName = User.FindFirst("display_name")?.Value ?? "Tài khoản";
+    var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+    var active = ViewData["Active"] as string;
+}
 <!DOCTYPE html>
 <html lang="vi" data-type="software">
 <head>
@@ -11,57 +19,46 @@
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/study.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
 </head>
-<body>
-    <a class="skip-link" href="#main">Bỏ qua điều hướng, đến nội dung chính</a>
-
+<body class="@(authPage ? "auth-page" : null)" data-user-id="@userId">
+    <a class="skip-link" href="#main">Đến nội dung chính</a>
     <header class="site-header">
         <div class="container header-inner">
-            <a class="brand" asp-page="/Index">
-                <svg class="icon" aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M9 11l3 3L22 4" />
-                    <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
-                <span>Trắc nghiệm</span>
-            </a>
-            @if (ViewData["FocusMode"] as bool? == true)
+            <a class="brand" asp-page="/Index"><span class="brand-mark"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Trắc nghiệm</span></a>
+            @if (focusMode && signedIn)
             {
                 <button type="submit" form="quiz-form" asp-page="/Test/Take" asp-route-id="@ViewContext.RouteData.Values["id"]" asp-page-handler="SaveAndExit" class="btn btn-ghost btn-sm" id="leave-quiz">Lưu &amp; thoát</button>
             }
+            else if (signedIn)
+            {
+                <nav class="site-nav" aria-label="Điều hướng chính">
+                    <a asp-page="/Index" class="@(active == "subjects" ? "active" : null)" aria-current="@(active == "subjects" ? "page" : null)">Luyện tập</a>
+                    <a asp-page="/Documents/Index" class="@(active == "documents" ? "active" : null)" aria-current="@(active == "documents" ? "page" : null)">Tài liệu</a>
+                    <a asp-page="/Admin/Index" class="@(active == "admin" ? "active" : null)" aria-current="@(active == "admin" ? "page" : null)">Ngân hàng</a>
+                    <a asp-page="/Wrong/Index" class="@(active == "wrong" ? "active" : null)" aria-current="@(active == "wrong" ? "page" : null)">Ôn câu sai</a>
+                    <a asp-page="/History/Index" class="@(active == "history" ? "active" : null)" aria-current="@(active == "history" ? "page" : null)">Lịch sử</a>
+                </nav>
+                <details class="user-menu"><summary aria-label="Menu tài khoản @displayName"><span class="user-avatar" aria-hidden="true">@Display.Initial(displayName)</span><span class="user-menu-name">@displayName</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="user-menu-panel"><div class="user-menu-heading"><strong>@displayName</strong><span class="badge @(User.IsInRole("Admin") ? "badge-accent" : "badge-primary")">@(User.IsInRole("Admin") ? "Admin" : "User")</span></div><a asp-page="/Account/Profile">Tài khoản của tôi</a><a asp-page="/Documents/Index">Tài liệu của tôi</a>
+                    @if (User.IsInRole("Admin")) { <div class="menu-divider"></div><a asp-page="/Administration/Users/Index">Quản lý người dùng</a><a asp-page="/Documents/Index" asp-route-scope="all">Tài liệu người dùng</a> }
+                    <form method="post" asp-page="/Account/Logout" data-logout><button type="submit">Đăng xuất <span aria-hidden="true">↗</span></button></form>
+                </div></details>
+            }
             else
             {
-            <nav class="site-nav" aria-label="Điều hướng chính">
-                <a asp-page="/Index" class="@(ViewData["Active"] as string == "subjects" ? "active" : null)">Luyện tập</a>
-                <a asp-page="/Wrong/Index" class="@(ViewData["Active"] as string == "wrong" ? "active" : null)">Ôn câu sai</a>
-                <a asp-page="/History/Index" class="@(ViewData["Active"] as string == "history" ? "active" : null)">Lịch sử</a>
-                <a asp-page="/Admin/Index" class="@(ViewData["Active"] as string == "admin" ? "active" : null)">Quản lý</a>
-            </nav>
+                <span class="guest-nav"><a asp-page="/Account/Login">Đăng nhập</a><a asp-page="/Account/Register" class="btn btn-secondary btn-sm">Tạo tài khoản</a></span>
             }
         </div>
     </header>
-
-    <main id="main" class="container main">
-        @if (TempData["Error"] is string errorMessage)
-        {
-            <div class="alert alert-danger" role="alert">@errorMessage</div>
-        }
-        @if (TempData["Success"] is string successMessage)
-        {
-            <div class="alert alert-success" role="status">@successMessage</div>
-        }
-        @if (TempData["Warning"] is string warningMessage)
-        {
-            <div class="alert alert-warning" role="status">@warningMessage</div>
-        }
+    <main id="main" class="container main @(authPage ? "auth-main" : null)">
+        @if (TempData["Error"] is string errorMessage) { <div class="alert alert-danger" role="alert">@errorMessage</div> }
+        @if (TempData["Success"] is string successMessage) { <div class="alert alert-success" role="status">@successMessage</div> }
+        @if (TempData["Warning"] is string warningMessage) { <div class="alert alert-warning" role="status">@warningMessage</div> }
         @RenderBody()
     </main>
-
-    <footer class="site-footer">
-        <div class="container">
-            <p>Trắc nghiệm <span aria-hidden="true">·</span> Không gian học tập</p>
-        </div>
-    </footer>
-
+    <footer class="site-footer"><div class="container"><p>Trắc nghiệm <span aria-hidden="true">·</span> Không gian học tập</p></div></footer>
+    <dialog id="action-dialog" class="submit-dialog" aria-labelledby="action-title" aria-describedby="action-description"><div class="dialog-mark" aria-hidden="true">!</div><h2 id="action-title">Xác nhận thao tác</h2><p id="action-description"></p><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="action-cancel">Giữ lại</button><button type="button" class="btn btn-danger" id="action-confirm">Xác nhận xóa</button></div></dialog>
+    <script src="~/js/workspace.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

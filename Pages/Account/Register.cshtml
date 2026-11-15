@@ -1,0 +1,17 @@
+@page
+@model TracNghiemWeb.Pages.Account.RegisterModel
+@{ ViewData["Title"] = "Tạo tài khoản"; ViewData["AuthPage"] = true; }
+<section class="auth-card card" aria-labelledby="register-title">
+    <span class="auth-symbol" aria-hidden="true"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="10" cy="8" r="4"/><path d="M3 21v-3a7 7 0 0 1 14 0v3M20 7v6M17 10h6"/></svg></span>
+    <h1 id="register-title">Tạo tài khoản</h1><p class="auth-lead">Một chỗ cho việc học của bạn.</p>
+    <form method="post" class="form-grid" data-busy="Đang tạo tài khoản…">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" role="alert"></div>
+        <div class="field"><label asp-for="Input.DisplayName">Tên hiển thị</label><input asp-for="Input.DisplayName" class="input" autocomplete="name" maxlength="80" required /><span asp-validation-for="Input.DisplayName" class="field-error"></span></div>
+        <div class="field"><label asp-for="Input.Email">Email</label><input asp-for="Input.Email" class="input" autocomplete="username" type="email" required /><span asp-validation-for="Input.Email" class="field-error"></span></div>
+        <div class="field"><label asp-for="Input.Password">Mật khẩu</label><div class="password-field"><input asp-for="Input.Password" class="input" autocomplete="new-password" minlength="10" maxlength="128" aria-describedby="password-help" required /><button type="button" class="password-toggle" data-password-toggle="Input_Password" aria-label="Hiện mật khẩu" aria-pressed="false">Hiện</button></div><span class="hint" id="password-help">Từ 10 ký tự, có chữ hoa, chữ thường và số.</span><span asp-validation-for="Input.Password" class="field-error"></span></div>
+        <div class="field"><label asp-for="Input.ConfirmPassword">Nhập lại mật khẩu</label><input asp-for="Input.ConfirmPassword" class="input" autocomplete="new-password" required /><span asp-validation-for="Input.ConfirmPassword" class="field-error"></span></div>
+        <button type="submit" class="btn btn-accent btn-block">Tạo tài khoản <span aria-hidden="true">→</span></button>
+    </form>
+    <p class="auth-switch">Đã có tài khoản? <a asp-page="Login" asp-route-returnUrl="@Model.ReturnUrl">Đăng nhập</a></p>
+</section>
