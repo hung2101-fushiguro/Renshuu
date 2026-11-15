@@ -1,5 +1,10 @@
+using System.Net;
 using System.Security.Claims;
+using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
@@ -299,7 +304,144 @@ try
     }
     Pass("Learner content is private by default, public only when shared, and admin has no content bypass");
 
-    Console.WriteLine("All 10 SQL integration groups passed.");
+    // Public registration through the real HTTP pipeline: learner accounts only, duplicate and
+    // weak passwords rejected, and posted role fields ignored.
+    await using (var db = Db())
+    {
+        if (!await db.Roles.AnyAsync(r => r.Name == CurrentUser.AdminRole))
+        {
+            db.Roles.Add(new IdentityRole
+            {
+                Name = CurrentUser.AdminRole,
+                NormalizedName = CurrentUser.AdminRole.ToUpperInvariant()
+            });
+            await db.SaveChangesAsync();
+        }
+
+        // Any public type from the web assembly works as the entry point marker; using one
+        // avoids clashing with this console runner's own generated Program class.
+        using var factory = new WebApplicationFactory<ApplicationUserClaimsFactory>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Testing");
+            builder.UseContentRoot(WebProjectDirectory());
+            builder.UseSetting("ConnectionStrings:DefaultConnection", connection.ConnectionString);
+        });
+
+        // HTTPS keeps the secure Identity cookie readable by the test client.
+        using var http = factory.CreateClient(new WebApplicationFactoryClientOptions
+        {
+            BaseAddress = new Uri("https://localhost"),
+            AllowAutoRedirect = false
+        });
+
+        async Task<string> GetHtmlAsync(string path)
+        {
+            using var response = await http.GetAsync(path);
+            Check(response.StatusCode == HttpStatusCode.OK,
+                $"GET {path} phải trả 200, nhận {(int)response.StatusCode}");
+            return await response.Content.ReadAsStringAsync();
+        }
+
+        async Task<HttpResponseMessage> PostFormAsync(string path, Dictionary<string, string> fields)
+        {
+            var html = await GetHtmlAsync(path);
+            var token = Regex.Match(html, "name=\"__RequestVerificationToken\"[^>]*value=\"([^\"]+)\"")
+                .Groups[1].Value;
+            Check(token.Length > 0, "Form phải có antiforgery token");
+            fields["__RequestVerificationToken"] = token;
+            return await http.PostAsync(path, new FormUrlEncodedContent(fields));
+        }
+
+        static string WebProjectDirectory()
+        {
+            var directory = new DirectoryInfo(AppContext.BaseDirectory);
+            while (directory is not null
+                && !File.Exists(Path.Combine(directory.FullName, "TracNghiemWeb.csproj")))
+            {
+                directory = directory.Parent;
+            }
+
+            return directory?.FullName
+                ?? throw new InvalidOperationException("Không tìm thấy thư mục project web từ " + AppContext.BaseDirectory);
+        }
+
+        static Dictionary<string, string> Form(string email, string password) => new()
+        {
+            ["DisplayName"] = "Người học mới",
+            ["Email"] = email,
+            ["Password"] = password,
+            ["ConfirmPassword"] = password
+        };
+
+        var learnerEmail = "Learner-" + Guid.NewGuid().ToString("N")[..8] + "@Renshuu.Local";
+        var normalizedEmail = learnerEmail.Trim().ToLowerInvariant();
+
+        using (var registered = await PostFormAsync("/Account/Register", Form("  " + learnerEmail + " ", "Learner#2026pass")))
+        {
+            Check(registered.StatusCode == HttpStatusCode.Redirect, "Đăng ký hợp lệ phải chuyển trang");
+            Check(registered.Headers.Location!.OriginalString.Contains("/Account/Login", StringComparison.OrdinalIgnoreCase),
+                "Đăng ký thành công phải chuyển về trang đăng nhập");
+        }
+
+        var newUser = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Email == normalizedEmail);
+        Check(newUser is not null, "Đăng ký phải tạo tài khoản với email đã trim + lowercase");
+        Check(newUser!.UserName == normalizedEmail && newUser.DisplayName == "Người học mới",
+            "Tài khoản mới phải lưu email chuẩn hóa và tên hiển thị");
+
+        using (var duplicate = await PostFormAsync("/Account/Register", Form(learnerEmail, "Learner#2026pass")))
+        {
+            Check(duplicate.StatusCode == HttpStatusCode.OK, "Email trùng phải trả lại form");
+            var duplicateHtml = WebUtility.HtmlDecode(await duplicate.Content.ReadAsStringAsync());
+            Check(duplicateHtml.Contains("Không thể tạo tài khoản với email này"),
+                "Email trùng phải báo lỗi trung tính");
+        }
+        Check(await db.Users.CountAsync(u => u.Email == normalizedEmail) == 1,
+            "Email trùng không được tạo thêm tài khoản");
+
+        var weakEmail = "weak-" + Guid.NewGuid().ToString("N")[..8] + "@renshuu.local";
+        using (var weak = await PostFormAsync("/Account/Register", Form(weakEmail, "abc")))
+        {
+            Check(weak.StatusCode == HttpStatusCode.OK, "Mật khẩu yếu phải bị từ chối");
+            var weakHtml = WebUtility.HtmlDecode(await weak.Content.ReadAsStringAsync());
+            Check(weakHtml.Contains("Mật khẩu cần 8–128 ký tự"),
+                "Mật khẩu quá ngắn phải báo lỗi độ dài");
+        }
+        Check(!await db.Users.AnyAsync(u => u.Email == weakEmail), "Mật khẩu yếu không được tạo tài khoản");
+
+        var sneakyEmail = "sneaky-" + Guid.NewGuid().ToString("N")[..8] + "@renshuu.local";
+        var sneaky = Form(sneakyEmail, "Learner#2026pass");
+        sneaky["IsAdmin"] = "true";
+        sneaky["Role"] = "Admin";
+        sneaky["NewIsAdmin"] = "true";
+        using (var overposted = await PostFormAsync("/Account/Register", sneaky))
+        {
+            Check(overposted.StatusCode == HttpStatusCode.Redirect, "Trường vai trò gửi kèm phải bị bỏ qua");
+        }
+
+        var sneakyUser = await db.Users.AsNoTracking().SingleAsync(u => u.Email == sneakyEmail);
+        var adminRoleId = await db.Roles.Where(r => r.Name == CurrentUser.AdminRole).Select(r => r.Id).SingleAsync();
+        Check(!await db.UserRoles.AnyAsync(ur => ur.UserId == sneakyUser.Id && ur.RoleId == adminRoleId),
+            "Không được tự đăng ký thành admin qua trường gửi kèm");
+
+        using (var login = await PostFormAsync("/Account/Login", new Dictionary<string, string>
+               {
+                   ["Email"] = normalizedEmail,
+                   ["Password"] = "Learner#2026pass"
+               }))
+        {
+            Check(login.StatusCode == HttpStatusCode.Redirect, "Tài khoản mới phải đăng nhập được");
+        }
+
+        using (var adminPage = await http.GetAsync("/Admin/Accounts"))
+        {
+            Check(adminPage.StatusCode == HttpStatusCode.Redirect, "Người học mới không được vào /Admin");
+            Check(adminPage.Headers.Location!.OriginalString.Contains("/Account/Denied", StringComparison.OrdinalIgnoreCase),
+                "Người học mới phải bị policy quản trị chặn");
+        }
+    }
+    Pass("Public registration creates learners only, rejects duplicates and weak passwords, and cannot escalate to admin");
+
+    Console.WriteLine("All 11 SQL integration groups passed.");
 }
 finally
 {

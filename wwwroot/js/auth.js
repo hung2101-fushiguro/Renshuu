@@ -27,7 +27,7 @@
 
         submit.setAttribute('aria-busy', 'true');
         submit.disabled = true;
-        submit.textContent = 'Đang đăng nhập…';
+        submit.textContent = submit.getAttribute('data-auth-busy') || 'Đang đăng nhập…';
         if (status) { status.textContent = 'Đang kiểm tra thông tin đăng nhập.'; }
     });
 })();

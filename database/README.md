@@ -86,17 +86,27 @@ Kết quả mong đợi:
 
 ## 5. Sau khi có schema: tạo tài khoản quản trị đầu tiên
 
-Chỉ trong Development, đặt user secrets rồi khởi động lại app:
+Đặt cấu hình quản trị ban đầu **trước khi** khởi động app. Không có mật khẩu mặc định
+trong mã nguồn và trang đăng nhập không hiển thị tài khoản thử.
 
 ```powershell
-dotnet user-secrets set "DevelopmentAdmin:Email" "admin@ten-mien-cua-ban"
-dotnet user-secrets set "DevelopmentAdmin:Password" "MatKhauManh#2026"
-dotnet user-secrets set "DevelopmentAdmin:ShowLoginCredentials" "true"   # tùy chọn, chỉ hiện gợi ý ở trang đăng nhập
+# Development — user secrets (không commit)
+dotnet user-secrets set "BootstrapAdmin:Email" "admin@ten-mien-cua-ban"
+dotnet user-secrets set "BootstrapAdmin:Password" "<mật-khẩu-mạnh-của-bạn>"
+
+# Production / máy chủ khác — biến môi trường
+$env:BootstrapAdmin__Email = 'admin@ten-mien-cua-ban'
+$env:BootstrapAdmin__Password = '<mật-khẩu-mạnh-của-bạn>'
 ```
 
 - Email đã tồn tại: app chỉ **gán** vai trò Admin, không đổi mật khẩu.
 - Email chưa tồn tại + có mật khẩu: app tạo tài khoản mới với vai trò Admin.
-- Khóa cũ `DevelopmentAdmin:LoginPassword` vẫn được chấp nhận để không phá cấu hình local cũ.
+- Thiếu cấu hình: app **không tạo** tài khoản nào và ghi log cảnh báo (Development hướng
+  dẫn `dotnet user-secrets`, Production hướng dẫn biến môi trường).
+- Khóa cũ `DevelopmentAdmin:Email`/`DevelopmentAdmin:Password`/`DevelopmentAdmin:LoginPassword`
+  vẫn được đọc để không phá cấu hình local cũ.
+- Nếu email/mật khẩu quản trị từng nằm trong lịch sử git hoặc tài liệu cũ, hãy **đổi mật
+  khẩu** tài khoản quản trị thật trên mọi môi trường đã dùng nó.
 
 Tài khoản sau đó quản lý người dùng tại `/Admin/Accounts`. Không có mật khẩu mặc định
 trong mã nguồn; không commit user secrets hay connection string.

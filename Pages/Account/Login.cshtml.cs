@@ -2,38 +2,18 @@ using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.RateLimiting;
 using TracNghiemWeb.Models;
 
 namespace TracNghiemWeb.Pages.Account;
 
 [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+[EnableRateLimiting(Security.AuthFormPolicy)]
 public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signIn;
-    private readonly IConfiguration _configuration;
-    private readonly IWebHostEnvironment _environment;
 
-    public LoginModel(SignInManager<ApplicationUser> signIn, IConfiguration configuration, IWebHostEnvironment environment)
-    {
-        _signIn = signIn;
-        _configuration = configuration;
-        _environment = environment;
-    }
-
-    /// <summary>
-    /// Development-only convenience: shows the seeded admin credentials under the form.
-    /// Never renders outside Development and never resets the account password.
-    /// </summary>
-    public bool ShowTestAccount =>
-        _environment.IsDevelopment()
-        && _configuration.GetValue<bool>("DevelopmentAdmin:ShowLoginCredentials")
-        && !string.IsNullOrWhiteSpace(TestEmail)
-        && !string.IsNullOrWhiteSpace(TestPassword);
-
-    public string? TestEmail => _configuration["DevelopmentAdmin:Email"];
-
-    public string? TestPassword =>
-        _configuration["DevelopmentAdmin:Password"] ?? _configuration["DevelopmentAdmin:LoginPassword"];
+    public LoginModel(SignInManager<ApplicationUser> signIn) => _signIn = signIn;
 
     [BindProperty]
     [Required(ErrorMessage = "Nhập email của bạn.")]

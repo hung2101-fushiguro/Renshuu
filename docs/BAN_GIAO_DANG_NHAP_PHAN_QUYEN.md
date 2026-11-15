@@ -18,7 +18,9 @@ Tài liệu này dành cho agent/đồng đội tiếp nhận nhánh `feature/lo
 >   có `OwnerId = NULL` mới là nội dung dùng chung.
 > - Flashcard được **giữ lại** trong bản tích hợp (nhánh gốc đã xóa).
 > - Thêm tài liệu riêng (`Documents`) với migration `20261115155351_AddPrivateDocuments`.
-> - Bộ kiểm thử hiện có **10 nhóm** integration và **19 kiểm tra** HTTP auth.
+> - Bộ kiểm thử hiện có **11 nhóm** integration và **19 kiểm tra** HTTP auth.
+> - Trang đăng nhập **không còn** hiển thị tài khoản thử/mật khẩu ở bất kỳ môi trường nào;
+>   đã có trang **đăng ký công khai** cho người học (`/Account/Register`).
 > - Xóa tài khoản: tài liệu riêng và tệp vật lý bị xóa; thư mục/môn học chuyển về
 >   `OwnerId = NULL`.
 
@@ -42,7 +44,7 @@ Tài liệu này dành cho agent/đồng đội tiếp nhận nhánh `feature/lo
 | DbContext | `Data/AppDbContext.cs` kế thừa `IdentityDbContext<ApplicationUser>` |
 | Cấu hình Identity + cookie + conventions | `Program.cs` |
 | Claims | `ApplicationUserClaimsFactory` (thêm claim `"DisplayName"` để layout không cần query DB) |
-| Bootstrap admin | `DevelopmentAccounts.EnsureAdminAsync` — chỉ chạy trong Development |
+| Bootstrap admin | `AdminBootstrap.EnsureAdminAsync` — chạy ở mọi môi trường nhưng chỉ đọc `BootstrapAdmin:Email`/`Password` (Development: user secrets, Production: biến môi trường); thiếu cấu hình thì chỉ log cảnh báo |
 
 Conventions trong `Program.cs`:
 
@@ -70,7 +72,8 @@ Quy tắc hiển thị nội dung (quan trọng, đừng phá):
 - Bài làm, lịch sử, câu sai, thống kê, tài liệu → **luôn** lọc `OwnerId == _currentUser.UserId`.
 
 ### Trang đã thêm
-- `Pages/Account/Login.cshtml(.cs)` — đăng nhập, chống open redirect, thông báo chung khi sai, gợi ý tài khoản thử chỉ trong Development.
+- `Pages/Account/Login.cshtml(.cs)` — đăng nhập, chống open redirect, thông báo chung khi sai. Không hiển thị tài khoản hay mật khẩu thử ở bất kỳ môi trường nào.
+- `Pages/Account/Register.cshtml(.cs)` — đăng ký công khai cho người học: tên hiển thị, email, mật khẩu + nhập lại. Tài khoản tạo ra luôn là người học (không có trường vai trò nào được bind), email được trim + lowercase và kiểm tra trùng với thông báo trung tính; dùng chung `UserManager`/password policy với luồng đặt lại mật khẩu. Thành công → chuyển về `/Account/Login` kèm thông báo.
 - `Pages/Account/Logout.cshtml(.cs)` — `OnGet` chuyển về `/Index` (không đăng xuất); `OnPost` mới đăng xuất.
 - `Pages/Account/Denied.cshtml(.cs)` — trang từ chối truy cập.
 - `Pages/Admin/Accounts.cshtml(.cs)` — danh sách + tìm kiếm + tạo tài khoản.
@@ -122,28 +125,34 @@ dotnet ef migrations script --idempotent --project TracNghiemWeb.csproj --output
 
 `Properties/launchSettings.json` dùng cổng **5080**. Dev tự chạy migration và seed khi database mới.
 
-### Tạo quản trị viên đầu tiên (chỉ Development)
+### Tạo quản trị viên đầu tiên (từ cấu hình)
 ```powershell
-dotnet user-secrets set "DevelopmentAdmin:Email" "admin@ten-mien"
-dotnet user-secrets set "DevelopmentAdmin:Password" "MatKhauManh#2026"
-dotnet user-secrets set "DevelopmentAdmin:ShowLoginCredentials" "true"   # tùy chọn
+# Development: user secrets
+dotnet user-secrets set "BootstrapAdmin:Email" "admin@ten-mien-cua-ban"
+dotnet user-secrets set "BootstrapAdmin:Password" "<mật-khẩu-mạnh-của-bạn>"
+
+# Production/máy chủ khác: biến môi trường (không ghi vào file cấu hình)
+$env:BootstrapAdmin__Email = 'admin@ten-mien-cua-ban'
+$env:BootstrapAdmin__Password = '<mật-khẩu-mạnh-của-bạn>'
 ```
 
-Hành vi: email đã tồn tại → **chỉ gán** vai trò Admin; email chưa tồn tại + có mật khẩu → tạo mới. Khoá cũ `DevelopmentAdmin:LoginPassword` vẫn được chấp nhận. Không có mật khẩu mặc định trong code.
+Hành vi: email đã tồn tại → **chỉ gán** vai trò Admin; email chưa tồn tại + có mật khẩu → tạo mới. Thiếu cấu hình → **không tạo** tài khoản nào, chỉ ghi log cảnh báo (Development hướng dẫn `dotnet user-secrets`, Production hướng dẫn biến môi trường). Khoá cũ `DevelopmentAdmin:Email`/`DevelopmentAdmin:Password`/`DevelopmentAdmin:LoginPassword` vẫn được đọc để không phá cấu hình local cũ; `DevelopmentAdmin:ShowLoginCredentials` đã bị bỏ. Không có mật khẩu mặc định trong code.
 
 ### Kiểm thử
 ```powershell
 # 1) Integration SQL — cần SQL Server, tự tạo/xóa database tạm RenshuuRegression_*
 dotnet run --project tests/Renshuu.IntegrationTests/Renshuu.IntegrationTests.csproj -- "localhost"
-# Kỳ vọng: 10 dòng PASS + "All 10 SQL integration groups passed."
+# Kỳ vọng: 11 dòng PASS + "All 11 SQL integration groups passed."
 
-# 2) HTTP auth — app phải đang chạy
-.\scripts\verify-auth.ps1 -BaseUrl 'http://localhost:5080' -Email 'admin@...' -Password '...'
+# 2) HTTP auth — app phải đang chạy; thông tin quản trị lấy từ biến môi trường
+$env:RENSHUU_ADMIN_EMAIL = 'admin@...'
+$env:RENSHUU_ADMIN_PASSWORD = '<mật-khẩu-quản-trị>'
+.\scripts\verify-auth.ps1 -BaseUrl 'http://localhost:5080'
 # Kỳ vọng: 19 PASS, script exit 0
 ```
 
-Kết quả lần chạy cuối: **10/10** nhóm integration, **19/19** kiểm tra HTTP, kiểm thử
-tài liệu riêng qua HTTP đều đạt.
+Kết quả lần chạy cuối: **11/11** nhóm integration, **19/19** kiểm tra HTTP, kiểm thử
+đăng ký công khai qua HTTP đều đạt.
 
 ---
 
@@ -154,11 +163,12 @@ tài liệu riêng qua HTTP đều đạt.
 | Build web + test | PASS | 0 warning, 0 error |
 | Migration trên DB trống | PASS | chạy trên `RenshuuVerify_Check`, sau đó đã xóa DB |
 | `verify-database.sql` | PASS | tất cả `CHECK OK`; `CHECK INFO` về vai trò Admin khi DB trống là bình thường |
-| Integration SQL 10 nhóm | PASS | migration, thứ tự nộp, nháp, deadline + grace, concurrent, giới hạn 200 câu, import, analytics, tài liệu riêng |
+| Integration SQL 11 nhóm | PASS | migration, thứ tự nộp, nháp, deadline + grace, concurrent, giới hạn 200 câu, import, analytics, quyền riêng tư nội dung, đăng ký công khai |
 | Auth HTTP 19 kiểm tra | PASS | ẩn danh, sai mật khẩu, ReturnUrl, admin, logout POST-only, learner bị chặn |
 | Tài liệu riêng qua HTTP | PASS (thủ công) | tạo user → tải/xem/sửa/xóa TXT; admin nhận 404 với tài liệu và thư mục của user |
 | Admin bị chặn nội dung người dùng | PASS | trang chi tiết chỉ hiện số liệu; không có danh sách thư mục/môn học/tài liệu riêng |
-| **Chưa xác minh** | — | đổi mật khẩu tự phục vụ, quên mật khẩu, đăng ký công khai, responsive mobile của trang auth/tài liệu, seed dữ liệu trên DB thật của team |
+| Đăng ký công khai | PASS | tạo tài khoản người học, email trùng bị từ chối, mật khẩu yếu bị từ chối, gửi kèm `IsAdmin/Role` bị bỏ qua, tài khoản mới đăng nhập được và bị chặn khỏi `/Admin` |
+| **Chưa xác minh** | — | đổi mật khẩu tự phục vụ, quên mật khẩu, responsive mobile của trang auth/tài liệu, seed dữ liệu trên DB thật của team |
 
 ---
 
@@ -166,7 +176,7 @@ tài liệu riêng qua HTTP đều đạt.
 
 1. **Chưa có đổi mật khẩu tự phục vụ.** Admin reset mật khẩu hộ; người dùng không tự đổi được. Nếu cần, thêm trang `Pages/Account/ChangePassword` và bật `AddDefaultTokenProviders` (đã có sẵn).
 2. **Chưa có quên mật khẩu / email.** Chưa cấu hình SMTP; `SignIn.RequireConfirmedAccount = false`.
-3. **Chưa có đăng ký công khai.** Cố ý: tài khoản do admin cấp. Nếu muốn mở đăng ký, cần thêm trang Register + chống spam.
+3. **Đăng ký công khai đã có** (`/Account/Register`), tài khoản mới luôn là người học. Chống spam hiện dùng rate limiting theo IP (20 lần/5 phút cho POST `/Account/Login` và `/Account/Register`); nếu cần chặt hơn, cân nhắc CAPTCHA hoặc xác nhận email.
 4. **`/Admin/*` (nội dung) mở cho mọi tài khoản đã đăng nhập**, chỉ giới hạn theo `OwnerId`. Cân nhắc lại nếu muốn chỉ Admin được vào toàn bộ khu vực quản trị.
 5. **Bài làm cũ (`OwnerId = NULL`) không hiển thị cho ai.** Nếu cần giữ, gán thủ công — câu SQL mẫu nằm trong `database/TASK-LOG.md`.
 6. **Chưa kiểm thử mobile/responsive** cho `Login`/`Denied`/`Accounts`. Có sẵn `scripts/verify-experience.cjs` và `verify-study-flow.cjs` (Playwright) để mở rộng.

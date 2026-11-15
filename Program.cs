@@ -1,5 +1,7 @@
 using System.Security.Claims;
+using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
@@ -27,6 +29,29 @@ builder.Services.AddScoped<QuizService>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<ImportService>();
 builder.Services.AddScoped<AccountAdminService>();
+
+// Sign-in and registration posts are throttled per client IP. GET requests are not limited.
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy(Security.AuthFormPolicy, httpContext =>
+    {
+        if (!HttpMethods.IsPost(httpContext.Request.Method))
+        {
+            return RateLimitPartition.GetNoLimiter("auth-get");
+        }
+
+        var client = httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+        return RateLimitPartition.GetFixedWindowLimiter(
+            $"{client}:{httpContext.Request.Path}",
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = 20,
+                Window = TimeSpan.FromMinutes(5),
+                QueueLimit = 0,
+            });
+    });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -61,15 +86,19 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+using (var scope = app.Services.CreateScope())
 {
-    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    var isFreshDatabase = false;
 
-    var isFreshDatabase = (await db.Database.GetPendingMigrationsAsync()).Any();
-    await db.Database.MigrateAsync();
+    if (app.Environment.IsDevelopment())
+    {
+        isFreshDatabase = (await db.Database.GetPendingMigrationsAsync()).Any();
+        await db.Database.MigrateAsync();
+    }
 
-    await DevelopmentAccounts.EnsureAdminAsync(scope.ServiceProvider, builder.Configuration);
+    await AdminBootstrap.EnsureAdminAsync(
+        scope.ServiceProvider, builder.Configuration, app.Environment, app.Logger);
 
     if (isFreshDatabase)
     {
@@ -81,6 +110,7 @@ app.UseExceptionHandler("/Error");
 app.UseStatusCodePagesWithReExecute("/Error", "?code={0}");
 app.UseStaticFiles();
 app.UseRouting();
+app.UseRateLimiter();
 app.UseSession();
 app.UseAuthentication();
 app.UseAuthorization();
@@ -91,6 +121,7 @@ app.Run();
 public static class Security
 {
     public const string AdminPolicy = "AdminOnly";
+    public const string AuthFormPolicy = "AuthForms";
 }
 
 /// <summary>
@@ -116,24 +147,41 @@ public class ApplicationUserClaimsFactory : UserClaimsPrincipalFactory<Applicati
 }
 
 /// <summary>
-/// Bootstraps the first administrator only through explicit development configuration
-/// (user secrets or environment variables). Never promotes arbitrary accounts.
-/// An existing account is only granted the role; a missing account is created when a
-/// password is configured. Both "DevelopmentAdmin:Password" and the older
-/// "DevelopmentAdmin:LoginPassword" key are accepted.
+/// Bootstraps the first administrator from explicit configuration only:
+/// user secrets in Development, environment variables (BootstrapAdmin__Email /
+/// BootstrapAdmin__Password) elsewhere. Never promotes arbitrary accounts and never
+/// falls back to a default password. An existing account is only granted the role;
+/// a missing account is created when a password is configured. The legacy
+/// "DevelopmentAdmin:*" keys are still read so existing local setups keep working.
 /// </summary>
-public static class DevelopmentAccounts
+public static class AdminBootstrap
 {
-    public static async Task EnsureAdminAsync(IServiceProvider services, IConfiguration configuration)
+    public static async Task EnsureAdminAsync(
+        IServiceProvider services,
+        IConfiguration configuration,
+        IHostEnvironment environment,
+        ILogger logger)
     {
-        var email = configuration["DevelopmentAdmin:Email"];
+        var email = FirstValue(configuration, "BootstrapAdmin:Email", "DevelopmentAdmin:Email");
         if (string.IsNullOrWhiteSpace(email))
         {
+            logger.LogWarning(environment.IsDevelopment()
+                ? "Chưa cấu hình quản trị viên đầu tiên. Đặt BootstrapAdmin:Email và " +
+                  "BootstrapAdmin:Password bằng 'dotnet user-secrets set' trong project " +
+                  "TracNghiemWeb rồi chạy lại. Ứng dụng không có mật khẩu quản trị mặc định."
+                : "Chưa cấu hình BootstrapAdmin:Email/BootstrapAdmin:Password. Ứng dụng " +
+                  "không tạo tài khoản quản trị nào. Nếu database chưa có quản trị viên, hãy " +
+                  "đặt biến môi trường BootstrapAdmin__Email và BootstrapAdmin__Password rồi " +
+                  "khởi động lại.");
             return;
         }
 
-        var password = configuration["DevelopmentAdmin:Password"]
-            ?? configuration["DevelopmentAdmin:LoginPassword"];
+        email = email.Trim().ToLowerInvariant();
+        var password = FirstValue(
+            configuration,
+            "BootstrapAdmin:Password",
+            "DevelopmentAdmin:Password",
+            "DevelopmentAdmin:LoginPassword");
 
         var roles = services.GetRequiredService<RoleManager<IdentityRole>>();
         if (!await roles.RoleExistsAsync(CurrentUser.AdminRole))
@@ -151,6 +199,11 @@ public static class DevelopmentAccounts
         {
             if (string.IsNullOrWhiteSpace(password))
             {
+                logger.LogWarning(
+                    "Đã cấu hình email quản trị {Email} nhưng thiếu mật khẩu ban đầu. Đặt " +
+                    "BootstrapAdmin:Password (hoặc biến môi trường BootstrapAdmin__Password) " +
+                    "để tạo tài khoản quản trị đầu tiên.",
+                    email);
                 return;
             }
 
@@ -166,7 +219,7 @@ public static class DevelopmentAccounts
             if (!result.Succeeded)
             {
                 throw new InvalidOperationException(
-                    "Không thể tạo tài khoản quản trị từ cấu hình DevelopmentAdmin. " +
+                    "Không thể tạo tài khoản quản trị từ cấu hình BootstrapAdmin. " +
                     string.Join(" ", result.Errors.Select(e => e.Description)));
             }
         }
@@ -180,4 +233,10 @@ public static class DevelopmentAccounts
             }
         }
     }
+
+    private static string? FirstValue(IConfiguration configuration, params string[] keys) =>
+        keys.Select(configuration.GetSection)
+            .Select(section => section.Value)
+            .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 }
+

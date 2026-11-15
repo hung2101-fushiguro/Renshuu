@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.32" />
     <ProjectReference Include="../../TracNghiemWeb.csproj" />
   </ItemGroup>
 </Project>

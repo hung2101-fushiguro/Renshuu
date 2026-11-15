@@ -1,10 +1,14 @@
 ﻿param(
     [string]$BaseUrl = 'http://localhost:5191',
-    [string]$Email = 'admin@renshuu.local',
-    [string]$Password = 'Admin#2026pass'
+    [string]$Email = $env:RENSHUU_ADMIN_EMAIL,
+    [string]$Password = $env:RENSHUU_ADMIN_PASSWORD
 )
 
 $ErrorActionPreference = 'Stop'
+
+if ([string]::IsNullOrWhiteSpace($Email) -or [string]::IsNullOrWhiteSpace($Password)) {
+    throw 'Thiếu tài khoản quản trị. Đặt biến môi trường RENSHUU_ADMIN_EMAIL và RENSHUU_ADMIN_PASSWORD (hoặc truyền -Email/-Password) bằng thông tin quản trị viên thật trên môi trường kiểm thử. Script không chứa mật khẩu mặc định.'
+}
 $work = Join-Path $env:TEMP ("renshuu-auth-" + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory -Path $work | Out-Null
 $cookies = Join-Path $work 'cookies.txt'
@@ -90,7 +94,7 @@ try {
     # 4. Admin pages load for the administrator.
     $accounts = Get-Page '/Admin/Accounts'
     Assert-True ($accounts.Status -eq 200 -and $accounts.Body -match 'Quản lý tài khoản') 'Quản trị viên xem được danh sách tài khoản'
-    Assert-True ($accounts.Body -match 'admin@renshuu.local') 'Danh sách hiển thị tài khoản quản trị'
+    Assert-True ($accounts.Body -match [regex]::Escape($Email)) 'Danh sách hiển thị tài khoản quản trị'
 
     $dashboard = Get-Page '/'
     Assert-True ($dashboard.Status -eq 200) 'Quản trị viên xem được không gian luyện tập'

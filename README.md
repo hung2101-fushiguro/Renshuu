@@ -29,7 +29,10 @@ dotnet run --no-launch-profile --urls http://localhost:5186
 
 ## Tài khoản và phân quyền
 
-Ứng dụng yêu cầu đăng nhập cho mọi trang (trừ `/Account/Login`, `/Account/Logout`, `/Account/Denied`, `/Error`).
+Ứng dụng yêu cầu đăng nhập cho mọi trang (trừ `/Account/Login`, `/Account/Register`,
+`/Account/Logout`, `/Account/Denied`, `/Error`). Người học có thể tự tạo tài khoản tại
+`/Account/Register`; tài khoản đăng ký luôn có vai trò người học, không có trường vai trò
+nào được nhận từ form. Đăng nhập và đăng ký bị giới hạn tần suất theo IP (20 lần/5 phút).
 ASP.NET Core Identity lưu tài khoản trong `AspNetUsers`; hai vai trò:
 
 - **Admin** — chỉ quản lý tài khoản tại `/Admin/Accounts`: tạo tài khoản, đặt lại mật khẩu,
@@ -42,23 +45,42 @@ Quyền sở hữu nội dung: dữ liệu mẫu chưa có chủ (`OwnerId = NUL
 mọi thư mục, môn học, bài làm và tài liệu do tài khoản tạo chỉ hiển thị với chính tài khoản đó.
 Tài liệu được lưu ngoài thư mục ứng dụng, tối đa 20 MB mỗi tệp (PDF, DOCX, PPTX, TXT).
 
-Tạo quản trị viên đầu tiên chỉ trong Development:
+Tạo quản trị viên đầu tiên bằng cấu hình, không có mật khẩu mặc định trong mã nguồn.
+
+Development (user secrets):
 
 ```powershell
-dotnet user-secrets set "DevelopmentAdmin:Email" "admin@ten-mien"
-dotnet user-secrets set "DevelopmentAdmin:Password" "MatKhauManh#2026"
+dotnet user-secrets set "BootstrapAdmin:Email" "admin@ten-mien-cua-ban"
+dotnet user-secrets set "BootstrapAdmin:Password" "<mật-khẩu-mạnh-của-bạn>"
 dotnet run
 ```
 
-Nếu email đã tồn tại, app chỉ gán vai trò Admin (không đổi mật khẩu). Không có mật khẩu
-mặc định trong mã nguồn. Cấu hình chỉ đọc trong Development và không commit user secrets.
+Production/máy chủ khác (biến môi trường, không ghi vào file cấu hình):
+
+```powershell
+$env:BootstrapAdmin__Email = 'admin@ten-mien-cua-ban'
+$env:BootstrapAdmin__Password = '<mật-khẩu-mạnh-của-bạn>'
+```
+
+Hành vi: email đã tồn tại → app **chỉ gán** vai trò Admin (không đổi mật khẩu); email chưa
+tồn tại + có mật khẩu → tạo tài khoản quản trị. Thiếu cấu hình thì app **không tạo** tài
+khoản nào và ghi log cảnh báo (Development: hướng dẫn `dotnet user-secrets`, Production:
+hướng dẫn biến môi trường). Khoá cũ `DevelopmentAdmin:Email`/`DevelopmentAdmin:Password`
+vẫn được đọc để không phá cấu hình local đã có; `DevelopmentAdmin:ShowLoginCredentials`
+đã bị bỏ hoàn toàn — trang đăng nhập không bao giờ hiển thị tài khoản hay mật khẩu.
+Không commit user secrets.
 Chi tiết bàn giao database: [database/README.md](database/README.md).
 
 Kiểm tra đăng nhập/phân quyền tự động (app đang chạy):
 
 ```powershell
-.\scripts\verify-auth.ps1 -BaseUrl 'http://localhost:5080' -Email 'admin@ten-mien' -Password 'MatKhauManh#2026'
+$env:RENSHUU_ADMIN_EMAIL = 'admin@ten-mien-cua-ban'
+$env:RENSHUU_ADMIN_PASSWORD = '<mật-khẩu-quản-trị-trên-môi-trường-kiểm-thử>'
+.\scripts\verify-auth.ps1 -BaseUrl 'http://localhost:5080'
 ```
+
+Script không chứa email hay mật khẩu mặc định; thiếu biến môi trường thì dừng ngay với
+hướng dẫn. Có thể truyền `-Email`/`-Password` thay cho biến môi trường.
 
 ## Luồng sử dụng
 
@@ -103,6 +125,10 @@ node --check wwwroot/js/dashboard.js
 node --check wwwroot/js/quiz.js
 dotnet run --project tests/Renshuu.IntegrationTests -- "SATORU\SQLEXPRESS"
 ```
+
+Bộ test hiện có **11 nhóm**: migration, thứ tự nộp bài, nháp, deadline + grace, đồng thời,
+giới hạn 200 câu, import, thống kê, quyền riêng tư nội dung và đăng ký công khai (dùng
+`WebApplicationFactory` trên database tạm).
 
 Kiểm thử luồng HTTP phải dùng database riêng và chưa có bài làm để không ảnh hưởng danh sách câu sai:
 

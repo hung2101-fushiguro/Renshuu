@@ -16,7 +16,12 @@
 
 <section class="auth-panel">
     <h2>Đăng nhập</h2>
-    <p class="muted">Dùng email và mật khẩu do quản trị viên cấp.</p>
+    <p class="muted">Đăng nhập bằng email và mật khẩu của bạn.</p>
+
+    @if (TempData["Success"] is string success)
+    {
+        <div class="alert alert-success" role="status">@success</div>
+    }
 
     <form method="post" class="auth-form">
         <input type="hidden" asp-for="ReturnUrl" />
@@ -48,17 +53,9 @@
 
         <button type="submit" class="btn btn-primary btn-block" data-auth-submit>Đăng nhập</button>
         <span class="visually-hidden" role="status" data-auth-status></span>
-        @if (Model.ShowTestAccount)
-        {
-            <p class="small muted mt-md mb-0">
-                Tài khoản thử (chỉ trên máy phát triển)<br />
-                Email: <span data-test-email>@Model.TestEmail</span><br />
-                Mật khẩu: <span data-test-password style="overflow-wrap: anywhere">@Model.TestPassword</span>
-            </p>
-        }
     </form>
 
-    <p class="auth-footnote muted">Chưa có tài khoản? Liên hệ quản trị viên để được cấp.</p>
+    <p class="auth-footnote muted">Chưa có tài khoản? <a asp-page="/Account/Register">Đăng ký</a>.</p>
 </section>
 
 @section Scripts {
