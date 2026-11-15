@@ -1,64 +1,110 @@
 @{
     var authPage = ViewData["AuthPage"] as bool? == true;
     var signedIn = User.Identity?.IsAuthenticated == true;
-    var focusMode = ViewData["FocusMode"] as bool? == true;
     var displayName = User.FindFirst("display_name")?.Value ?? "Tài khoản";
     var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-    var active = ViewData["Active"] as string;
+    var active = ViewData["Active"] as string ?? "subjects";
+    var navigation = new[] {
+        (Page: "/Index", Key: "subjects", Icon: "grid", Text: "Tổng quan"),
+        (Page: "/Documents/Index", Key: "documents", Icon: "folder", Text: "Tài liệu"),
+        (Page: "/Wrong/Index", Key: "wrong", Icon: "retry", Text: "Ôn lại câu sai"),
+        (Page: "/History/Index", Key: "history", Icon: "history", Text: "Lịch sử luyện tập"),
+        (Page: "/History/Analytics", Key: "analytics", Icon: "chart", Text: "Thống kê & Tiến độ"),
+        (Page: "/Admin/Index", Key: "admin", Icon: "settings", Text: "Ngân hàng câu hỏi")
+    };
 }
 <!DOCTYPE html>
-<html lang="vi" data-type="software">
+<html lang="vi" class="no-js" data-type="software" data-radius="soft" data-buttons="solid" data-motion>
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Renshuu — không gian luyện trắc nghiệm, ôn lại câu sai và theo dõi kết quả học tập." />
     <meta name="page-type" content="software" />
     <meta name="site-kind" content="software" />
-    <title>@(ViewData["Title"] is null ? "Trắc nghiệm" : $"{ViewData["Title"]} – Trắc nghiệm")</title>
+    <meta name="theme-color" content="#EFF6FF" />
+    <title>@(ViewData["Title"] is null ? "Renshuu — Luyện trắc nghiệm" : $"{ViewData["Title"]} · Renshuu")</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600&display=swap" rel="stylesheet" />
+    @if (ViewData["ScrollCraft"] is true)
+    {
+        <link rel="stylesheet" href="~/assets/scrollcraft/scrollcraft.css" asp-append-version="true" />
+    }
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/study.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/assets/motion/motion.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/accounts-documents.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body class="@(authPage ? "auth-page" : null)" data-user-id="@userId">
+<body class="@(!signedIn ? "auth-page" : null)" data-user-id="@userId">
+    <!-- Software learning workspace. Blue/amber palette, Be Vietnam Pro, quiet motion and live study controls. -->
     <a class="skip-link" href="#main">Đến nội dung chính</a>
-    <header class="site-header">
-        <div class="container header-inner">
-            <a class="brand" asp-page="/Index"><span class="brand-mark"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></span><span>Trắc nghiệm</span></a>
-            @if (focusMode && signedIn)
+    @if (signedIn)
+    {
+    <aside class="sidebar" id="sidebar" aria-label="Điều hướng ứng dụng">
+        <button class="icon-button sidebar-close" id="menu-close" type="button" aria-label="Đóng điều hướng">×</button>
+        <a class="brand" asp-page="/Index" aria-label="Renshuu — Trang chủ">
+            <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#layers" /></svg></span>
+            <span>renshuu</span>
+        </a>
+        <nav class="workspace-nav" aria-label="Điều hướng chính">
+            @foreach (var item in navigation)
             {
-                <button type="submit" form="quiz-form" asp-page="/Test/Take" asp-route-id="@ViewContext.RouteData.Values["id"]" asp-page-handler="SaveAndExit" class="btn btn-ghost btn-sm" id="leave-quiz">Lưu &amp; thoát</button>
+                <a asp-page="@item.Page" class="@(active == item.Key ? "active" : null)" aria-current="@(active == item.Key ? "page" : null)">
+                    <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#@item.Icon" /></svg>
+                    <span>@item.Text</span>
+                    @if (active == item.Key) { <span class="nav-indicator" aria-hidden="true"></span> }
+                </a>
             }
-            else if (signedIn)
-            {
-                <nav class="site-nav" aria-label="Điều hướng chính">
-                    <a asp-page="/Index" class="@(active == "subjects" ? "active" : null)" aria-current="@(active == "subjects" ? "page" : null)">Luyện tập</a>
-                    <a asp-page="/Documents/Index" class="@(active == "documents" ? "active" : null)" aria-current="@(active == "documents" ? "page" : null)">Tài liệu</a>
-                    <a asp-page="/Admin/Index" class="@(active == "admin" ? "active" : null)" aria-current="@(active == "admin" ? "page" : null)">Ngân hàng</a>
-                    <a asp-page="/Wrong/Index" class="@(active == "wrong" ? "active" : null)" aria-current="@(active == "wrong" ? "page" : null)">Ôn câu sai</a>
-                    <a asp-page="/History/Index" class="@(active == "history" ? "active" : null)" aria-current="@(active == "history" ? "page" : null)">Lịch sử</a>
-                </nav>
+            @if (User.IsInRole("Admin"))
+            { <a asp-page="/Administration/Users/Index" class="@(active == "users" ? "active" : null)"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#settings" /></svg><span>Người dùng</span></a> }
+        </nav>
+        <div class="sidebar-bottom">
+            <div class="workspace-signature"><span class="signature-mark">r.</span><div><strong>Renshuu</strong><span>Luyện tập mỗi ngày.</span></div></div>
+        </div>
+    </aside>
+    <div class="mobile-scrim" id="mobile-scrim" hidden></div>
+    }
+    <div class="app-shell">
+        @if (signedIn)
+        {
+        <header class="topbar">
+            <div class="topbar-location">
+                <button class="icon-button mobile-menu" id="menu-toggle" type="button" aria-label="Mở điều hướng" aria-controls="sidebar" aria-expanded="false"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#menu" /></svg></button>
+                <span>Renshuu</span><span class="topbar-divider" aria-hidden="true">/</span><strong>@ViewData["Title"]</strong>
+            </div>
+            <div class="topbar-actions">
+                <span class="today-date"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#calendar" /></svg> @DateTime.Now.ToString("dd.MM.yyyy")</span>
+                <button class="icon-button" id="motion-toggle" type="button" aria-label="Tạm dừng chuyển động" aria-pressed="false" title="Bật hoặc tắt chuyển động"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#motion" /></svg></button>
                 <details class="user-menu"><summary aria-label="Menu tài khoản @displayName"><span class="user-avatar" aria-hidden="true">@Display.Initial(displayName)</span><span class="user-menu-name">@displayName</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary><div class="user-menu-panel"><div class="user-menu-heading"><strong>@displayName</strong><span class="badge @(User.IsInRole("Admin") ? "badge-accent" : "badge-primary")">@(User.IsInRole("Admin") ? "Admin" : "User")</span></div><a asp-page="/Account/Profile">Tài khoản của tôi</a><a asp-page="/Documents/Index">Tài liệu của tôi</a>
                     @if (User.IsInRole("Admin")) { <div class="menu-divider"></div><a asp-page="/Administration/Users/Index">Quản lý người dùng</a><a asp-page="/Documents/Index" asp-route-scope="all">Tài liệu người dùng</a> }
                     <form method="post" asp-page="/Account/Logout" data-logout><button type="submit">Đăng xuất <span aria-hidden="true">↗</span></button></form>
                 </div></details>
-            }
-            else
-            {
-                <span class="guest-nav"><a asp-page="/Account/Login">Đăng nhập</a><a asp-page="/Account/Register" class="btn btn-secondary btn-sm">Tạo tài khoản</a></span>
-            }
-        </div>
-    </header>
-    <main id="main" class="container main @(authPage ? "auth-main" : null)">
-        @if (TempData["Error"] is string errorMessage) { <div class="alert alert-danger" role="alert">@errorMessage</div> }
-        @if (TempData["Success"] is string successMessage) { <div class="alert alert-success" role="status">@successMessage</div> }
-        @if (TempData["Warning"] is string warningMessage) { <div class="alert alert-warning" role="status">@warningMessage</div> }
-        @RenderBody()
-    </main>
-    <footer class="site-footer"><div class="container"><p>Trắc nghiệm <span aria-hidden="true">·</span> Không gian học tập</p></div></footer>
+            </div>
+        </header>
+        }
+        else
+        { <header class="topbar auth-topbar"><a class="auth-brand" asp-page="/Account/Login">renshuu<span>.</span></a><a asp-page="/Account/Register" class="btn btn-secondary btn-sm">Tạo tài khoản</a></header> }
+        <main id="main" class="container main @(authPage ? "auth-main" : null)" tabindex="-1">
+            @if (TempData["Error"] is string errorMessage)
+            { <div class="alert alert-danger" role="alert">@errorMessage</div> }
+            @if (TempData["Success"] is string successMessage)
+            { <div class="alert alert-success" role="status">@successMessage</div> }
+            @if (TempData["Warning"] is string warningMessage)
+            { <div class="alert alert-warning" role="status">@warningMessage</div> }
+            @RenderBody()
+        </main>
+        <footer class="workspace-footer"><span>renshuu<span class="footer-dot">.</span></span><span>Học. Hiểu. Nhớ.</span></footer>
+    </div>
     <dialog id="action-dialog" class="submit-dialog" aria-labelledby="action-title" aria-describedby="action-description"><div class="dialog-mark" aria-hidden="true">!</div><h2 id="action-title">Xác nhận thao tác</h2><p id="action-description"></p><div class="dialog-actions"><button type="button" class="btn btn-secondary" id="action-cancel">Giữ lại</button><button type="button" class="btn btn-danger" id="action-confirm">Xác nhận xóa</button></div></dialog>
+    @if (signedIn)
+    {
     <script src="~/js/workspace.js" asp-append-version="true" defer></script>
+    <script src="~/js/import-preview.js" asp-append-version="true" defer></script>
+    <script type="module" src="~/assets/motion/motion.js" asp-append-version="true"></script>
+    }
+    <script src="~/js/accounts-documents.js" asp-append-version="true" defer></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

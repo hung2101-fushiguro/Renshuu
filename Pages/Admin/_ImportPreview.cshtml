@@ -1,7 +1,13 @@
 @model TracNghiemWeb.Services.ImportPreview
 
-<div class="table-wrap mb-lg">
-    <table class="table">
+<div data-import-preview>
+<div class="toolbar preview-toolbar" hidden data-preview-controls>
+    <div class="field"><label>Trạng thái dòng<select class="input" data-preview-filter><option value="all">Tất cả (@Model.Items.Count)</option><option value="valid">Hợp lệ (@Model.ValidCount)</option><option value="duplicate">Trùng (@Model.DuplicateCount)</option><option value="invalid">Lỗi (@Model.InvalidCount)</option></select></label></div>
+    <p class="small muted mb-0" data-preview-count role="status"></p>
+</div>
+<p class="small muted preview-scroll-hint">Cuộn ngang bảng để xem đủ nội dung và chi tiết lỗi trên màn hình nhỏ.</p>
+<div class="table-wrap mb-lg" tabindex="0" role="region" aria-label="Danh sách câu hỏi xem trước, có thể cuộn ngang">
+    <table class="table preview-table">
         <thead>
             <tr>
                 <th scope="col">#</th>
@@ -15,7 +21,7 @@
             @foreach (var item in Model.Items)
             {
                 var isDuplicate = item.IsValid && Model.Duplicates.Contains(item.Index);
-                <tr class="@(item.IsValid ? null : "row-invalid")">
+                <tr class="@(item.IsValid ? null : "row-invalid")" data-preview-status="@(!item.IsValid ? "invalid" : isDuplicate ? "duplicate" : "valid")">
                     <td class="nowrap">@item.Index</td>
                     <td>@item.Subject</td>
                     <td>
@@ -49,9 +55,11 @@
         </tbody>
     </table>
 </div>
+<p class="empty" data-preview-empty hidden>Không có dòng nào thuộc trạng thái này.</p>
 
 <p class="muted">
     Hợp lệ: <strong>@Model.ValidCount</strong> ·
     Trùng (bỏ qua): <strong>@Model.DuplicateCount</strong> ·
     Lỗi (bỏ qua): <strong>@Model.InvalidCount</strong>
 </p>
+</div>

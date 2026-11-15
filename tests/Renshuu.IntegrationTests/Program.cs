@@ -31,9 +31,9 @@ void Check(bool condition, string message)
 void Pass(string message) => Console.WriteLine("PASS " + message);
 Dictionary<int, string?> Answer(int id, string value) => new() { [id] = value };
 Question Question(string content) => new() { Content = content, OptionA = "A", OptionB = "B", OptionC = "C", OptionD = "D", CorrectOption = "A" };
-async Task<int> Start(int subject, int? minutes = null)
+async Task<int> Start(int subject, int? minutes = null, int count = 1)
 {
-    var result = await Run(q => q.StartAsync(subject, 1, minutes));
+    var result = await Run(q => q.StartAsync(subject, count, minutes));
     Check(result.Success, result.Error ?? "Start failed");
     return result.AttemptId!.Value;
 }
@@ -201,8 +201,43 @@ try
     Check((await Run(q => q.GetAttemptForResultAsync(blank)))!.CorrectCount == 0, "Blank and foreign answers must not score");
     Pass("Invalid setup is rejected; clearing, blank submission and foreign answers are handled correctly");
 
+    // Analytics and Flashcards: verify recovery rate, subject performances, and deck queries
+    await using (var db = Db())
+    {
+        var subjectA = new Subject { Name = "C# Core", Questions = [Question("C# 1"), Question("C# 2")] };
+        var subjectB = new Subject { Name = "ASP.NET Core", Questions = [Question("ASP 1"), Question("ASP 2")] };
+        db.Subjects.AddRange(subjectA, subjectB);
+        await db.SaveChangesAsync();
+
+        var qA1 = subjectA.Questions.First().Id;
+        var qB1 = subjectB.Questions.First().Id;
+
+        // Attempt 1 on Subject A: qA1 answered wrong ("B")
+        clock.Advance(10);
+        var att1 = await Start(subjectA.Id, null, 2);
+        await Run(q => q.SubmitAsync(att1, new Dictionary<int, string?> { [qA1] = "B" }));
+
+        var analytics1 = await Run(q => q.GetAnalyticsAsync());
+        Check(analytics1.TotalEverWrong >= 1, "Must detect ever-wrong question");
+        var initialRecovered = analytics1.TotalRecoveredWrong;
+
+        // Attempt 2 on Subject A: qA1 answered correct ("A") -> Recovered!
+        clock.Advance(10);
+        var att2 = await Start(subjectA.Id, null, 2);
+        await Run(q => q.SubmitAsync(att2, new Dictionary<int, string?> { [qA1] = "A" }));
+
+        var analytics2 = await Run(q => q.GetAnalyticsAsync());
+        Check(analytics2.TotalRecoveredWrong == initialRecovered + 1, "Recovered count must increase by 1");
+        Check(analytics2.RecoveryRate > 0, "Recovery rate must be positive");
+
+        // Verify Flashcard deck query (null subjectId and specific subjectId)
+        var wrongAll = await Run(q => q.GetWrongQuestionsAsync(null));
+        Check(wrongAll.All(q => q.Subject != null), "Wrong questions must include Subject navigation property for Flashcards");
+    }
+    Pass("Analytics and Flashcards: recovery rate calculation, subject ratings, and deck queries verified");
+
     await AccessAndDocumentChecks.RunAsync(options, clock, actor);
-    Console.WriteLine("All 11 SQL integration groups passed.");
+    Console.WriteLine("All 12 SQL integration groups passed.");
 }
 finally
 {

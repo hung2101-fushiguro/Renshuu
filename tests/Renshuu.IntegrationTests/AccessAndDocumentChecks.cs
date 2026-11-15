@@ -58,6 +58,13 @@ static class AccessAndDocumentChecks
         }
         await Quiz(owner, q => q.SubmitAsync(attempt, answer));
         Check((await Quiz(other, q => q.GetWrongQuestionsAsync(subject))).Count == 0, "Wrong review crossed users");
+        Check((await Quiz(owner, q => q.GetAnalyticsAsync())).TotalAttempts > 0, "Owner analytics missing");
+        foreach (var actor in new ICurrentUser[] { other, admin, new TestUser { Id = null } })
+        {
+            Check((await Quiz(actor, q => q.GetAnalyticsAsync())).TotalAttempts == 0, "Analytics crossed users");
+            Check((await Quiz(actor, q => q.GetAnalyticsAsync(subject))).TotalEverWrong == 0, "Subject analytics crossed users");
+            Check((await Quiz(actor, q => q.GetPracticeSummaryAsync())).AttemptCount == 0, "Dashboard summary crossed users");
+        }
         await Quiz(other, q => q.ClearHistoryAsync());
         Check(await Quiz(owner, q => q.GetAttemptForResultAsync(attempt)) is not null, "Clear history crossed users");
         Check(!(await Quiz(new TestUser { Id = null }, q => q.StartAsync(subject, 1, null))).Success, "Anonymous attempt creation");

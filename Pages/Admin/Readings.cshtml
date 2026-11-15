@@ -9,7 +9,7 @@
 <div class="page-head">
     <div>
         <h1>Nhập bài đọc</h1>
-        <p>Dán bài đọc kèm bộ câu hỏi riêng, xem trước rồi mới lưu.</p>
+        <p>Dán nội dung · xem trước rồi lưu.</p>
     </div>
 </div>
 
@@ -21,7 +21,7 @@
     <div class="card">
         <div class="form-grid">
             <div class="field">
-                <label asp-for="SubjectId">Môn học (áp dụng cho tất cả bài đọc dán vào)</label>
+                <label asp-for="SubjectId">Môn học</label>
                 <select asp-for="SubjectId" class="input">
                     <partial name="_SubjectOptions" model="SubjectOptionsView.From(Model.Subjects, Model.SubjectId)" />
                 </select>
@@ -31,13 +31,13 @@
                 <label asp-for="Text">Nội dung bài đọc và câu hỏi</label>
                 <textarea asp-for="Text" class="input" rows="22" spellcheck="false"
                           placeholder="[BÀI ĐỌC] Bài 1: Tiêu đề&#10;Nội dung bài đọc...&#10;&#10;[CÂU HỎI]&#10;28. Câu hỏi...&#10;1. Đáp án 1&#10;2. Đáp án 2&#10;3. Đáp án 3&#10;4. Đáp án 4&#10;Đáp án: 3&#10;&#10;29. Câu hỏi tiếp theo...&#10;...&#10;[HẾT BÀI]"></textarea>
-                <span class="hint">
+                <details class="help-disclosure"><summary>Cách nhập bài đọc</summary><div class="help-content hint">
                     Mỗi bài bắt đầu bằng <code>[BÀI ĐỌC]</code>, phần câu hỏi bắt đầu bằng <code>[CÂU HỎI]</code>.
                     Các câu cách nhau bằng dòng trống; đáp án có thể là <code>1–4</code> hoặc <code>A–D</code>.
                     Dùng <code>&lt;star&gt;&lt;/star&gt;</code> cho ngôi sao và
                     <code>&lt;blank&gt;&lt;/blank&gt;</code> cho chỗ trống.
                     Bài đọc chỉ có 1 câu thì dùng mục <a asp-page="/Admin/Paste">Dán câu hỏi</a>.
-                </span>
+                </div></details>
             </div>
         </div>
     </div>

@@ -9,9 +9,20 @@
 <div class="page-head">
     <div>
         <h1>Câu còn sai</h1>
-        <p>Trả lời đúng ở lượt sau để gỡ câu khỏi danh sách.</p>
+        <p>Ôn lại đến khi trả lời đúng.</p>
     </div>
 </div>
+
+<nav class="subnav mb-lg" aria-label="Chế độ ôn tập">
+    <a asp-page="/Wrong/Index" asp-route-subjectId="@Model.SubjectId" class="active" aria-current="page">
+        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#retry" /></svg>
+        Danh sách câu sai
+    </a>
+    <a asp-page="/Wrong/Flashcard" asp-route-subjectId="@Model.SubjectId">
+        <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
+        Thẻ ghi nhớ Flashcard
+    </a>
+</nav>
 
 @if (Model.Subjects.Count == 0)
 {
@@ -44,12 +55,12 @@ else
     {
         <div class="card mb-lg">
             <h2 class="mt-0">Làm lại các câu sai</h2>
-            <p class="muted">Bài làm sẽ gồm đúng @Model.Questions.Count câu sai này, thứ tự câu được xáo trộn.</p>
+            <p class="muted">@Math.Min(Model.Questions.Count, QuizService.MaxQuestionsPerAttempt) câu · thứ tự ngẫu nhiên · tối đa 200 câu/lượt.</p>
             <form method="post" class="toolbar mb-0">
                 <input type="hidden" asp-for="SubjectId" />
                 <div class="field">
-                    <label asp-for="TimeLimitMinutes">Thời gian (phút, để trống nếu không giới hạn)</label>
-                    <input asp-for="TimeLimitMinutes" type="number" min="1" max="240" class="input" placeholder="Ví dụ: 10" />
+                    <label asp-for="TimeLimitMinutes">Thời gian (phút)</label>
+                    <input asp-for="TimeLimitMinutes" type="number" min="1" max="240" class="input" placeholder="Không giới hạn" />
                     <span asp-validation-for="TimeLimitMinutes" class="field-error"></span>
                 </div>
                 <button type="submit" class="btn btn-accent">
@@ -57,8 +68,12 @@ else
                         <path d="M1 4v6h6" />
                         <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
                     </svg>
-                    Làm lại các câu sai (@Model.Questions.Count câu)
+                    Làm lại các câu sai (@Math.Min(Model.Questions.Count, QuizService.MaxQuestionsPerAttempt) câu)
                 </button>
+                <a class="btn btn-secondary" asp-page="/Wrong/Flashcard" asp-route-subjectId="@Model.SubjectId">
+                    <svg class="icon" aria-hidden="true"><use href="/images/icons.svg#spark" /></svg>
+                    Ôn nhanh bằng Flashcard
+                </a>
             </form>
         </div>
 
@@ -81,12 +96,7 @@ else
                     <span class="question-number">@(index + 1)</span>
                     <div>
                         <p class="question-content">@Display.RichText(question.Content)</p>
-                        <p class="mt-sm mb-0">
-                            <span class="badge badge-primary">
-                                Đáp án đúng: @(Display.OptionLabel(question.OptionStyle, question.CorrectOption)).
-                                @Display.RichText(question.GetOption(question.CorrectOption))
-                            </span>
-                        </p>
+                        <p class="answer-line"><span>Đáp án đúng: @(Display.OptionLabel(question.OptionStyle, question.CorrectOption)).</span> @Display.RichText(question.GetOption(question.CorrectOption))</p>
                     </div>
                 </div>
                 @if (!string.IsNullOrWhiteSpace(question.Explanation))

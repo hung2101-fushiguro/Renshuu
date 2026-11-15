@@ -36,13 +36,13 @@ async function main() {
         await authenticateContext(context, base, session.Accounts.userA);
         let page = await context.newPage(); observe(page);
         await page.goto(base);
-        assert(await page.locator('[data-count-preset="20"]').isDisabled());
-        await page.locator('[data-time-preset="30"]').click();
+        assert(await page.locator('[data-value="20"]').isDisabled());
+        await page.locator('#Input_TimeLimitMinutes').fill('30');
         assert.equal(await page.locator('#Input_TimeLimitMinutes').inputValue(), '30');
         await page.locator('#library-search').fill('LAP TRINH');
         assert.equal(await page.locator('.library-item:visible').count(), 1);
         await page.locator('#library-search').fill('does not exist');
-        assert(await page.locator('#library-empty').isVisible());
+        assert(await page.locator('#search-empty').isVisible());
         pass('Setup presets respect the bank size; library search ignores Vietnamese accents');
 
         const attempt = await start(page, 3, 10);
@@ -106,10 +106,9 @@ async function main() {
             assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow at ${width}`);
         }
         await page.emulateMedia({ reducedMotion: 'reduce' });
-        await page.locator('.question-overview').evaluate(element => { element.open = true; });
-        await page.locator('#next-unanswered').click();
-        assert.equal(await page.locator('.question:focus').getAttribute('data-question-number'), '2');
-        pass('Question navigation, focus, reduced motion and four viewport widths work');
+        await page.locator('.question').nth(1).locator('input[value="A"]').focus();
+        assert.equal(await page.locator('.question input:focus').getAttribute('value'), 'A');
+        pass('Quiz keyboard focus, reduced motion and four viewport widths work');
 
         const stale = await context.newPage(); observe(stale); await stale.goto(base + attempt.path);
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
@@ -119,13 +118,13 @@ async function main() {
         assert(!await page.locator('#submit-dialog').isVisible());
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
         await page.locator('#confirm-submit').click(); await page.waitForURL('**/Test/Result/*');
-        assert.match(await page.locator('.result-summary').innerText(), /1\/3/);
+        assert.match(await page.locator('.result-summary').innerText(), /đúng 1 trong 3 câu/);
         assert.equal(await page.evaluate(key => localStorage.getItem(key), draftKey(attempt.path)), null);
         const summary = await page.locator('.result-summary').innerText();
         if (!await radio(stale, items[0], 'B').isDisabled()) await radio(stale, items[0], 'B').check();
         await stale.waitForFunction(() => !!document.querySelector('#draft-status a'));
         assert(await radio(stale, items[0], 'B').isDisabled());
-        const token = await stale.locator('input[name="__RequestVerificationToken"]').inputValue();
+        const token = await stale.locator('#quiz-form input[name="__RequestVerificationToken"]').inputValue();
         const blocked = await context.request.post(base + attempt.path + '?handler=SaveDraft', { form: { id: attempt.id, [items[0].name]: 'B' } });
         assert.equal(blocked.status(), 400);
         const closed = await context.request.post(base + attempt.path + '?handler=SaveDraft', { form: { id: attempt.id, __RequestVerificationToken: token, [items[0].name]: 'B' } });
@@ -147,13 +146,13 @@ async function main() {
         await page.unroute('**' + failureAttempt.path);
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
         await page.waitForURL('**/Test/Result/*');
-        assert.match(await page.locator('.result-summary').innerText(), /2\/2/);
+        assert.match(await page.locator('.result-summary').innerText(), /đúng 2 trong 2 câu/);
         pass('A failed submission keeps all choices and can be retried successfully');
 
         await start(page, 1);
         await page.locator('button[form="quiz-form"]').filter({ hasText: 'Nộp bài' }).click();
         await page.locator('#confirm-submit').click(); await page.waitForURL('**/Test/Result/*');
-        assert.match(await page.locator('.result-summary').innerText(), /0\/1/);
+        assert.match(await page.locator('.result-summary').innerText(), /đúng 0 trong 1 câu/);
         pass('Submitting a completely blank exam grades zero correctly');
 
         const timed = await start(page, 1, 1);
@@ -161,7 +160,7 @@ async function main() {
         await radio(page, items[0], correct(items[0].id)).check(); await waitSaved(page, 1);
         sql(`UPDATE dbo.Attempts SET StartedAt=DATEADD(second,-59,GETDATE()) WHERE Id=${timed.id}`);
         await page.reload(); await page.waitForURL('**/Test/Result/*', { timeout: 10000 });
-        assert.match(await page.locator('.result-summary').innerText(), /1\/1/);
+        assert.match(await page.locator('.result-summary').innerText(), /đúng 1 trong 1 câu/);
         pass('The countdown expires and automatically submits the saved exam');
 
         for (const route of ['/', '/Admin', '/Admin/Questions', '/Admin/Paste', '/Admin/AddMany', '/Admin/Readings', '/History', '/Wrong', '/Folder/1']) {

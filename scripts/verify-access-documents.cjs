@@ -227,7 +227,7 @@ async function main() {
         pass('Profile and password updates keep the current session and revoke old sessions');
         for (const width of [1440, 1024, 768, 390]) {
             await admin.setViewportSize({ width, height: width === 390 ? 844 : 900 });
-            for (const route of ['/Administration/Users', '/Documents?Scope=all', '/Documents/Upload', '/Administration/Users/Edit', '/Documents/Edit/' + docxId, '/Account/Profile']) {
+            for (const route of ['/Administration/Users', '/Documents?Scope=all', '/Documents/Upload', '/Administration/Users/Edit', '/Documents/Edit/' + docxId, '/Account/Profile', '/History/Analytics', '/Wrong/Flashcard', '/']) {
                 await admin.goto(base + route);
                 assert(await admin.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `Overflow ${route} at ${width}`);
             }

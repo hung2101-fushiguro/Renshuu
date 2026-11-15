@@ -69,7 +69,7 @@ CLI chỉ tạo tài khoản mới, không ghi đè mật khẩu hoặc nâng qu
 ## Kiểm chứng và chạy lại
 
 ```powershell
-dotnet run --project tests/TracNghiemWeb.IntegrationTests -c Release --no-launch-profile
+dotnet run --project tests/Renshuu.IntegrationTests -c Release --no-launch-profile
 .\scripts\setup-access-test.ps1
 # Ở terminal riêng, chạy host kiểm thử:
 $fixture = Get-Content artifacts/access-test.json -Raw | ConvertFrom-Json
@@ -82,7 +82,7 @@ node scripts/verify-access-documents.cjs http://localhost:5081 $fixture.Database
 .\scripts\cleanup-access-test.ps1
 ```
 
-- 11 nhóm SQL qua: các kiểm thử luồng học trước đó, nâng cấp giữ dữ liệu, tách bài làm, quyền tài liệu/CRUD/rowversion/định dạng, quản trị tài khoản/security stamp/admin cuối cùng. Tạo và xóa đúng database riêng mỗi lần.
+- 12 nhóm SQL qua: các kiểm thử luồng học trước đó, flashcard/thống kê, nâng cấp giữ dữ liệu, tách bài làm và thống kê theo tài khoản, quyền tài liệu/CRUD/rowversion/định dạng, quản trị tài khoản/security stamp/admin cuối cùng. Tạo và xóa đúng database riêng mỗi lần.
 - 11 nhóm trình duyệt luồng học trước đó vẫn qua với đăng nhập.
 - 16 nhóm trình duyệt tài khoản/tài liệu qua: ẩn danh/CSRF; login; đăng ký chống nâng quyền; upload/Unicode/XSS; chặn truy cập chéo; PDF/DOCX/PPTX; định dạng; admin sửa/thay tệp; xác nhận xóa; tạo/ngừng user; đổi quyền; xóa giữ sở hữu; return URL/logout; hết phiên/đổi tài khoản/bản nháp; profile/password; responsive/bàn phím/reduced motion.
 - Ảnh thật trên Chrome headless ở 390/768/1024/1440 px, có kiểm tra PDF native viewer. Báo cáo và credential fixture chỉ nằm trong `artifacts/`, không publish.

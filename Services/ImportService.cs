@@ -475,25 +475,23 @@ public class ImportService
 
         var subjectMap = await GetSubjectMapAsync(valid);
         var subjectIds = subjectMap.Values.Select(s => s.Id).Distinct().ToList();
-        if (subjectIds.Count == 0)
-        {
-            return duplicates;
-        }
-
         var existing = await _db.Questions
             .Where(q => subjectIds.Contains(q.SubjectId))
             .Select(q => new { q.SubjectId, q.Content })
             .ToListAsync();
         var existingKeys = new HashSet<string>(existing.Select(x => DuplicateKey(x.SubjectId, x.Content)));
+        var newSubjectKeys = new HashSet<(string Subject, string Content)>();
 
         foreach (var item in valid)
         {
             if (!subjectMap.TryGetValue(item.Subject!.Trim(), out var subject))
             {
+                if (!newSubjectKeys.Add((item.Subject.Trim().ToUpperInvariant(), item.Content!.Trim().ToLowerInvariant())))
+                    duplicates.Add(item.Index);
                 continue;
             }
 
-            if (existingKeys.Contains(DuplicateKey(subject.Id, item.Content!)))
+            if (!existingKeys.Add(DuplicateKey(subject.Id, item.Content!)))
             {
                 duplicates.Add(item.Index);
             }

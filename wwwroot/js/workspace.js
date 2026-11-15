@@ -1,76 +1,76 @@
 (() => {
-    'use strict';
-    const userId = document.body.dataset.userId || '';
-    const marker = 'tracnghiem_account';
-    const clearOtherDrafts = () => {
-        try {
-            Object.keys(localStorage).filter(key => key.startsWith('quiz_draft_v2:') || key.startsWith('quiz_draft_v3:') && !key.startsWith('quiz_draft_v3:' + userId + ':')).forEach(key => localStorage.removeItem(key));
-            localStorage.setItem(marker, userId);
-        } catch (_) { /* Server ownership is authoritative even if browser storage is disabled. */ }
+    const root = document.documentElement;
+    root.classList.remove('no-js');
+    const motionButton = document.getElementById('motion-toggle');
+    const scenePause = document.getElementById('scene-pause');
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)');
+    let paused = false;
+    try { paused = localStorage.getItem('renshuu-motion') === 'paused'; } catch { }
+    const updateMotion = () => {
+        const stopped = paused || reduced.matches;
+        root.dataset.motion = stopped ? 'off' : '';
+        motionButton.setAttribute('aria-pressed', String(stopped));
+        motionButton.setAttribute('aria-label', stopped ? 'Bật chuyển động' : 'Tạm dừng chuyển động');
+        motionButton.disabled = reduced.matches;
+        motionButton.title = reduced.matches ? 'Đang giảm chuyển động theo cài đặt thiết bị' : motionButton.getAttribute('aria-label');
+        if (scenePause) {
+            scenePause.setAttribute('aria-pressed', String(stopped));
+            scenePause.setAttribute('aria-label', stopped ? 'Bật chuyển động thẻ ôn tập' : 'Tạm dừng chuyển động thẻ ôn tập');
+            scenePause.textContent = stopped ? '▷' : 'Ⅱ';
+            scenePause.disabled = reduced.matches;
+        }
+        document.dispatchEvent(new CustomEvent('renshuu:motionchange', { detail: { paused: stopped } }));
     };
-    if (userId) clearOtherDrafts();
-    window.addEventListener('storage', event => { if (event.key === marker && event.newValue !== userId) { window.dispatchEvent(new Event('account:changed')); location.reload(); } });
-    window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
-    document.querySelectorAll('[data-logout]').forEach(form => form.addEventListener('submit', () => {
-        try { Object.keys(localStorage).filter(key => key.startsWith('quiz_draft_v3:' + userId + ':')).forEach(key => localStorage.removeItem(key)); localStorage.setItem(marker, ''); } catch (_) { }
-    }));
-    document.querySelectorAll('[data-password-toggle]').forEach(button => button.addEventListener('click', () => {
-        const input = document.getElementById(button.dataset.passwordToggle);
-        const show = input.type === 'password';
-        input.type = show ? 'text' : 'password';
-        button.textContent = show ? 'Ẩn' : 'Hiện';
-        button.setAttribute('aria-pressed', String(show));
-        button.setAttribute('aria-label', show ? 'Ẩn mật khẩu' : 'Hiện mật khẩu');
-    }));
-    const menu = document.querySelector('.user-menu');
-    document.addEventListener('click', event => { if (menu && !menu.contains(event.target)) menu.open = false; });
-    document.addEventListener('keydown', event => { if (event.key === 'Escape' && menu?.open) { menu.open = false; menu.querySelector('summary').focus(); } });
-    const dialog = document.getElementById('action-dialog');
-    let pending, submitter;
-    document.querySelectorAll('form[data-confirm]').forEach(form => form.addEventListener('submit', event => {
-        if (form.dataset.confirmed === 'true') { delete form.dataset.confirmed; return; }
-        event.preventDefault();
-        pending = form; submitter = event.submitter;
-        document.getElementById('action-description').textContent = form.dataset.confirm;
-        dialog.showModal();
-        document.getElementById('action-cancel').focus();
-    }));
-    document.getElementById('action-cancel')?.addEventListener('click', () => dialog.close());
-    document.getElementById('action-confirm')?.addEventListener('click', () => {
-        if (!pending) return;
-        const form = pending, button = submitter;
-        form.dataset.confirmed = 'true';
-        pending = null;
-        dialog.close();
-        form.requestSubmit(button);
+    updateMotion();
+    motionButton.addEventListener('click', () => {
+        paused = !paused;
+        try { localStorage.setItem('renshuu-motion', paused ? 'paused' : 'active'); } catch { }
+        updateMotion();
     });
-    document.querySelectorAll('form[data-busy]').forEach(form => form.addEventListener('submit', event => {
-        if (event.defaultPrevented) return;
-        form.setAttribute('aria-busy', 'true');
-        form.querySelectorAll('button[type="submit"]').forEach(button => { button.disabled = true; button.textContent = form.dataset.busy; });
-    }));
-    const upload = document.querySelector('.document-form input[type="file"]');
-    if (upload) {
-        const selection = document.getElementById('file-selection');
-        const refreshFile = () => {
-            const file = upload.files?.[0];
-            let error = '';
-            if (file && !/\.(pdf|docx|pptx|txt)$/i.test(file.name)) error = 'Chỉ nhận PDF, DOCX, PPTX hoặc TXT.';
-            if (file && file.size > 20 * 1024 * 1024) error = 'Mỗi tệp tối đa 20 MB.';
-            upload.setCustomValidity(error);
-            selection.textContent = error || (file ? file.name + ' · ' + (file.size / 1024 / 1024 < 1 ? Math.max(1, Math.round(file.size / 1024)) + ' KB' : (file.size / 1024 / 1024).toFixed(1) + ' MB') : '');
-            selection.classList.toggle('text-danger', !!error);
-            const title = document.getElementById('Input_Title');
-            if (file && !error && title && !title.value.trim()) title.value = file.name.replace(/\.[^.]+$/, '').slice(0, 200);
-        };
-        upload.addEventListener('change', refreshFile);
-        const zone = document.querySelector('[data-drop-zone]');
-        zone?.addEventListener('dragover', event => { event.preventDefault(); zone.classList.add('dragging'); });
-        zone?.addEventListener('dragleave', () => zone.classList.remove('dragging'));
-        zone?.addEventListener('drop', event => {
-            event.preventDefault(); zone.classList.remove('dragging');
-            if (event.dataTransfer.files.length !== 1) { selection.textContent = 'Chọn một tệp mỗi lần tải lên.'; return; }
-            upload.files = event.dataTransfer.files; refreshFile();
-        });
+    reduced.addEventListener('change', updateMotion);
+    scenePause?.addEventListener('click', () => motionButton.click());
+    document.addEventListener('visibilitychange', () => { root.classList.toggle('document-hidden', document.hidden); });
+    const scene = document.querySelector('.study-scene');
+    if (scene && 'IntersectionObserver' in window) {
+        new IntersectionObserver(entries => { scene.classList.toggle('offscreen', !entries[0].isIntersecting); }).observe(scene);
     }
+    const menu = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    const scrim = document.getElementById('mobile-scrim');
+    const narrow = matchMedia('(max-width: 760px)');
+    const setMenu = open => {
+        root.classList.toggle('menu-open', open);
+        menu.setAttribute('aria-expanded', String(open));
+        menu.setAttribute('aria-label', open ? 'Đóng điều hướng' : 'Mở điều hướng');
+        scrim.hidden = !open;
+        sidebar.inert = narrow.matches && !open;
+        document.querySelector('.app-shell').inert = open;
+        if (open) {
+            sidebar.setAttribute('role', 'dialog');
+            sidebar.setAttribute('aria-modal', 'true');
+        } else {
+            sidebar.removeAttribute('role');
+            sidebar.removeAttribute('aria-modal');
+        }
+        if (open) sidebar.querySelector('a').focus();
+    };
+    setMenu(false);
+    menu.addEventListener('click', () => setMenu(!root.classList.contains('menu-open')));
+    document.getElementById('menu-close').addEventListener('click', () => { setMenu(false); menu.focus(); });
+    scrim.addEventListener('click', () => { setMenu(false); menu.focus(); });
+    narrow.addEventListener('change', () => setMenu(false));
+    document.addEventListener('keydown', event => {
+        if (!root.classList.contains('menu-open')) return;
+        if (event.key === 'Escape') { setMenu(false); menu.focus(); }
+        if (event.key === 'Tab') {
+            const links = [...sidebar.querySelectorAll('a, button')].filter(element => element.getClientRects().length);
+            if (event.shiftKey && document.activeElement === links[0]) { event.preventDefault(); links.at(-1).focus(); }
+            else if (!event.shiftKey && document.activeElement === links.at(-1)) { event.preventDefault(); links[0].focus(); }
+        }
+    });
+    const errors = document.querySelector('.validation-summary-errors');
+    if (errors) { errors.tabIndex = -1; errors.focus(); }
+    const invalidFields = [...document.querySelectorAll('.input-validation-error')];
+    invalidFields.forEach(field => field.setAttribute('aria-invalid', 'true'));
+    if (!errors && invalidFields.length) invalidFields[0].focus();
 })();

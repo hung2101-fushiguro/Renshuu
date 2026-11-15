@@ -128,7 +128,7 @@
         question.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
         question.focus({ preventScroll: true });
     }
-    document.getElementById('next-unanswered').addEventListener('click', () => {
+    document.getElementById('next-unanswered')?.addEventListener('click', () => {
         const question = questions.find(item => !item.querySelector('input:checked'));
         if (question) focusQuestion(question);
         else message('Bạn đã trả lời đủ các câu. Có thể nộp bài.');
@@ -235,14 +235,16 @@
     window.addEventListener('account:changed', () => { closed = true; });
     setInterval(syncState, 30000);
     document.querySelectorAll('[data-enhanced]').forEach(element => { element.hidden = false; });
-    if (matchMedia('(max-width: 700px)').matches) document.querySelector('.question-overview').open = false;
-    if ('ResizeObserver' in window) {
+    const overview = document.querySelector('.question-overview');
+    if (overview && matchMedia('(max-width: 700px)').matches) overview.open = false;
+    const header = document.querySelector('.site-header, .topbar');
+    const toolbar = document.querySelector('.quiz-bar');
+    if ('ResizeObserver' in window && header && toolbar) {
         const resize = new ResizeObserver(() => {
-            const header = document.querySelector('.site-header');
             document.documentElement.style.setProperty('--header-height', `${getComputedStyle(header).position === 'sticky' ? header.offsetHeight : 0}px`);
-            document.documentElement.style.setProperty('--quizbar-height', `${document.getElementById('quiz-toolbar').offsetHeight}px`);
+            document.documentElement.style.setProperty('--quizbar-height', `${toolbar.offsetHeight}px`);
         });
-        resize.observe(document.querySelector('.site-header')); resize.observe(document.getElementById('quiz-toolbar'));
+        resize.observe(header); resize.observe(toolbar);
     }
     if ('IntersectionObserver' in window) {
         const observer = new IntersectionObserver(entries => {
