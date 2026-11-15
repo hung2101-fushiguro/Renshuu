@@ -19,7 +19,7 @@ SELECT
     SUSER_SNAME() AS LoginName,
     (SELECT SERVERPROPERTY('ServerName')) AS ServerName;
 
-PRINT '--- 2. Lịch sử migration (phải có đủ 5 bản, mới nhất AddIdentityAccountsAndOwnership) ---';
+PRINT '--- 2. Lịch sử migration (phải có đủ 6 bản, mới nhất AddPrivateDocuments) ---';
 SELECT [MigrationId], [ProductVersion]
 FROM [__EFMigrationsHistory]
 ORDER BY [MigrationId];
@@ -29,6 +29,12 @@ IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory]
     PRINT 'CHECK FAIL: thiếu migration 20261114025237_AddIdentityAccountsAndOwnership';
 ELSE
     PRINT 'CHECK OK: đã có migration AddIdentityAccountsAndOwnership';
+
+IF NOT EXISTS (SELECT 1 FROM [__EFMigrationsHistory]
+               WHERE [MigrationId] = N'20261115155351_AddPrivateDocuments')
+    PRINT 'CHECK FAIL: thiếu migration 20261115155351_AddPrivateDocuments';
+ELSE
+    PRINT 'CHECK OK: đã có migration AddPrivateDocuments';
 
 PRINT '--- 3. Bảng Identity bắt buộc ---';
 DECLARE @required TABLE (TableName sysname);
@@ -51,6 +57,19 @@ IF EXISTS (
 ELSE
     PRINT 'CHECK OK: đủ 7 bảng Identity';
 
+PRINT '--- 3b. Bảng tài liệu riêng ---';
+IF OBJECT_ID(N'dbo.Documents', N'U') IS NULL
+    PRINT 'CHECK FAIL: thiếu bảng Documents';
+ELSE IF (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+         WHERE TABLE_NAME = N'Documents'
+           AND COLUMN_NAME IN (N'OwnerId', N'Title', N'StorageKey', N'ContentType', N'FileSize', N'RowVersion')) <> 6
+    PRINT 'CHECK FAIL: bảng Documents thiếu cột bắt buộc';
+ELSE IF NOT EXISTS (SELECT 1 FROM sys.indexes
+                    WHERE name = N'IX_Documents_OwnerId_UpdatedAtUtc')
+    PRINT 'CHECK FAIL: thiếu index IX_Documents_OwnerId_UpdatedAtUtc';
+ELSE
+    PRINT 'CHECK OK: bảng Documents đủ cột và index';
+
 PRINT '--- 4. Cột Ownership mới trên dữ liệu học tập ---';
 SELECT c.TABLE_NAME, c.COLUMN_NAME, c.DATA_TYPE, c.IS_NULLABLE
 FROM INFORMATION_SCHEMA.COLUMNS c
@@ -67,7 +86,7 @@ ELSE IF (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
 ELSE
     PRINT 'CHECK OK: đủ cột OwnerId/CreatedAt';
 
-PRINT '--- 5. Khóa ngoại tới AspNetUsers (SetNull cho nội dung, Cascade cho bài làm) ---';
+PRINT '--- 5. Khóa ngoại tới AspNetUsers (SetNull cho nội dung, Cascade cho bài làm/tài liệu) ---';
 SELECT fk.name AS ForeignKeyName,
        OBJECT_NAME(fk.parent_object_id) AS TableName,
        fk.delete_referential_action_desc AS OnDelete
@@ -75,16 +94,22 @@ FROM sys.foreign_keys fk
 WHERE fk.name IN (
     N'FK_Subjects_AspNetUsers_OwnerId',
     N'FK_SubjectFolders_AspNetUsers_OwnerId',
-    N'FK_Attempts_AspNetUsers_OwnerId')
+    N'FK_Attempts_AspNetUsers_OwnerId',
+    N'FK_Documents_AspNetUsers_OwnerId')
 ORDER BY fk.name;
 
 IF (SELECT COUNT(*) FROM sys.foreign_keys
     WHERE name IN (N'FK_Subjects_AspNetUsers_OwnerId',
                    N'FK_SubjectFolders_AspNetUsers_OwnerId',
-                   N'FK_Attempts_AspNetUsers_OwnerId')) <> 3
+                   N'FK_Attempts_AspNetUsers_OwnerId',
+                   N'FK_Documents_AspNetUsers_OwnerId')) <> 4
     PRINT 'CHECK FAIL: thiếu khóa ngoại OwnerId';
+ELSE IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys
+                    WHERE name = N'FK_Documents_AspNetUsers_OwnerId'
+                      AND delete_referential_action_desc = N'CASCADE')
+    PRINT 'CHECK FAIL: FK_Documents_AspNetUsers_OwnerId phải CASCADE';
 ELSE
-    PRINT 'CHECK OK: đủ 3 khóa ngoại OwnerId';
+    PRINT 'CHECK OK: đủ 4 khóa ngoại OwnerId';
 
 PRINT '--- 6. Index duy nhất theo chủ sở hữu ---';
 SELECT i.name AS IndexName, OBJECT_NAME(i.object_id) AS TableName, i.is_unique, i.filter_definition
@@ -99,6 +124,7 @@ UNION ALL SELECT N'Questions', COUNT(*) FROM dbo.Questions
 UNION ALL SELECT N'ReadingPassages', COUNT(*) FROM dbo.ReadingPassages
 UNION ALL SELECT N'Attempts', COUNT(*) FROM dbo.Attempts
 UNION ALL SELECT N'AttemptAnswers', COUNT(*) FROM dbo.AttemptAnswers
+UNION ALL SELECT N'Documents', COUNT(*) FROM dbo.Documents
 UNION ALL SELECT N'AspNetUsers', COUNT(*) FROM dbo.AspNetUsers
 UNION ALL SELECT N'AspNetRoles', COUNT(*) FROM dbo.AspNetRoles
 UNION ALL SELECT N'AspNetUserRoles', COUNT(*) FROM dbo.AspNetUserRoles;
@@ -128,7 +154,8 @@ SELECT
     (SELECT COUNT(*) FROM dbo.Subjects WHERE OwnerId IS NULL)      AS SharedSubjects,
     (SELECT COUNT(*) FROM dbo.Subjects WHERE OwnerId IS NOT NULL)  AS OwnedSubjects,
     (SELECT COUNT(*) FROM dbo.SubjectFolders WHERE OwnerId IS NULL)     AS SharedFolders,
-    (SELECT COUNT(*) FROM dbo.SubjectFolders WHERE OwnerId IS NOT NULL) AS OwnedFolders;
+    (SELECT COUNT(*) FROM dbo.SubjectFolders WHERE OwnerId IS NOT NULL) AS OwnedFolders,
+    (SELECT COUNT(*) FROM dbo.Documents) AS PrivateDocuments;
 
 PRINT '--- 10. Bài làm chưa gán chủ sở hữu (dữ liệu cũ trước khi có đăng nhập) ---';
 SELECT COUNT(*) AS AttemptsWithoutOwner FROM dbo.Attempts WHERE OwnerId IS NULL;

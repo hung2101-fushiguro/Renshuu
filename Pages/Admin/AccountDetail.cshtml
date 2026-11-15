@@ -31,6 +31,7 @@
             <div><dt>Thư mục đã tạo</dt><dd>@Model.Account.FolderCount</dd></div>
             <div><dt>Môn học đã tạo</dt><dd>@Model.Account.SubjectCount</dd></div>
             <div><dt>Lượt làm bài</dt><dd>@Model.Account.AttemptCount</dd></div>
+            <div><dt>Tài liệu riêng</dt><dd>@Model.Account.DocumentCount</dd></div>
         </dl>
 
         <div class="account-actions">
@@ -64,55 +65,10 @@
         <hr class="account-divider" />
 
         <h2>Xóa tài khoản</h2>
-        <p class="muted">Thư mục và môn học của tài khoản sẽ được giữ lại làm nội dung dùng chung. Lịch sử làm bài bị xóa theo tài khoản.</p>
+        <p class="muted">Thư mục và môn học của tài khoản sẽ được giữ lại làm nội dung dùng chung. Lịch sử làm bài và tài liệu riêng bị xóa theo tài khoản.</p>
         <form method="post" asp-page-handler="Delete" asp-route-id="@Model.Account.Id"
               onsubmit="return confirm('Xóa tài khoản @Model.Account.Email? Hành động này không thể hoàn tác.');">
             <button type="submit" class="btn btn-danger btn-sm">Xóa tài khoản</button>
         </form>
     </div>
 </div>
-
-<h2>Thư mục và môn học của tài khoản</h2>
-
-@if (Model.ContentRows.Count == 0)
-{
-    <div class="empty">
-        <strong>Tài khoản này chưa tạo nội dung nào.</strong>
-        <p class="mt-sm">Thư mục và môn học người dùng tạo sẽ hiện ở đây.</p>
-    </div>
-}
-else
-{
-    <div class="table-wrap">
-        <table class="table">
-            <thead>
-                <tr>
-                    <th scope="col">Loại</th>
-                    <th scope="col">Tên</th>
-                    <th scope="col" class="num">Số mục con</th>
-                    <th scope="col">Ngày tạo</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var item in Model.ContentRows)
-                {
-                    <tr>
-                        <td>
-                            @if (item.Kind == "Thư mục")
-                            {
-                                <span class="badge badge-accent">Thư mục</span>
-                            }
-                            else
-                            {
-                                <span class="badge badge-primary">Môn học</span>
-                            }
-                        </td>
-                        <td>@item.Name</td>
-                        <td class="num">@item.ItemCount @(item.Kind == "Thư mục" ? "môn" : "câu")</td>
-                        <td class="small muted">@item.CreatedAt.ToString("dd/MM/yyyy")</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-}

@@ -77,8 +77,9 @@ sqlcmd -S "<server>" -d "<database>" -E -b -i database\verify-database.sql
 
 Kết quả mong đợi:
 
-- `CHECK OK` cho migration `20261114025237_AddIdentityAccountsAndOwnership`,
-  7 bảng Identity, cột `OwnerId`/`CreatedAt`, 3 khóa ngoại `OwnerId`.
+- `CHECK OK` cho migration `20261114025237_AddIdentityAccountsAndOwnership` và
+  `20261115155351_AddPrivateDocuments`, 7 bảng Identity, bảng `Documents`,
+  cột `OwnerId`/`CreatedAt`, 4 khóa ngoại `OwnerId`.
 - Bảng đếm dòng khớp với bản sao lưu (trừ bảng mới được tạo).
 - Database trống: `CHECK INFO` về vai trò Admin là bình thường — lần chạy app
   Development đầu tiên sẽ tạo vai trò và tài khoản quản trị theo cấu hình.
@@ -109,6 +110,7 @@ trong mã nguồn; không commit user secrets hay connection string.
 | `20261110061027_AddSubjectFolders` | Thư mục môn học, gộp `JLPT-N3*`. |
 | `20261110092823_SaveAttemptDrafts` | Lưu nháp, deadline, chỉ mục nộp bài. |
 | `20261114025237_AddIdentityAccountsAndOwnership` | Identity (`AspNet*`), `OwnerId`/`CreatedAt`, khóa ngoại và index chủ sở hữu. |
+| `20261115155351_AddPrivateDocuments` | Bảng `Documents` cho tài liệu riêng, FK chủ sở hữu (`CASCADE`) và môn học (`SET NULL`). |
 
 Sinh lại script sau mỗi lần đổi schema:
 

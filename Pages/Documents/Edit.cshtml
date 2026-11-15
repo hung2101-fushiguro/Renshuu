@@ -1,0 +1,22 @@
+@page "{id:int}"
+@model TracNghiemWeb.Pages.Documents.EditModel
+@{ ViewData["Title"] = "Sửa tài liệu"; ViewData["Active"] = "documents"; }
+<nav class="breadcrumb" aria-label="Đường dẫn"><a asp-page="Index">Tài liệu</a><span aria-hidden="true">/</span><a asp-page="View" asp-route-id="@Model.Document.Id">@Model.Document.Title</a><span aria-hidden="true">/</span><span>Chỉnh sửa</span></nav>
+<div class="page-head"><div><span class="eyebrow">CẬP NHẬT TÀI LIỆU</span><h1>Chỉnh sửa tài liệu</h1></div></div>
+<div class="editor-layout">
+    <form method="post" enctype="multipart/form-data" class="card form-grid document-form" data-busy="Đang lưu…">
+        <div asp-validation-summary="ModelOnly" role="alert"></div><input type="hidden" asp-for="Input.Version" />
+        <partial name="_Fields" model="new TracNghiemWeb.Pages.Documents.DocumentFieldsView(Model.Input, Model.Subjects)" />
+        @if (Model.CanEditText)
+        {
+            <div class="field"><label asp-for="Input.TextContent">Nội dung TXT</label><textarea asp-for="Input.TextContent" class="input text-editor" rows="12" maxlength="100000"></textarea><span asp-validation-for="Input.TextContent" class="field-error"></span></div>
+        }
+        <div class="current-file"><span class="file-type">@System.IO.Path.GetExtension(Model.Document.StorageKey).TrimStart('.').ToUpperInvariant()</span><span><strong>@Model.Document.OriginalFileName</strong><span class="small muted">@Display.FileSize(Model.Document.FileSize)</span></span></div>
+        <div class="field"><label asp-for="Upload">Thay tệp <span class="label-unit">(tùy chọn)</span></label><input asp-for="Upload" type="file" class="input" accept=".pdf,.docx,.pptx,.txt" aria-describedby="replace-help file-selection" /><span id="replace-help" class="hint">Tệp mới sẽ thay nội dung hiện tại. Không chọn tệp nếu chỉ sửa thông tin. Tối đa 20 MB.</span><span id="file-selection" class="hint" role="status"></span><span asp-validation-for="Upload" class="field-error"></span></div>
+        <div class="form-actions"><a class="btn btn-ghost" asp-page="View" asp-route-id="@Model.Document.Id">Hủy</a><button type="submit" class="btn btn-primary">Lưu thay đổi</button></div>
+    </form>
+    <aside class="editor-note"><h2>Thông tin tài liệu</h2><dl class="meta-list"><dt>Người tải lên</dt><dd>@Model.Document.Owner?.DisplayName</dd><dt>Cập nhật gần nhất</dt><dd>@Display.LocalDate(Model.Document.UpdatedAtUtc)</dd></dl><a asp-page="View" asp-route-id="@Model.Document.Id" class="text-link small">Về tài liệu <span aria-hidden="true">↗</span></a></aside>
+</div>
+@section Scripts {
+    <script src="~/js/documents.js" asp-append-version="true" defer></script>
+}

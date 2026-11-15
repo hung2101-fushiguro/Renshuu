@@ -86,6 +86,7 @@ else
                     <th scope="col" class="num">Thư mục</th>
                     <th scope="col" class="num">Môn học</th>
                     <th scope="col" class="num">Lượt làm</th>
+                    <th scope="col" class="num">Tài liệu</th>
                     <th scope="col">Ngày tạo</th>
                     <th scope="col"><span class="visually-hidden">Hành động</span></th>
                 </tr>
@@ -115,6 +116,7 @@ else
                         <td class="num">@account.FolderCount</td>
                         <td class="num">@account.SubjectCount</td>
                         <td class="num">@account.AttemptCount</td>
+                        <td class="num">@account.DocumentCount</td>
                         <td class="small muted">@account.CreatedAt.ToString("dd/MM/yyyy")</td>
                         <td class="num">
                             <a class="btn btn-secondary btn-sm" asp-page="/Admin/AccountDetail" asp-route-id="@account.Id">Xem &amp; quản lý</a>

@@ -9,6 +9,19 @@ Tài liệu này dành cho agent/đồng đội tiếp nhận nhánh `feature/lo
 - Build: web + test project đều `0 warning, 0 error`
 - Working tree sạch, `output/` đã nằm trong `.gitignore`
 
+> **Cập nhật sau tích hợp 15/11/2026 (nhánh `integration/auth-documents`):**
+> tài liệu này ghi lại bản bàn giao gốc của `feature/login-authorization`. Khi gộp vào
+> workspace hiện tại, các điểm sau đã thay đổi:
+> - Admin **chỉ quản lý tài khoản**; không xem thư mục, môn học hay tài liệu riêng của
+>   người khác. Trang chi tiết tài khoản chỉ hiện số liệu tổng hợp.
+> - Mọi nội dung do tài khoản tạo — kể cả tài khoản Admin — là **riêng tư**. Chỉ dữ liệu
+>   có `OwnerId = NULL` mới là nội dung dùng chung.
+> - Flashcard được **giữ lại** trong bản tích hợp (nhánh gốc đã xóa).
+> - Thêm tài liệu riêng (`Documents`) với migration `20261115155351_AddPrivateDocuments`.
+> - Bộ kiểm thử hiện có **10 nhóm** integration và **19 kiểm tra** HTTP auth.
+> - Xóa tài khoản: tài liệu riêng và tệp vật lý bị xóa; thư mục/môn học chuyển về
+>   `OwnerId = NULL`.
+
 ---
 
 ## 1. Yêu cầu nghiệp vụ đã chốt
@@ -53,32 +66,34 @@ options.Conventions.AuthorizePage("/Admin/Accounts", Security.AdminPolicy);
 Quy tắc hiển thị nội dung (quan trọng, đừng phá):
 
 - `OwnerId == null` → **nội dung dùng chung** (dữ liệu seed, nội dung cũ) → mọi tài khoản luyện được.
-- Nội dung do **Admin** tạo → thư viện giảng dạy dùng chung, mọi tài khoản thấy.
-- Nội dung do **Người học** tạo → chỉ người đó (và không ai khác) thấy trong luyện tập.
-- Bài làm, lịch sử, câu sai, thống kê → **luôn** lọc `OwnerId == _currentUser.UserId`.
+- Mọi nội dung do tài khoản tạo (kể cả Admin) → chỉ chủ sở hữu thấy; Admin không có quyền xem thay.
+- Bài làm, lịch sử, câu sai, thống kê, tài liệu → **luôn** lọc `OwnerId == _currentUser.UserId`.
 
 ### Trang đã thêm
 - `Pages/Account/Login.cshtml(.cs)` — đăng nhập, chống open redirect, thông báo chung khi sai, gợi ý tài khoản thử chỉ trong Development.
 - `Pages/Account/Logout.cshtml(.cs)` — `OnGet` chuyển về `/Index` (không đăng xuất); `OnPost` mới đăng xuất.
 - `Pages/Account/Denied.cshtml(.cs)` — trang từ chối truy cập.
 - `Pages/Admin/Accounts.cshtml(.cs)` — danh sách + tìm kiếm + tạo tài khoản.
-- `Pages/Admin/AccountDetail.cshtml(.cs)` — chi tiết, đổi vai trò, khóa, reset mật khẩu, xóa, xem nội dung đã tạo.
+- `Pages/Admin/AccountDetail.cshtml(.cs)` — chi tiết, đổi vai trò, khóa, reset mật khẩu, xóa; chỉ hiện số liệu tổng hợp, không hiện nội dung riêng.
 - `Pages/Shared/_AuthLayout.cshtml`, `wwwroot/css/auth.css`, `wwwroot/js/auth.js`.
 
 ### Bảo vệ nghiệp vụ trong `AccountAdminService`
 - Không tự khóa / tự xóa tài khoản đang đăng nhập.
 - Không thu hồi quyền / khóa / xóa **quản trị viên cuối cùng**.
-- Xóa tài khoản: chuyển `SubjectFolders.OwnerId` và `Subjects.OwnerId` về `NULL` (giữ lại nội dung làm dùng chung) **trước khi** xóa user; bài làm bị `CASCADE`.
+- Xóa tài khoản: chuyển `SubjectFolders.OwnerId` và `Subjects.OwnerId` về `NULL` (giữ lại nội dung làm dùng chung) **trước khi** xóa user; bài làm và tài liệu riêng bị `CASCADE`, tệp tài liệu được xóa khỏi ổ đĩa.
 
 ---
 
 ## 3. Database
 
-Migration: `20261114025237_AddIdentityAccountsAndOwnership`
+Migration: `20261114025237_AddIdentityAccountsAndOwnership` và
+`20261115155351_AddPrivateDocuments`.
 
 - Tạo 7 bảng `AspNet*`.
 - `Subjects`, `SubjectFolders`: `OwnerId` (FK → `AspNetUsers`, `SET NULL`) + `CreatedAt`.
 - `Attempts`: `OwnerId` (FK → `AspNetUsers`, `CASCADE`).
+- `Documents`: `OwnerId` (FK → `AspNetUsers`, `CASCADE`), `SubjectId`
+  (FK → `Subjects`, `SET NULL`), `RowVersion` cho cập nhật đồng thời.
 - Bỏ unique index cũ `IX_SubjectFolders_Name`; thay bằng unique có lọc `IX_SubjectFolders_OwnerId_Name` trên `(OwnerId, Name)`.
 
 Tệp bàn giao trong `database/`:
@@ -120,14 +135,15 @@ Hành vi: email đã tồn tại → **chỉ gán** vai trò Admin; email chưa 
 ```powershell
 # 1) Integration SQL — cần SQL Server, tự tạo/xóa database tạm RenshuuRegression_*
 dotnet run --project tests/Renshuu.IntegrationTests/Renshuu.IntegrationTests.csproj -- "localhost"
-# Kỳ vọng: 7 dòng PASS + "All 7 SQL integration groups passed."
+# Kỳ vọng: 10 dòng PASS + "All 10 SQL integration groups passed."
 
 # 2) HTTP auth — app phải đang chạy
 .\scripts\verify-auth.ps1 -BaseUrl 'http://localhost:5080' -Email 'admin@...' -Password '...'
-# Kỳ vọng: 20 PASS, script exit 0
+# Kỳ vọng: 19 PASS, script exit 0
 ```
 
-Kết quả lần chạy cuối: **7/7** nhóm integration, **20/20** kiểm tra HTTP.
+Kết quả lần chạy cuối: **10/10** nhóm integration, **19/19** kiểm tra HTTP, kiểm thử
+tài liệu riêng qua HTTP đều đạt.
 
 ---
 
@@ -138,10 +154,11 @@ Kết quả lần chạy cuối: **7/7** nhóm integration, **20/20** kiểm tra
 | Build web + test | PASS | 0 warning, 0 error |
 | Migration trên DB trống | PASS | chạy trên `RenshuuVerify_Check`, sau đó đã xóa DB |
 | `verify-database.sql` | PASS | tất cả `CHECK OK`; `CHECK INFO` về vai trò Admin khi DB trống là bình thường |
-| Integration SQL 7 nhóm | PASS | migration, thứ tự nộp, nháp, deadline + grace, concurrent, giới hạn 200 câu, import, analytics |
-| Auth HTTP 20 kiểm tra | PASS | ẩn danh, sai mật khẩu, ReturnUrl, admin, logout POST-only, learner bị chặn |
-| Admin xem nội dung người dùng | PASS (thủ công) | tạo user → user tạo thư mục + môn → admin thấy cả hai dòng ở trang chi tiết |
-| **Chưa xác minh** | — | đổi mật khẩu tự phục vụ, quên mật khẩu, đăng ký công khai, responsive mobile của trang auth, seed dữ liệu trên DB thật của team |
+| Integration SQL 10 nhóm | PASS | migration, thứ tự nộp, nháp, deadline + grace, concurrent, giới hạn 200 câu, import, analytics, tài liệu riêng |
+| Auth HTTP 19 kiểm tra | PASS | ẩn danh, sai mật khẩu, ReturnUrl, admin, logout POST-only, learner bị chặn |
+| Tài liệu riêng qua HTTP | PASS (thủ công) | tạo user → tải/xem/sửa/xóa TXT; admin nhận 404 với tài liệu và thư mục của user |
+| Admin bị chặn nội dung người dùng | PASS | trang chi tiết chỉ hiện số liệu; không có danh sách thư mục/môn học/tài liệu riêng |
+| **Chưa xác minh** | — | đổi mật khẩu tự phục vụ, quên mật khẩu, đăng ký công khai, responsive mobile của trang auth/tài liệu, seed dữ liệu trên DB thật của team |
 
 ---
 

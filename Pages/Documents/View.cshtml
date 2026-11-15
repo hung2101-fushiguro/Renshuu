@@ -1,0 +1,22 @@
+@page "{id:int}"
+@model TracNghiemWeb.Pages.Documents.ViewModel
+@{ ViewData["Title"] = Model.Document.Title; ViewData["Active"] = "documents"; var document = Model.Document; }
+<nav class="breadcrumb" aria-label="Đường dẫn"><a asp-page="Index">Tài liệu</a><span aria-hidden="true">/</span><span>Xem tài liệu</span></nav>
+<div class="page-head workspace-heading"><div><span class="eyebrow">TÀI LIỆU HỌC TẬP</span><h1 class="document-view-title">@document.Title</h1><p>@document.Owner?.DisplayName <span aria-hidden="true">·</span> @Display.LocalDate(document.UpdatedAtUtc)</p></div><div class="actions"><a class="btn btn-secondary" asp-page="Edit" asp-route-id="@document.Id">Chỉnh sửa</a><a class="btn btn-accent" asp-page="File" asp-route-id="@document.Id" asp-route-download="true">Tải xuống <span aria-hidden="true">↓</span></a></div></div>
+<div class="document-view-layout">
+    <section class="card document-preview" aria-labelledby="preview-title"><div class="panel-heading"><h2 id="preview-title">Xem trước</h2><span class="badge badge-primary">@System.IO.Path.GetExtension(document.StorageKey).TrimStart('.').ToUpperInvariant()</span></div>
+        @if (document.ContentType == "application/pdf")
+        {
+            <iframe class="pdf-preview" src="@Url.Page("File", new { id = document.Id })" title="Xem PDF: @document.Title"></iframe><p class="small muted mt-sm mb-0">Không mở được PDF? <a asp-page="File" asp-route-id="@document.Id" asp-route-download="true">Tải tệp gốc</a> để đọc.</p>
+        }
+        else if (Model.PreviewError is not null) { <p class="muted">@Model.PreviewError</p> }
+        else if (string.IsNullOrWhiteSpace(Model.Preview.Text)) { <p class="muted">Tài liệu không có văn bản để xem trước. Tải tệp gốc để xem nội dung đầy đủ.</p> }
+        else
+        {
+            @if (!document.StorageKey.EndsWith(".txt")) { <p class="preview-caption">Bản văn bản · bố cục đầy đủ nằm trong tệp gốc.</p> }
+            <pre class="document-text">@Model.Preview.Text</pre>
+            @if (Model.Preview.Truncated) { <p class="small muted mt-md">Đang hiển thị phần đầu tài liệu. Tải tệp gốc để đọc tiếp.</p> }
+        }
+    </section>
+    <aside class="document-info card"><h2>Thông tin</h2><dl class="meta-list"><dt>Tên tệp</dt><dd>@document.OriginalFileName</dd><dt>Dung lượng</dt><dd>@Display.FileSize(document.FileSize)</dd><dt>Môn học</dt><dd>@(document.Subject?.Name ?? "Chưa phân loại")</dd><dt>Tải lên</dt><dd>@Display.LocalDate(document.UploadedAtUtc)</dd><dt>Người tải lên</dt><dd>@document.Owner?.DisplayName</dd></dl>@if (!string.IsNullOrWhiteSpace(document.Description)) { <div class="document-description"><h3>Ghi chú</h3><p>@document.Description</p></div> }<form method="post" asp-page-handler="Delete" data-confirm="Xóa tài liệu này? Tệp và thông tin tài liệu sẽ bị xóa." class="document-delete"><input type="hidden" name="version" value="@Convert.ToBase64String(document.RowVersion)" /><button class="btn btn-danger btn-sm btn-block" type="submit">Xóa tài liệu</button></form></aside>
+</div>

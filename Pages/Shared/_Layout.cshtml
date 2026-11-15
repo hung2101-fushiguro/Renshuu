@@ -10,6 +10,7 @@
         ("/Wrong/Index", "wrong", "retry", "Ôn lại câu sai"),
         ("/History/Index", "history", "history", "Lịch sử luyện tập"),
         ("/History/Analytics", "analytics", "chart", "Thống kê & Tiến độ"),
+        ("/Documents/Index", "documents", "file", "Tài liệu của tôi"),
         ("/Admin/Index", "admin", "settings", "Quản lý nội dung")
     };
     if (isAdmin)
@@ -38,6 +39,10 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/assets/motion/motion.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
+    @if (active == "documents")
+    {
+        <link rel="stylesheet" href="~/css/documents.css" asp-append-version="true" />
+    }
     @await RenderSectionAsync("Styles", required: false)
 </head>
 <body>

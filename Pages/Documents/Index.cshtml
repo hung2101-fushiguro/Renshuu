@@ -1,0 +1,33 @@
+@page
+@model TracNghiemWeb.Pages.Documents.IndexModel
+@{ ViewData["Title"] = "Tài liệu"; ViewData["Active"] = "documents"; }
+<div class="page-head workspace-heading"><div><span class="eyebrow">THƯ VIỆN CÁ NHÂN</span><h1>Tài liệu của tôi</h1><p>@Model.Total tài liệu <span aria-hidden="true">·</span> @Display.FileSize(Model.TotalBytes)</p></div><a class="btn btn-accent" asp-page="Upload"><span aria-hidden="true">+</span> Tải tài liệu</a></div>
+<section class="card document-library">
+    <form method="get" class="document-filters" role="search">
+        <div class="field search-field"><label asp-for="Q" class="visually-hidden">Tìm tài liệu</label><input asp-for="Q" type="search" class="input" maxlength="200" placeholder="Tìm tên tệp hoặc tài liệu…" /></div>
+        <div class="field"><label asp-for="Type" class="visually-hidden">Loại tệp</label><select asp-for="Type" class="input"><option value="">Mọi định dạng</option><option value="pdf">PDF</option><option value="docx">DOCX</option><option value="pptx">PPTX</option><option value="txt">TXT</option></select></div>
+        <div class="field"><label asp-for="SubjectId" class="visually-hidden">Môn học</label><select asp-for="SubjectId" class="input"><option value="">Mọi môn học</option>@foreach (var subject in Model.Subjects) { <option value="@subject.Id">@subject.Name</option> }</select></div>
+        <button type="submit" class="btn btn-secondary">Tìm</button>
+    </form>
+    @if (Model.Items.Count == 0)
+    {
+        <div class="workspace-empty"><span class="empty-symbol" aria-hidden="true"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h5"/></svg></span><h2>@(string.IsNullOrEmpty(Model.Q) && Model.Type is null && Model.SubjectId is null ? "Chưa có tài liệu" : "Không tìm thấy tài liệu")</h2><p>Tải tài liệu lên hoặc thay đổi bộ lọc để tìm lại.</p>@if (!string.IsNullOrEmpty(Model.Q) || Model.Type is not null || Model.SubjectId.HasValue) { <a class="text-link" asp-page="Index">Xóa bộ lọc <span aria-hidden="true">→</span></a> } else { <a class="text-link" asp-page="Upload">Tải tài liệu <span aria-hidden="true">→</span></a> }</div>
+    }
+    else
+    {
+        <div class="document-rows">
+            @foreach (var document in Model.Items)
+            {
+                var extension = System.IO.Path.GetExtension(document.StorageKey).TrimStart('.').ToUpperInvariant();
+                <article class="document-row"><span class="file-type @(extension == "PPTX" ? "file-type-gold" : null)" aria-hidden="true">@extension</span><div class="document-row-main"><a class="document-title" asp-page="View" asp-route-id="@document.Id">@document.Title</a><div class="document-row-meta"><span>@Display.FileSize(document.FileSize)</span><span>@(document.Subject?.Name ?? "Chưa phân loại")</span><span>@Display.LocalDate(document.UpdatedAtUtc)</span></div></div><div class="row-actions"><a class="btn btn-ghost btn-sm" asp-page="View" asp-route-id="@document.Id">Xem</a><a class="btn btn-secondary btn-sm" asp-page="Edit" asp-route-id="@document.Id">Sửa</a></div></article>
+            }
+        </div>
+    }
+</section>
+@if (Model.PageCount > 1)
+{
+    <nav class="pagination" aria-label="Phân trang">@if (Model.PageNumber > 1) { <a class="btn btn-secondary btn-sm" asp-route-Q="@Model.Q" asp-route-Type="@Model.Type" asp-route-SubjectId="@Model.SubjectId" asp-route-PageNumber="@(Model.PageNumber - 1)">Trang trước</a> }<span>Trang @Model.PageNumber / @Model.PageCount</span>@if (Model.PageNumber < Model.PageCount) { <a class="btn btn-secondary btn-sm" asp-route-Q="@Model.Q" asp-route-Type="@Model.Type" asp-route-SubjectId="@Model.SubjectId" asp-route-PageNumber="@(Model.PageNumber + 1)">Trang sau</a> }</nav>
+}
+@section Scripts {
+    <script src="~/js/documents.js" asp-append-version="true" defer></script>
+}

@@ -17,7 +17,6 @@ public class AccountDetailModel : PageModel
     }
 
     public AccountRow Account { get; private set; } = null!;
-    public List<AccountContentRow> ContentRows { get; private set; } = new();
 
     [BindProperty]
     [Required(ErrorMessage = "Nhập mật khẩu mới.")]
@@ -99,7 +98,6 @@ public class AccountDetailModel : PageModel
         }
 
         Account = account;
-        ContentRows = await _accounts.GetContentAsync(id);
         return account;
     }
 }

@@ -63,7 +63,7 @@ public class QuizService
             .Select(g => new { SubjectId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.SubjectId, x => x.Count);
 
-        var subjects = await VisibleSubjects(includeAllWhenAdmin: false)
+        var subjects = await VisibleSubjects()
             .OrderBy(s => s.Name)
             .Select(s => new
             {
@@ -96,7 +96,7 @@ public class QuizService
             return StartResult.Fail(error);
         }
 
-        var subject = await VisibleSubjects(includeAllWhenAdmin: false)
+        var subject = await VisibleSubjects()
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == subjectId);
         if (subject is null)
@@ -150,7 +150,7 @@ public class QuizService
             return StartResult.Fail($"Thời gian làm bài phải từ 1 đến {MaxTimeLimitMinutes} phút.");
         }
 
-        var subject = await VisibleSubjects(includeAllWhenAdmin: false)
+        var subject = await VisibleSubjects()
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == subjectId);
         if (subject is null)
@@ -487,15 +487,7 @@ public class QuizService
         );
     }
 
-    private IQueryable<Subject> VisibleSubjects(bool includeAllWhenAdmin)
-    {
-        if (includeAllWhenAdmin && _currentUser.IsAdmin)
-        {
-            return _db.Subjects.AsQueryable();
-        }
-
-        return _db.VisibleSubjects(_currentUser.UserId);
-    }
+    private IQueryable<Subject> VisibleSubjects() => _db.VisibleSubjects(_currentUser.UserId);
 
     private IQueryable<AttemptAnswer> LatestAnswers()
     {

@@ -1,10 +1,16 @@
 using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.FileProviders;
+using Microsoft.Extensions.Logging.Abstractions;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
 using TracNghiemWeb.Services;
+using TracNghiemWeb.Services.Documents;
 
 // SQL Server is required: transaction/locking tests must run against the production provider.
 // A unique temporary database is created and only that database is removed in finally.
@@ -17,17 +23,23 @@ var connection = new SqlConnectionStringBuilder
 var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection.ConnectionString).Options;
 var clock = new TestClock();
 const string TestUserId = "regression-user";
-var currentUser = new CurrentUser(new TestHttpContextAccessor
+CurrentUser ForUser(string id, bool admin = false)
 {
-    HttpContext = new DefaultHttpContext
+    var claims = new List<Claim>
     {
-        User = new ClaimsPrincipal(new ClaimsIdentity(
-            [
-                new Claim(ClaimTypes.NameIdentifier, TestUserId),
-                new Claim(ClaimTypes.Name, "regression@local")
-            ], "Regression"))
-    }
-});
+        new(ClaimTypes.NameIdentifier, id),
+        new(ClaimTypes.Name, id + "@local")
+    };
+    if (admin) claims.Add(new Claim(ClaimTypes.Role, CurrentUser.AdminRole));
+    return new CurrentUser(new TestHttpContextAccessor
+    {
+        HttpContext = new DefaultHttpContext
+        {
+            User = new ClaimsPrincipal(new ClaimsIdentity(claims, "Regression"))
+        }
+    });
+}
+var currentUser = ForUser(TestUserId);
 AppDbContext Db() => new(options);
 async Task<T> Run<T>(Func<QuizService, Task<T>> operation)
 {
@@ -245,7 +257,48 @@ try
         Check(wrongAll.All(q => q.Subject != null), "Wrong questions must include the Subject navigation property");
     }
     Pass("Analytics: recovery rate calculation, subject ratings, and wrong-question queries verified");
-    Console.WriteLine("All 7 SQL integration groups passed.");
+
+    // Private documents: only the owner may read, update or delete a file; an admin
+    // has no special access and the stored file is removed with the row.
+    await using (var db = Db())
+    {
+        const string otherId = "other-user";
+        db.Users.Add(new ApplicationUser { Id = otherId, UserName = "other@local", Email = "other@local", EmailConfirmed = true });
+        await db.SaveChangesAsync();
+
+        var root = Path.Combine(Path.GetTempPath(), "RenshuuDocs_" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var storage = new DocumentStorage(
+                new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?> { ["Documents:StoragePath"] = root }).Build(),
+                new TestWebHostEnvironment(AppContext.BaseDirectory),
+                NullLogger<DocumentStorage>.Instance);
+            var content = Encoding.UTF8.GetBytes("private study note");
+            var file = new FormFile(new MemoryStream(content), 0, content.Length, "Upload", "note.txt");
+            var owner = new DocumentService(db, currentUser, storage, clock);
+            var uploaded = await owner.UploadAsync(new("Ghi chú", null, null), file);
+            Check(uploaded.Success && uploaded.Id is int id, uploaded.Error ?? "Document upload failed");
+            var storedKey = db.Documents.Single(d => d.Id == uploaded.Id).StorageKey;
+            Check(File.Exists(Path.Combine(root, storedKey)), "Document file was not stored outside the app");
+
+            var intruder = new DocumentService(db, ForUser(otherId, admin: true), storage, clock);
+            Check(await intruder.FindAsync(uploaded.Id!.Value) is null, "Admin must not read another user's document");
+            Check(!(await intruder.DeleteAsync(uploaded.Id.Value, null)).Success, "Admin must not delete another user's document");
+
+            var version = Convert.ToBase64String(db.Documents.Single(d => d.Id == uploaded.Id).RowVersion);
+            var removed = await owner.DeleteAsync(uploaded.Id.Value, version);
+            Check(removed.Success, removed.Error ?? "Document delete failed");
+            Check(!File.Exists(Path.Combine(root, storedKey)), "Document file was not removed with the row");
+        }
+        finally
+        {
+            Directory.Delete(root, recursive: true);
+        }
+    }
+    Pass("Private documents are owner-scoped, admins cannot read them, and files are cleaned up");
+
+    Console.WriteLine("All 10 SQL integration groups passed.");
 }
 finally
 {
@@ -260,6 +313,16 @@ finally
 sealed class TestHttpContextAccessor : IHttpContextAccessor
 {
     public HttpContext? HttpContext { get; set; }
+}
+
+sealed class TestWebHostEnvironment(string root) : IWebHostEnvironment
+{
+    public string ApplicationName { get; set; } = "TracNghiemWeb.Tests";
+    public IFileProvider WebRootFileProvider { get; set; } = new NullFileProvider();
+    public string WebRootPath { get; set; } = root;
+    public string EnvironmentName { get; set; } = "Development";
+    public string ContentRootPath { get; set; } = root;
+    public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
 }
 
 sealed class TestClock : TimeProvider

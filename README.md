@@ -32,13 +32,15 @@ dotnet run --no-launch-profile --urls http://localhost:5186
 Ứng dụng yêu cầu đăng nhập cho mọi trang (trừ `/Account/Login`, `/Account/Logout`, `/Account/Denied`, `/Error`).
 ASP.NET Core Identity lưu tài khoản trong `AspNetUsers`; hai vai trò:
 
-- **Admin** — xem và quản lý tài khoản tại `/Admin/Accounts`: tạo tài khoản, đặt lại mật khẩu,
-  khóa/mở khóa, cấp/thu hồi quyền quản trị, xóa tài khoản, xem thư mục và môn học từng người tạo.
-- **Người học** (mặc định) — luyện tập, ôn câu sai, xem lịch sử/thống kê của chính mình.
+- **Admin** — chỉ quản lý tài khoản tại `/Admin/Accounts`: tạo tài khoản, đặt lại mật khẩu,
+  khóa/mở khóa, cấp/thu hồi quyền quản trị, xóa tài khoản. Admin không đọc nội dung học
+  hay tài liệu riêng của người khác.
+- **Người học** (mặc định) — luyện tập, ôn câu sai, xem lịch sử/thống kê của chính mình,
+  tạo thư mục/môn học riêng và quản lý tài liệu riêng tại `/Documents`.
 
-Quyền sở hữu nội dung: thư mục và môn học do quản trị viên tạo (hoặc dữ liệu mẫu chưa có chủ)
-là **nội dung dùng chung** mà mọi tài khoản đều luyện được; nội dung do người học tạo chỉ
-hiển thị với chính người đó và quản trị viên.
+Quyền sở hữu nội dung: dữ liệu mẫu chưa có chủ (`OwnerId = NULL`) là nội dung dùng chung;
+mọi thư mục, môn học, bài làm và tài liệu do tài khoản tạo chỉ hiển thị với chính tài khoản đó.
+Tài liệu được lưu ngoài thư mục ứng dụng, tối đa 20 MB mỗi tệp (PDF, DOCX, PPTX, TXT).
 
 Tạo quản trị viên đầu tiên chỉ trong Development:
 
@@ -66,6 +68,7 @@ Kiểm tra đăng nhập/phân quyền tự động (app đang chạy):
 4. Nộp bài để xem tỷ lệ đúng, đáp án và giải thích.
 5. Vào **Ôn lại câu sai** để làm lại; trả lời đúng sẽ gỡ câu khỏi danh sách.
 6. Vào **Quản lý nội dung** để quản lý thư mục, môn học, câu hỏi hoặc nhập CSV/JSON/văn bản/bài đọc.
+7. Vào **Tài liệu của tôi** để tải lên, xem trước, sửa hoặc xóa tệp PDF/DOCX/PPTX/TXT riêng của bạn.
 
 ## Giao diện mới
 

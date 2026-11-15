@@ -2,22 +2,27 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
+using TracNghiemWeb.Services.Documents;
 
 namespace TracNghiemWeb.Services;
 
 /// <summary>
 /// Account administration used by the admin-only account pages.
 /// Everything here is server-side: the pages themselves require the Admin role.
+/// The Admin role has no access to other users' private documents; deleting an
+/// account removes its document files as part of the account cleanup.
 /// </summary>
 public class AccountAdminService
 {
     private readonly AppDbContext _db;
     private readonly UserManager<ApplicationUser> _users;
+    private readonly DocumentStorage _storage;
 
-    public AccountAdminService(AppDbContext db, UserManager<ApplicationUser> users)
+    public AccountAdminService(AppDbContext db, UserManager<ApplicationUser> users, DocumentStorage storage)
     {
         _db = db;
         _users = users;
+        _storage = storage;
     }
 
     public async Task<List<AccountRow>> GetAccountsAsync(string? search = null)
@@ -50,6 +55,12 @@ public class AccountAdminService
             .Select(g => new { OwnerId = g.Key, Count = g.Count() })
             .ToDictionaryAsync(x => x.OwnerId, x => x.Count);
 
+        var documentCounts = await _db.Documents
+            .AsNoTracking()
+            .GroupBy(d => d.OwnerId)
+            .Select(g => new { OwnerId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.OwnerId, x => x.Count);
+
         var query = _db.Users.AsNoTracking();
         if (!string.IsNullOrWhiteSpace(search))
         {
@@ -73,36 +84,8 @@ public class AccountAdminService
                 u.LockoutEnd is DateTimeOffset end && end > DateTimeOffset.UtcNow,
                 folderCounts.GetValueOrDefault(u.Id),
                 subjectCounts.GetValueOrDefault(u.Id),
-                attemptCounts.GetValueOrDefault(u.Id)))
-            .ToList();
-    }
-
-    public async Task<List<AccountContentRow>> GetContentAsync(string ownerId)
-    {
-        var folders = await _db.SubjectFolders
-            .AsNoTracking()
-            .Where(f => f.OwnerId == ownerId)
-            .OrderBy(f => f.Name)
-            .Select(f => new AccountContentRow(
-                "Thư mục",
-                f.Name,
-                f.Subjects.Count,
-                f.CreatedAt))
-            .ToListAsync();
-
-        var subjects = await _db.Subjects
-            .AsNoTracking()
-            .Where(s => s.OwnerId == ownerId)
-            .OrderBy(s => s.Name)
-            .Select(s => new AccountContentRow(
-                "Môn học",
-                s.Folder != null ? s.Folder.Name + " / " + s.Name : s.Name,
-                s.Questions.Count,
-                s.CreatedAt))
-            .ToListAsync();
-
-        return folders.Concat(subjects)
-            .OrderBy(r => r.CreatedAt)
+                attemptCounts.GetValueOrDefault(u.Id),
+                documentCounts.GetValueOrDefault(u.Id)))
             .ToList();
     }
 
@@ -237,16 +220,32 @@ public class AccountAdminService
             return AccountActionResult.Fail("Không thể xóa quản trị viên duy nhất.");
         }
 
-        // Detach content so classroom data survives the account; attempts cascade with the user row.
+        // Detach content so classroom data survives the account; attempts and private
+        // documents cascade with the user row. Document files are removed after the
+        // account row is actually deleted.
+        var documentKeys = await _db.Documents
+            .AsNoTracking()
+            .Where(d => d.OwnerId == userId)
+            .Select(d => d.StorageKey)
+            .ToListAsync();
+
         await _db.SubjectFolders.Where(f => f.OwnerId == userId)
             .ExecuteUpdateAsync(s => s.SetProperty(f => f.OwnerId, (string?)null));
         await _db.Subjects.Where(s => s.OwnerId == userId)
             .ExecuteUpdateAsync(s => s.SetProperty(s => s.OwnerId, (string?)null));
 
         var deleted = await _users.DeleteAsync(user);
-        return deleted.Succeeded
-            ? AccountActionResult.Ok("Đã xóa tài khoản. Thư mục và môn học của tài khoản này được giữ lại làm nội dung dùng chung.")
-            : AccountActionResult.Fail(deleted.Errors.Select(e => e.Description));
+        if (!deleted.Succeeded)
+        {
+            return AccountActionResult.Fail(deleted.Errors.Select(e => e.Description));
+        }
+
+        foreach (var key in documentKeys)
+        {
+            _storage.Delete(key);
+        }
+
+        return AccountActionResult.Ok("Đã xóa tài khoản. Bài làm và tài liệu riêng bị xóa theo tài khoản; thư mục và môn học được giữ lại làm nội dung dùng chung.");
     }
 
     private Task<int> CountAdminsAsync() =>
@@ -264,9 +263,8 @@ public record AccountRow(
     bool IsLocked,
     int FolderCount,
     int SubjectCount,
-    int AttemptCount);
-
-public record AccountContentRow(string Kind, string Name, int ItemCount, DateTime CreatedAt);
+    int AttemptCount,
+    int DocumentCount);
 
 public record AccountActionResult(bool Success, string? Message)
 {

@@ -16,6 +16,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
     public DbSet<ReadingPassage> ReadingPassages => Set<ReadingPassage>();
     public DbSet<Attempt> Attempts => Set<Attempt>();
     public DbSet<AttemptAnswer> AttemptAnswers => Set<AttemptAnswer>();
+    public DbSet<UploadedDocument> Documents => Set<UploadedDocument>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -120,6 +121,30 @@ public class AppDbContext : IdentityDbContext<ApplicationUser>
                 .WithMany(q => q.AttemptAnswers)
                 .HasForeignKey(a => a.QuestionId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<UploadedDocument>(entity =>
+        {
+            entity.Property(d => d.Title).IsRequired().HasMaxLength(200);
+            entity.Property(d => d.Description).HasMaxLength(1000);
+            entity.Property(d => d.OriginalFileName).IsRequired().HasMaxLength(255);
+            entity.Property(d => d.StorageKey).IsRequired().HasMaxLength(64);
+            entity.Property(d => d.ContentType).IsRequired().HasMaxLength(128);
+            entity.Property(d => d.RowVersion).IsRowVersion();
+
+            entity.HasIndex(d => new { d.OwnerId, d.UpdatedAtUtc });
+            entity.HasIndex(d => d.SubjectId);
+
+            entity.HasOne(d => d.Owner)
+                .WithMany()
+                .HasForeignKey(d => d.OwnerId)
+                .IsRequired()
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.Subject)
+                .WithMany()
+                .HasForeignKey(d => d.SubjectId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

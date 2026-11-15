@@ -1,0 +1,20 @@
+@page
+@model TracNghiemWeb.Pages.Documents.UploadModel
+@{ ViewData["Title"] = "Tải tài liệu"; ViewData["Active"] = "documents"; }
+<nav class="breadcrumb" aria-label="Đường dẫn"><a asp-page="Index">Tài liệu</a><span aria-hidden="true">/</span><span>Tải lên</span></nav>
+<div class="page-head"><div><span class="eyebrow">THƯ VIỆN CÁ NHÂN</span><h1>Tải tài liệu</h1></div></div>
+<div class="editor-layout">
+    <form method="post" enctype="multipart/form-data" class="card form-grid document-form" data-busy="Đang tải lên…">
+        <div asp-validation-summary="ModelOnly" role="alert"></div>
+        <div class="field"><label asp-for="Upload">Tệp tài liệu</label><input asp-for="Upload" type="file" class="file-input" accept=".pdf,.docx,.pptx,.txt" aria-describedby="file-help file-selection" required />
+            <label for="Upload" class="upload-zone" data-drop-zone><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M12 16V3m-5 5 5-5 5 5M4 15v5h16v-5"/></svg><strong>Chọn tệp <span>hoặc kéo vào đây</span></strong><span class="small" id="file-help">PDF, DOCX, PPTX, TXT · tối đa 20 MB</span></label>
+            <span id="file-selection" class="hint" role="status"></span><span asp-validation-for="Upload" class="field-error"></span>
+        </div>
+        <partial name="_Fields" model="new TracNghiemWeb.Pages.Documents.DocumentFieldsView(Model.Input, Model.Subjects)" />
+        <div class="form-actions"><a asp-page="Index" class="btn btn-ghost">Hủy</a><button type="submit" class="btn btn-accent">Tải tài liệu <span aria-hidden="true">↑</span></button></div>
+    </form>
+    <aside class="editor-note"><span class="note-icon" aria-hidden="true"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7l-9-4Z"/><path d="m8 12 3 3 5-6"/></svg></span><h2>Tài liệu của bạn</h2><p>Chỉ bạn có thể xem, chỉnh sửa hoặc xóa tài liệu này. Quản trị viên quản lý tài khoản, không đọc nội dung riêng tư.</p><p>Đặt tên và chọn môn để dễ tìm lại khi học.</p></aside>
+</div>
+@section Scripts {
+    <script src="~/js/documents.js" asp-append-version="true" defer></script>
+}

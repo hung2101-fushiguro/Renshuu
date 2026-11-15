@@ -5,6 +5,51 @@ nào, đã sinh/chạy SQL nào, database nào đã thực sự được cập n
 
 ---
 
+## 2026-11-15 — Tài liệu riêng sau tích hợp đăng nhập
+
+**Có thay đổi schema.** Migration: `20261115155351_AddPrivateDocuments`.
+
+### Thay đổi
+
+- Thêm bảng `Documents`: `Id`, `OwnerId` (bắt buộc), `Title`, `Description`,
+  `SubjectId` (tùy chọn), `OriginalFileName`, `StorageKey`, `ContentType`,
+  `FileSize`, `UploadedAtUtc`, `UpdatedAtUtc`, `RowVersion` (rowversion).
+- FK `FK_Documents_AspNetUsers_OwnerId` → `AspNetUsers` (`CASCADE`): xóa tài khoản
+  sẽ xóa bản ghi tài liệu.
+- FK `FK_Documents_Subjects_SubjectId` → `Subjects` (`SET NULL`): xóa môn học không
+  xóa tài liệu.
+- Index `IX_Documents_OwnerId_UpdatedAtUtc` và `IX_Documents_SubjectId`.
+- Tệp tài liệu lưu ngoài thư mục ứng dụng (mặc định
+  `%LOCALAPPDATA%\TracNghiemWeb\Documents`, đổi bằng `Documents:StoragePath`),
+  tối đa 20 MB/tệp; chỉ nhận PDF, DOCX, PPTX, TXT.
+
+### Ảnh hưởng dữ liệu
+
+- Không thay đổi bảng cũ; dữ liệu hiện có giữ nguyên.
+- Tài liệu hoàn toàn riêng tư: mọi truy vấn lọc `OwnerId == userId`. Admin không có
+  quyền đọc, sửa, tải hay xóa tài liệu của tài khoản khác.
+- Xóa tài khoản: bản ghi tài liệu bị xóa theo `CASCADE`; `AccountAdminService` xóa
+  thêm tệp vật lý. Thư mục/môn học của tài khoản vẫn được chuyển về `OwnerId = NULL`.
+
+### Đã sinh gì
+
+- `dotnet ef migrations add AddPrivateDocuments`.
+- Sinh lại `database/update-database.sql` (đủ 6 migration, idempotent).
+- Cập nhật `database/verify-database.sql` (migration mới, bảng `Documents`, 4 FK).
+- Cập nhật `database/README.md` và tài liệu bàn giao đăng nhập.
+
+### Đã chạy trên database nào
+
+- Migration được áp dụng tự động khi chạy app Development trên database dev
+  `SATORU\SQLEXPRESS / TracNghiemWeb`; `verify-database.sql` đạt các `CHECK OK`.
+- Bộ kiểm thử tích hợp SQL: **10/10 nhóm PASS**, gồm nhóm tài liệu riêng và kiểm tra
+  admin bị chặn đọc/xóa tài liệu của người khác.
+- `scripts/verify-auth.ps1`: **19/19 PASS**.
+- Kiểm thử HTTP tài liệu: tạo tài khoản, tải TXT, xem/tải/sửa/xóa, admin nhận 404 với
+  tài liệu người khác — tất cả PASS. Dữ liệu thử đã được dọn khỏi database dev.
+
+---
+
 ## 2026-11-14 — Đăng nhập, phân quyền và quản lý tài khoản
 
 **Có thay đổi schema.** Migration: `20261114025237_AddIdentityAccountsAndOwnership`.

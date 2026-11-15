@@ -647,3 +647,62 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261115155351_AddPrivateDocuments'
+)
+BEGIN
+    CREATE TABLE [Documents] (
+        [Id] int NOT NULL IDENTITY,
+        [OwnerId] nvarchar(450) NOT NULL,
+        [Title] nvarchar(200) NOT NULL,
+        [Description] nvarchar(1000) NULL,
+        [SubjectId] int NULL,
+        [OriginalFileName] nvarchar(255) NOT NULL,
+        [StorageKey] nvarchar(64) NOT NULL,
+        [ContentType] nvarchar(128) NOT NULL,
+        [FileSize] bigint NOT NULL,
+        [UploadedAtUtc] datetime2 NOT NULL,
+        [UpdatedAtUtc] datetime2 NOT NULL,
+        [RowVersion] rowversion NOT NULL,
+        CONSTRAINT [PK_Documents] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_Documents_AspNetUsers_OwnerId] FOREIGN KEY ([OwnerId]) REFERENCES [AspNetUsers] ([Id]) ON DELETE CASCADE,
+        CONSTRAINT [FK_Documents_Subjects_SubjectId] FOREIGN KEY ([SubjectId]) REFERENCES [Subjects] ([Id]) ON DELETE SET NULL
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261115155351_AddPrivateDocuments'
+)
+BEGIN
+    CREATE INDEX [IX_Documents_OwnerId_UpdatedAtUtc] ON [Documents] ([OwnerId], [UpdatedAtUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261115155351_AddPrivateDocuments'
+)
+BEGIN
+    CREATE INDEX [IX_Documents_SubjectId] ON [Documents] ([SubjectId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261115155351_AddPrivateDocuments'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261115155351_AddPrivateDocuments', N'8.0.32');
+END;
+GO
+
+COMMIT;
+GO
+
