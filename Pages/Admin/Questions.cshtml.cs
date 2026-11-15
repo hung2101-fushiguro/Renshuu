@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
+using TracNghiemWeb.Services;
 
 namespace TracNghiemWeb.Pages.Admin;
 
@@ -11,8 +12,13 @@ public class QuestionsModel : PageModel
     public const int PageSize = 15;
 
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public QuestionsModel(AppDbContext db) => _db = db;
+    public QuestionsModel(AppDbContext db, CurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public List<Subject> Subjects { get; private set; } = new();
     public List<Question> Questions { get; private set; } = new();
@@ -26,6 +32,7 @@ public class QuestionsModel : PageModel
     {
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();
@@ -33,7 +40,9 @@ public class QuestionsModel : PageModel
         Search = search?.Trim();
         PageNumber = Math.Max(1, pageNumber);
 
-        var query = _db.Questions.AsNoTracking();
+        var query = _db.Questions
+            .Where(q => q.Subject!.OwnerId == _currentUser.UserId)
+            .AsNoTracking();
         if (subjectId is int id)
         {
             query = query.Where(q => q.SubjectId == id);
@@ -59,10 +68,11 @@ public class QuestionsModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(int id, int? subjectId, string? search, int pageNumber = 1)
     {
-        var question = await _db.Questions.FindAsync(id);
+        var question = await _db.Questions
+            .FirstOrDefaultAsync(q => q.Id == id && q.Subject!.OwnerId == _currentUser.UserId);
         if (question is null)
         {
-            TempData["Error"] = "Câu hỏi không tồn tại.";
+            TempData["Error"] = "Câu hỏi không tồn tại hoặc bạn không có quyền xóa.";
         }
         else
         {

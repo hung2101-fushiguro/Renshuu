@@ -68,8 +68,13 @@ public class ImportService
     };
 
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public ImportService(AppDbContext db) => _db = db;
+    public ImportService(AppDbContext db, CurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public static List<ParsedQuestion> ParsePaste(string? subjectName, string? text)
     {
@@ -514,7 +519,7 @@ public class ImportService
             .Select(i => i.Subject!.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(name => !subjectMap.ContainsKey(name))
-            .Select(name => new Subject { Name = name })
+            .Select(name => new Subject { Name = name, OwnerId = _currentUser.UserId })
             .ToList();
 
         if (newSubjects.Count > 0)
@@ -599,7 +604,7 @@ public class ImportService
             .Select(i => i.Subject!.Trim())
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .Where(name => !subjectMap.ContainsKey(name))
-            .Select(name => new Subject { Name = name })
+            .Select(name => new Subject { Name = name, OwnerId = _currentUser.UserId })
             .ToList();
 
         if (newSubjects.Count > 0)
@@ -820,7 +825,7 @@ public class ImportService
             .ToList();
 
         var subjects = await _db.Subjects
-            .Where(s => names.Contains(s.Name))
+            .Where(s => s.OwnerId == _currentUser.UserId && names.Contains(s.Name))
             .ToListAsync();
 
         var map = new Dictionary<string, Subject>(StringComparer.OrdinalIgnoreCase);

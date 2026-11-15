@@ -1,0 +1,66 @@
+@page
+@model TracNghiemWeb.Pages.Account.LoginModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Đăng nhập";
+}
+
+<section class="auth-intro">
+    <h1>Vào lại không gian luyện tập của bạn.</h1>
+    <p>Renshuu giữ thư mục, môn học và toàn bộ lịch sử làm bài theo tài khoản. Đăng nhập để tiếp tục đúng nơi bạn đã dừng.</p>
+    <ul class="auth-points">
+        <li>Tiến độ và câu sai được lưu riêng cho từng tài khoản.</li>
+        <li>Quản trị viên có thêm khu vực quản lý tài khoản.</li>
+    </ul>
+</section>
+
+<section class="auth-panel">
+    <h2>Đăng nhập</h2>
+    <p class="muted">Dùng email và mật khẩu do quản trị viên cấp.</p>
+
+    <form method="post" class="auth-form">
+        <input type="hidden" asp-for="ReturnUrl" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+        <div class="field">
+            <label asp-for="Email">Email</label>
+            <input asp-for="Email" class="input" type="email" autocomplete="username"
+                   inputmode="email" aria-describedby="email-error" required />
+            <span asp-validation-for="Email" id="email-error" class="field-error"></span>
+        </div>
+
+        <div class="field">
+            <label asp-for="Password">Mật khẩu</label>
+            <div class="password-field">
+                <input asp-for="Password" id="Password" class="input" type="password"
+                       autocomplete="current-password" aria-describedby="password-error"
+                       minlength="8" maxlength="128" required />
+                <button type="button" class="password-toggle" data-password-toggle
+                        aria-controls="Password" aria-pressed="false">Hiện</button>
+            </div>
+            <span asp-validation-for="Password" id="password-error" class="field-error"></span>
+        </div>
+
+        <label class="checkbox-row">
+            <input asp-for="RememberMe" />
+            <span>Ghi nhớ đăng nhập trên thiết bị này</span>
+        </label>
+
+        <button type="submit" class="btn btn-primary btn-block" data-auth-submit>Đăng nhập</button>
+        <span class="visually-hidden" role="status" data-auth-status></span>
+        @if (Model.ShowTestAccount)
+        {
+            <p class="small muted mt-md mb-0">
+                Tài khoản thử (chỉ trên máy phát triển)<br />
+                Email: <span data-test-email>@Model.TestEmail</span><br />
+                Mật khẩu: <span data-test-password style="overflow-wrap: anywhere">@Model.TestPassword</span>
+            </p>
+        }
+    </form>
+
+    <p class="auth-footnote muted">Chưa có tài khoản? Liên hệ quản trị viên để được cấp.</p>
+</section>
+
+@section Scripts {
+    <script src="~/js/auth.js" asp-append-version="true" defer></script>
+}

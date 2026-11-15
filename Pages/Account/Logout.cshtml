@@ -1,0 +1,12 @@
+@page
+@model TracNghiemWeb.Pages.Account.LogoutModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = "Đã đăng xuất";
+}
+
+<section class="auth-panel">
+    <h2>Đã đăng xuất</h2>
+    <p class="muted">Phiên làm việc đã kết thúc trên thiết bị này.</p>
+    <a class="btn btn-primary btn-block" asp-page="/Account/Login">Đăng nhập lại</a>
+</section>

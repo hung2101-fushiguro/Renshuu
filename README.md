@@ -27,6 +27,37 @@ $env:ASPNETCORE_ENVIRONMENT = 'Development'
 dotnet run --no-launch-profile --urls http://localhost:5186
 ```
 
+## Tài khoản và phân quyền
+
+Ứng dụng yêu cầu đăng nhập cho mọi trang (trừ `/Account/Login`, `/Account/Logout`, `/Account/Denied`, `/Error`).
+ASP.NET Core Identity lưu tài khoản trong `AspNetUsers`; hai vai trò:
+
+- **Admin** — xem và quản lý tài khoản tại `/Admin/Accounts`: tạo tài khoản, đặt lại mật khẩu,
+  khóa/mở khóa, cấp/thu hồi quyền quản trị, xóa tài khoản, xem thư mục và môn học từng người tạo.
+- **Người học** (mặc định) — luyện tập, ôn câu sai, xem lịch sử/thống kê của chính mình.
+
+Quyền sở hữu nội dung: thư mục và môn học do quản trị viên tạo (hoặc dữ liệu mẫu chưa có chủ)
+là **nội dung dùng chung** mà mọi tài khoản đều luyện được; nội dung do người học tạo chỉ
+hiển thị với chính người đó và quản trị viên.
+
+Tạo quản trị viên đầu tiên chỉ trong Development:
+
+```powershell
+dotnet user-secrets set "DevelopmentAdmin:Email" "admin@ten-mien"
+dotnet user-secrets set "DevelopmentAdmin:Password" "MatKhauManh#2026"
+dotnet run
+```
+
+Nếu email đã tồn tại, app chỉ gán vai trò Admin (không đổi mật khẩu). Không có mật khẩu
+mặc định trong mã nguồn. Cấu hình chỉ đọc trong Development và không commit user secrets.
+Chi tiết bàn giao database: [database/README.md](database/README.md).
+
+Kiểm tra đăng nhập/phân quyền tự động (app đang chạy):
+
+```powershell
+.\scripts\verify-auth.ps1 -BaseUrl 'http://localhost:5080' -Email 'admin@ten-mien' -Password 'MatKhauManh#2026'
+```
+
 ## Luồng sử dụng
 
 1. Chọn môn trong form hoặc mở thư mục để chọn môn học.

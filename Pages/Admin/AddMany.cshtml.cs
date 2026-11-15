@@ -13,11 +13,13 @@ public class AddManyModel : PageModel
 
     private readonly AppDbContext _db;
     private readonly ImportService _import;
+    private readonly CurrentUser _currentUser;
 
-    public AddManyModel(AppDbContext db, ImportService import)
+    public AddManyModel(AppDbContext db, ImportService import, CurrentUser currentUser)
     {
         _db = db;
         _import = import;
+        _currentUser = currentUser;
     }
 
     public List<Subject> Subjects { get; private set; } = new();
@@ -52,6 +54,7 @@ public class AddManyModel : PageModel
     {
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();
@@ -74,6 +77,7 @@ public class AddManyModel : PageModel
     {
         Subjects = await _db.Subjects
             .Include(s => s.Folder)
+            .Where(s => s.OwnerId == _currentUser.UserId)
             .OrderBy(s => s.Name)
             .AsNoTracking()
             .ToListAsync();

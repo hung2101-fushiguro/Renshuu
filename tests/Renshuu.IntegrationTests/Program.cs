@@ -1,3 +1,5 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
@@ -14,11 +16,23 @@ var connection = new SqlConnectionStringBuilder
 };
 var options = new DbContextOptionsBuilder<AppDbContext>().UseSqlServer(connection.ConnectionString).Options;
 var clock = new TestClock();
+const string TestUserId = "regression-user";
+var currentUser = new CurrentUser(new TestHttpContextAccessor
+{
+    HttpContext = new DefaultHttpContext
+    {
+        User = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, TestUserId),
+                new Claim(ClaimTypes.Name, "regression@local")
+            ], "Regression"))
+    }
+});
 AppDbContext Db() => new(options);
 async Task<T> Run<T>(Func<QuizService, Task<T>> operation)
 {
     await using var db = Db();
-    return await operation(new QuizService(db, clock));
+    return await operation(new QuizService(db, clock, currentUser));
 }
 void Check(bool condition, string message)
 {
@@ -40,7 +54,9 @@ try
     await using (var db = Db())
     {
         await db.Database.MigrateAsync();
-        var subject = new Subject { Name = "Regression", Questions = [Question("Single question")] };
+        db.Users.Add(new ApplicationUser { Id = TestUserId, UserName = "regression@local", Email = "regression@local", EmailConfirmed = true });
+        await db.SaveChangesAsync();
+        var subject = new Subject { Name = "Regression", OwnerId = TestUserId, Questions = [Question("Single question")] };
         db.Subjects.Add(subject);
         await db.SaveChangesAsync();
         subjectId = subject.Id;
@@ -134,7 +150,7 @@ try
         var wrongSubject = new Subject { Name = "Many wrong", Questions = Enumerable.Range(1, 205).Select(i => Question("Wrong " + i)).ToList() };
         db.Subjects.Add(wrongSubject);
         await db.SaveChangesAsync();
-        db.Attempts.Add(new Attempt { SubjectId = wrongSubject.Id, StartedAt = clock.GetLocalNow().DateTime, SubmittedAt = clock.GetLocalNow().DateTime, TotalQuestions = 205, Answers = wrongSubject.Questions.Select(q => new AttemptAnswer { QuestionId = q.Id }).ToList() });
+        db.Attempts.Add(new Attempt { SubjectId = wrongSubject.Id, OwnerId = TestUserId, StartedAt = clock.GetLocalNow().DateTime, SubmittedAt = clock.GetLocalNow().DateTime, TotalQuestions = 205, Answers = wrongSubject.Questions.Select(q => new AttemptAnswer { QuestionId = q.Id }).ToList() });
         await db.SaveChangesAsync();
         var retry = await Run(q => q.StartWrongAsync(wrongSubject.Id, null));
         Check(retry.Success && (await Run(q => q.GetAttemptForResultAsync(retry.AttemptId!.Value)))!.TotalQuestions == 200, "Wrong retry must respect 200 cap");
@@ -180,7 +196,7 @@ try
 
     await using (var db = Db())
     {
-        var importer = new ImportService(db);
+        var importer = new ImportService(db, currentUser);
         ParsedQuestion Item(int index, string subject, string content) => new(index, subject, content, "A", "B", "C", "D", "A", null, []);
         var items = new List<ParsedQuestion> {
             Item(1, "Regression", "Single question"), Item(2, "Regression", "Fresh"), Item(3, "Regression", " FRESH "),
@@ -195,7 +211,7 @@ try
     }
     Pass("Import preview matches actual save for existing subjects, new subjects and within-file duplicates");
 
-    // Analytics and Flashcards: verify recovery rate, subject performances, and deck queries
+    // Analytics: verify recovery rate, subject performances, and wrong-question queries
     await using (var db = Db())
     {
         var subjectA = new Subject { Name = "C# Core", Questions = [Question("C# 1"), Question("C# 2")] };
@@ -224,12 +240,12 @@ try
         Check(analytics2.TotalRecoveredWrong == initialRecovered + 1, "Recovered count must increase by 1");
         Check(analytics2.RecoveryRate > 0, "Recovery rate must be positive");
 
-        // Verify Flashcard deck query (null subjectId and specific subjectId)
+        // Wrong-question review queries (all subjects and a specific subject)
         var wrongAll = await Run(q => q.GetWrongQuestionsAsync(null));
-        Check(wrongAll.All(q => q.Subject != null), "Wrong questions must include Subject navigation property for Flashcards");
+        Check(wrongAll.All(q => q.Subject != null), "Wrong questions must include the Subject navigation property");
     }
-    Pass("Analytics and Flashcards: recovery rate calculation, subject ratings, and deck queries verified");
-    Console.WriteLine("All 8 SQL integration groups passed.");
+    Pass("Analytics: recovery rate calculation, subject ratings, and wrong-question queries verified");
+    Console.WriteLine("All 7 SQL integration groups passed.");
 }
 finally
 {
@@ -239,6 +255,11 @@ finally
         await db.Database.EnsureDeletedAsync();
         Console.WriteLine("Removed temporary test database " + database);
     }
+}
+
+sealed class TestHttpContextAccessor : IHttpContextAccessor
+{
+    public HttpContext? HttpContext { get; set; }
 }
 
 sealed class TestClock : TimeProvider

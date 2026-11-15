@@ -7,6 +7,9 @@ public class Attempt
     public int SubjectId { get; set; }
     public Subject? Subject { get; set; }
 
+    public string? OwnerId { get; set; }
+    public ApplicationUser? Owner { get; set; }
+
     public DateTime StartedAt { get; set; }
 
     public DateTime? SubmittedAt { get; set; }

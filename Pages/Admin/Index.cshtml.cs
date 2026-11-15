@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using TracNghiemWeb.Data;
 using TracNghiemWeb.Models;
+using TracNghiemWeb.Services;
 
 namespace TracNghiemWeb.Pages.Admin;
 
@@ -12,8 +13,13 @@ public class IndexModel : PageModel
     private const int MaxFolderNameLength = 200;
 
     private readonly AppDbContext _db;
+    private readonly CurrentUser _currentUser;
 
-    public IndexModel(AppDbContext db) => _db = db;
+    public IndexModel(AppDbContext db, CurrentUser currentUser)
+    {
+        _db = db;
+        _currentUser = currentUser;
+    }
 
     public List<SubjectRow> Subjects { get; private set; } = new();
     public List<FolderRow> Folders { get; private set; } = new();
@@ -52,13 +58,13 @@ public class IndexModel : PageModel
             return RedirectToPage();
         }
 
-        if (await _db.SubjectFolders.AnyAsync(f => f.Name == name))
+        if (await OwnedFolders.AnyAsync(f => f.Name == name))
         {
             TempData["Error"] = "Thư mục này đã tồn tại.";
             return RedirectToPage();
         }
 
-        _db.SubjectFolders.Add(new SubjectFolder { Name = name });
+        _db.SubjectFolders.Add(new SubjectFolder { Name = name, OwnerId = _currentUser.UserId });
         await _db.SaveChangesAsync();
         TempData["Success"] = $"Đã thêm thư mục \"{name}\".";
         return RedirectToPage();
@@ -66,10 +72,10 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostRenameFolderAsync(int id, string? name)
     {
-        var folder = await _db.SubjectFolders.FindAsync(id);
+        var folder = await OwnedFolders.FirstOrDefaultAsync(f => f.Id == id);
         if (folder is null)
         {
-            TempData["Error"] = "Thư mục không tồn tại.";
+            TempData["Error"] = "Thư mục không tồn tại hoặc bạn không có quyền sửa.";
             return RedirectToPage();
         }
 
@@ -80,7 +86,7 @@ public class IndexModel : PageModel
             return RedirectToPage();
         }
 
-        if (await _db.SubjectFolders.AnyAsync(f => f.Name == newName && f.Id != id))
+        if (await OwnedFolders.AnyAsync(f => f.Name == newName && f.Id != id))
         {
             TempData["Error"] = "Đã có thư mục khác cùng tên.";
             return RedirectToPage();
@@ -94,16 +100,23 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteFolderAsync(int id)
     {
-        var folder = await _db.SubjectFolders.FindAsync(id);
+        var folder = await OwnedFolders.FirstOrDefaultAsync(f => f.Id == id);
         if (folder is null)
         {
-            TempData["Error"] = "Thư mục không tồn tại.";
+            TempData["Error"] = "Thư mục không tồn tại hoặc bạn không có quyền xóa.";
             return RedirectToPage();
         }
 
         await _db.Subjects
-            .Where(s => s.FolderId == id)
+            .Where(s => s.FolderId == id && s.OwnerId == _currentUser.UserId)
             .ExecuteUpdateAsync(setters => setters.SetProperty(s => s.FolderId, (int?)null));
+
+        var detached = await _db.Subjects.AnyAsync(s => s.FolderId == id);
+        if (detached)
+        {
+            TempData["Error"] = "Không thể xóa thư mục vì còn môn học của tài khoản khác bên trong.";
+            return RedirectToPage();
+        }
 
         _db.SubjectFolders.Remove(folder);
         await _db.SaveChangesAsync();
@@ -121,9 +134,9 @@ public class IndexModel : PageModel
         }
 
         var name = NewSubjectName!.Trim();
-        if (await _db.Subjects.AnyAsync(s => s.Name == name))
+        if (await OwnedSubjects.AnyAsync(s => s.Name == name))
         {
-            ModelState.AddModelError(nameof(NewSubjectName), "Môn học này đã tồn tại.");
+            ModelState.AddModelError(nameof(NewSubjectName), "Bạn đã có môn học cùng tên.");
             await LoadAsync();
             return Page();
         }
@@ -139,10 +152,10 @@ public class IndexModel : PageModel
                 return Page();
             }
 
-            var folder = await _db.SubjectFolders.FirstOrDefaultAsync(f => f.Name == newFolderName);
+            var folder = await OwnedFolders.FirstOrDefaultAsync(f => f.Name == newFolderName);
             if (folder is null)
             {
-                folder = new SubjectFolder { Name = newFolderName };
+                folder = new SubjectFolder { Name = newFolderName, OwnerId = _currentUser.UserId };
                 _db.SubjectFolders.Add(folder);
                 await _db.SaveChangesAsync();
             }
@@ -151,9 +164,9 @@ public class IndexModel : PageModel
         }
         else if (NewSubjectFolderId is int selectedFolderId)
         {
-            if (!await _db.SubjectFolders.AnyAsync(f => f.Id == selectedFolderId))
+            if (!await OwnedFolders.AnyAsync(f => f.Id == selectedFolderId))
             {
-                ModelState.AddModelError(nameof(NewSubjectFolderId), "Thư mục không tồn tại.");
+                ModelState.AddModelError(nameof(NewSubjectFolderId), "Thư mục không hợp lệ.");
                 await LoadAsync();
                 return Page();
             }
@@ -161,7 +174,12 @@ public class IndexModel : PageModel
             folderId = selectedFolderId;
         }
 
-        _db.Subjects.Add(new Subject { Name = name, FolderId = folderId });
+        _db.Subjects.Add(new Subject
+        {
+            Name = name,
+            FolderId = folderId,
+            OwnerId = _currentUser.UserId,
+        });
         await _db.SaveChangesAsync();
         TempData["Success"] = $"Đã thêm môn \"{name}\".";
         return RedirectToPage();
@@ -169,10 +187,10 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostRenameAsync()
     {
-        var subject = await _db.Subjects.FindAsync(EditId);
+        var subject = await OwnedSubjects.FirstOrDefaultAsync(s => s.Id == EditId);
         if (subject is null)
         {
-            TempData["Error"] = "Môn học không tồn tại.";
+            TempData["Error"] = "Môn học không tồn tại hoặc bạn không có quyền sửa.";
             return RedirectToPage();
         }
 
@@ -183,16 +201,16 @@ public class IndexModel : PageModel
             return RedirectToPage();
         }
 
-        if (await _db.Subjects.AnyAsync(s => s.Name == name && s.Id != EditId))
+        if (await OwnedSubjects.AnyAsync(s => s.Name == name && s.Id != EditId))
         {
             TempData["Error"] = "Đã có môn học khác cùng tên.";
             return RedirectToPage();
         }
 
         if (EditFolderId is int folderId
-            && !await _db.SubjectFolders.AnyAsync(f => f.Id == folderId))
+            && !await OwnedFolders.AnyAsync(f => f.Id == folderId))
         {
-            TempData["Error"] = "Thư mục không tồn tại.";
+            TempData["Error"] = "Thư mục không hợp lệ.";
             return RedirectToPage();
         }
 
@@ -205,10 +223,10 @@ public class IndexModel : PageModel
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        var subject = await _db.Subjects.FindAsync(id);
+        var subject = await OwnedSubjects.FirstOrDefaultAsync(s => s.Id == id);
         if (subject is null)
         {
-            TempData["Error"] = "Môn học không tồn tại.";
+            TempData["Error"] = "Môn học không tồn tại hoặc bạn không có quyền xóa.";
             return RedirectToPage();
         }
 
@@ -222,21 +240,27 @@ public class IndexModel : PageModel
         {
             TempData["Error"] =
                 $"Không thể xóa môn \"{subject.Name}\" vì đã có bài làm liên quan. " +
-                "Hãy xóa lịch sử làm bài trước (hoặc giữ lại môn học).";
+                "Hãy xóa lịch sử làm bài của các tài khoản trước (hoặc giữ lại môn học).";
         }
 
         return RedirectToPage();
     }
 
+    private IQueryable<SubjectFolder> OwnedFolders =>
+        _db.SubjectFolders.Where(f => f.OwnerId == _currentUser.UserId);
+
+    private IQueryable<Subject> OwnedSubjects =>
+        _db.Subjects.Where(s => s.OwnerId == _currentUser.UserId);
+
     private async Task LoadAsync()
     {
-        Folders = await _db.SubjectFolders
+        Folders = await OwnedFolders
             .AsNoTracking()
             .OrderBy(f => f.Name)
             .Select(f => new FolderRow(f.Id, f.Name, f.Subjects.Count))
             .ToListAsync();
 
-        var subjects = await _db.Subjects
+        var subjects = await OwnedSubjects
             .AsNoTracking()
             .Select(s => new SubjectRow(
                 s.Id,

@@ -1,0 +1,42 @@
+@{
+    var title = ViewData["Title"] as string ?? "Tài khoản";
+}
+<!DOCTYPE html>
+<html lang="vi" class="no-js">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Renshuu — đăng nhập để tiếp tục không gian luyện trắc nghiệm của bạn." />
+    <meta name="theme-color" content="#EFF6FF" />
+    <title>@title · Renshuu</title>
+    <link rel="icon" type="image/svg+xml" href="~/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body class="auth-page">
+    <a class="skip-link" href="#main">Đến nội dung chính</a>
+
+    <header class="auth-header">
+        <a class="brand" asp-page="/Account/Login" aria-label="Renshuu — trang đăng nhập">
+            <span class="brand-mark"><svg class="icon" aria-hidden="true"><use href="/images/icons.svg#layers" /></svg></span>
+            <span>renshuu</span>
+        </a>
+        <span class="auth-header-note">Không gian luyện trắc nghiệm</span>
+    </header>
+
+    <main id="main" class="auth-shell" tabindex="-1">
+        @RenderBody()
+    </main>
+
+    <footer class="auth-footer">
+        <span>renshuu<span class="footer-dot">.</span></span>
+        <span>Học. Hiểu. Nhớ.</span>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
