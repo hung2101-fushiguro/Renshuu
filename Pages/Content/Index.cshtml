@@ -81,34 +81,46 @@
 else
 {
     <div class="table-wrap mb-lg">
-        <table class="table">
+        <table class="table content-table content-table-folders">
             <thead>
                 <tr>
                     <th scope="col">Thư mục</th>
                     <th scope="col" class="num">Số môn</th>
-                    <th scope="col">Đổi tên</th>
-                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                    <th scope="col" class="col-actions">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var folder in Model.Folders)
                 {
                     <tr>
-                        <td>@folder.Name</td>
+                        <td class="cell-name">@folder.Name</td>
                         <td class="num">@folder.SubjectCount</td>
-                        <td>
-                            <form method="post" asp-page-handler="RenameFolder" class="toolbar mb-0">
-                                <input type="hidden" name="id" value="@folder.Id" />
-                                <input type="text" name="name" value="@folder.Name" class="input" maxlength="200"
-                                       aria-label="Tên mới cho thư mục @folder.Name" />
-                                <button type="submit" class="btn btn-secondary btn-sm">Lưu</button>
-                            </form>
+                        <td class="col-actions">
+                            <div class="row-actions">
+                                <input class="row-edit-toggle visually-hidden" type="checkbox" id="edit-folder-@folder.Id"
+                                       aria-label="Mở form đổi tên thư mục @folder.Name" />
+                                <label class="btn btn-secondary btn-sm" for="edit-folder-@folder.Id">Sửa</label>
+                                <form method="post" asp-page-handler="DeleteFolder"
+                                      onsubmit="return confirm('Xóa thư mục &quot;@folder.Name&quot;? Các môn bên trong sẽ được chuyển ra ngoài.');">
+                                    <input type="hidden" name="id" value="@folder.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </div>
                         </td>
-                        <td class="num">
-                            <form method="post" asp-page-handler="DeleteFolder" class="inline-form"
-                                  onsubmit="return confirm('Xóa thư mục &quot;@folder.Name&quot;? Các môn bên trong sẽ được chuyển ra ngoài.');">
+                    </tr>
+                    <tr class="row-edit">
+                        <td colspan="3">
+                            <form method="post" asp-page-handler="RenameFolder" class="row-edit-form">
                                 <input type="hidden" name="id" value="@folder.Id" />
-                                <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                <div class="field">
+                                    <label for="folder-name-@folder.Id">Tên thư mục</label>
+                                    <input id="folder-name-@folder.Id" type="text" name="name" value="@folder.Name"
+                                           class="input" maxlength="200" />
+                                </div>
+                                <div class="row-edit-actions">
+                                    <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                                    <label class="btn btn-secondary btn-sm" for="edit-folder-@folder.Id">Hủy</label>
+                                </div>
                             </form>
                         </td>
                     </tr>
@@ -130,7 +142,7 @@ else
 else
 {
     <div class="table-wrap">
-        <table class="table">
+        <table class="table content-table content-table-subjects">
             <thead>
                 <tr>
                     <th scope="col">Môn học</th>
@@ -138,15 +150,14 @@ else
                     <th scope="col" class="num">Số câu</th>
                     <th scope="col" class="num">Lượt làm</th>
                     <th scope="col">Hiển thị</th>
-                    <th scope="col">Đổi tên / thư mục</th>
-                    <th scope="col"><span class="visually-hidden">Hành động</span></th>
+                    <th scope="col" class="col-actions">Thao tác</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var subject in Model.Subjects)
                 {
                     <tr>
-                        <td>@subject.Name</td>
+                        <td class="cell-name">@subject.Name</td>
                         <td>
                             @if (subject.FolderName is not null)
                             {
@@ -165,33 +176,50 @@ else
                             <span class="badge @(subject.IsPublic ? "badge-primary" : "badge-muted")">
                                 @(subject.IsPublic ? "Công khai" : "Riêng tư")
                             </span>
-                            <form method="post" asp-page-handler="TogglePublic" class="inline-form mt-sm">
-                                <input type="hidden" name="id" value="@subject.Id" />
-                                <button type="submit" class="btn btn-secondary btn-sm">
-                                    @(subject.IsPublic ? "Chuyển riêng tư" : "Công khai")
-                                </button>
-                            </form>
                         </td>
-                        <td>
-                            <form method="post" asp-page-handler="Rename" class="toolbar mb-0">
+                        <td class="col-actions">
+                            <div class="row-actions">
+                                <input class="row-edit-toggle visually-hidden" type="checkbox" id="edit-subject-@subject.Id"
+                                       aria-label="Mở form sửa môn @subject.Name" />
+                                <label class="btn btn-secondary btn-sm" for="edit-subject-@subject.Id">Sửa</label>
+                                <form method="post" asp-page-handler="TogglePublic">
+                                    <input type="hidden" name="id" value="@subject.Id" />
+                                    <button type="submit" class="btn btn-secondary btn-sm"
+                                            title="@(subject.IsPublic ? $"Chuyển môn {subject.Name} về riêng tư" : $"Đặt môn {subject.Name} thành công khai")">
+                                        @(subject.IsPublic ? "Riêng tư" : "Công khai")
+                                    </button>
+                                </form>
+                                <form method="post" asp-page-handler="Delete"
+                                      onsubmit="return confirm('Xóa môn &quot;@subject.Name&quot; và toàn bộ câu hỏi của môn này?');">
+                                    <input type="hidden" name="id" value="@subject.Id" />
+                                    <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr class="row-edit">
+                        <td colspan="6">
+                            <form method="post" asp-page-handler="Rename" class="row-edit-form">
                                 <input type="hidden" name="EditId" value="@subject.Id" />
-                                <input type="text" name="EditName" value="@subject.Name" class="input" maxlength="200"
-                                       aria-label="Tên mới cho môn @subject.Name" />
-                                <select name="EditFolderId" class="input" aria-label="Thư mục cho môn @subject.Name">
-                                    <option value="">— Không thư mục —</option>
-                                    @foreach (var folder in Model.Folders)
-                                    {
-                                        <option value="@folder.Id" selected="@(folder.Id == subject.FolderId)">@folder.Name</option>
-                                    }
-                                </select>
-                                <button type="submit" class="btn btn-secondary btn-sm">Lưu</button>
-                            </form>
-                        </td>
-                        <td class="num">
-                            <form method="post" asp-page-handler="Delete" class="inline-form"
-                                  onsubmit="return confirm('Xóa môn &quot;@subject.Name&quot; và toàn bộ câu hỏi của môn này?');">
-                                <input type="hidden" name="id" value="@subject.Id" />
-                                <button type="submit" class="btn btn-danger btn-sm">Xóa</button>
+                                <div class="field">
+                                    <label for="subject-name-@subject.Id">Tên môn học</label>
+                                    <input id="subject-name-@subject.Id" type="text" name="EditName" value="@subject.Name"
+                                           class="input" maxlength="200" />
+                                </div>
+                                <div class="field">
+                                    <label for="subject-folder-@subject.Id">Thư mục</label>
+                                    <select id="subject-folder-@subject.Id" name="EditFolderId" class="input">
+                                        <option value="">— Không thư mục —</option>
+                                        @foreach (var folder in Model.Folders)
+                                        {
+                                            <option value="@folder.Id" selected="@(folder.Id == subject.FolderId)">@folder.Name</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="row-edit-actions">
+                                    <button type="submit" class="btn btn-primary btn-sm">Lưu</button>
+                                    <label class="btn btn-secondary btn-sm" for="edit-subject-@subject.Id">Hủy</label>
+                                </div>
                             </form>
                         </td>
                     </tr>
