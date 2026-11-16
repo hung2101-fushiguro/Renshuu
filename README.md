@@ -123,12 +123,20 @@ dotnet build --nologo
 node --check wwwroot/js/workspace.js
 node --check wwwroot/js/dashboard.js
 node --check wwwroot/js/quiz.js
-dotnet run --project tests/Renshuu.IntegrationTests -- "SATORU\SQLEXPRESS"
 ```
 
-Bộ test hiện có **11 nhóm**: migration, thứ tự nộp bài, nháp, deadline + grace, đồng thời,
-giới hạn 200 câu, import, thống kê, quyền riêng tư nội dung và đăng ký công khai (dùng
-`WebApplicationFactory` trên database tạm).
+Bộ kiểm thử tích hợp nhận tên SQL Server đang chạy trên máy bạn. Ví dụ với SQL Express:
+
+```powershell
+dotnet run --project tests/Renshuu.IntegrationTests -- '.\SQLEXPRESS'
+```
+
+Có thể đổi đối số thành `localhost` hoặc `(localdb)\MSSQLLocalDB` tùy instance.
+Bộ kiểm thử dùng Windows Authentication và tạo database tạm có tên bắt đầu bằng
+`RenshuuRegression_`, vì vậy tài khoản Windows cần quyền tạo và xóa database trên
+instance đó. Mỗi nhóm thành công in một dòng `PASS`; chương trình dọn database tạm
+khi kết thúc. Nhóm kiểm thử đăng ký gửi yêu cầu HTTP bằng
+`WebApplicationFactory` mà không cần khởi động app trước.
 
 Kiểm thử luồng HTTP phải dùng database riêng và chưa có bài làm để không ảnh hưởng danh sách câu sai:
 
