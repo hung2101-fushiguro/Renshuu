@@ -36,14 +36,15 @@ nào được nhận từ form. Đăng nhập và đăng ký bị giới hạn t
 ASP.NET Core Identity lưu tài khoản trong `AspNetUsers`; hai vai trò:
 
 - **Admin** — chỉ quản lý tài khoản tại `/Admin/Accounts`: tạo tài khoản, đặt lại mật khẩu,
-  khóa/mở khóa, cấp/thu hồi quyền quản trị, xóa tài khoản. Admin không đọc nội dung học
-  hay tài liệu riêng của người khác.
-- **Người học** (mặc định) — luyện tập, ôn câu sai, xem lịch sử/thống kê của chính mình,
-  tạo thư mục/môn học riêng và quản lý tài liệu riêng tại `/Documents`.
+  khóa/mở khóa, cấp/thu hồi quyền quản trị và xóa tài khoản. Khi luyện tập, Admin cũng
+  áp dụng quy tắc hiển thị môn học như mọi tài khoản khác.
+- **Người học** (mặc định) — luyện tập, ôn câu sai, xem lịch sử/thống kê của chính mình
+  và quản lý thư mục, môn học do mình tạo tại **Nội dung của tôi**.
 
-Quyền sở hữu nội dung: dữ liệu mẫu chưa có chủ (`OwnerId = NULL`) là nội dung dùng chung;
-mọi thư mục, môn học, bài làm và tài liệu do tài khoản tạo chỉ hiển thị với chính tài khoản đó.
-Tài liệu được lưu ngoài thư mục ứng dụng, tối đa 20 MB mỗi tệp (PDF, DOCX, PPTX, TXT).
+Môn mới là **Riêng tư** theo mặc định. Chủ sở hữu có thể chọn **Công khai** tại
+**Nội dung của tôi** để tài khoản khác luyện tập, rồi chuyển môn về **Riêng tư** khi cần.
+Việc công khai chỉ áp dụng cho môn được chọn. Thư mục có thể xuất hiện với người học khác
+khi chứa một môn họ được phép xem. Lịch sử làm bài thuộc về từng tài khoản.
 
 Tạo quản trị viên đầu tiên bằng cấu hình, không có mật khẩu mặc định trong mã nguồn.
 
@@ -89,8 +90,7 @@ hướng dẫn. Có thể truyền `-Email`/`-Password` thay cho biến môi tr�
 3. Trả lời các câu hỏi. Đợi trạng thái **Đã lưu trên máy chủ** trước khi rời trang, hoặc dùng **Lưu & thoát**; vào **Bài chưa nộp** trên tổng quan để tiếp tục.
 4. Nộp bài để xem tỷ lệ đúng, đáp án và giải thích.
 5. Vào **Ôn lại câu sai** để làm lại; trả lời đúng sẽ gỡ câu khỏi danh sách.
-6. Vào **Quản lý nội dung** để quản lý thư mục, môn học, câu hỏi hoặc nhập CSV/JSON/văn bản/bài đọc.
-7. Vào **Tài liệu của tôi** để tải lên, xem trước, sửa hoặc xóa tệp PDF/DOCX/PPTX/TXT riêng của bạn.
+6. Vào **Nội dung của tôi** để quản lý thư mục, môn học, câu hỏi hoặc nhập CSV/JSON/văn bản/bài đọc.
 
 ## Giao diện mới
 
@@ -123,12 +123,20 @@ dotnet build --nologo
 node --check wwwroot/js/workspace.js
 node --check wwwroot/js/dashboard.js
 node --check wwwroot/js/quiz.js
-dotnet run --project tests/Renshuu.IntegrationTests -- "SATORU\SQLEXPRESS"
 ```
 
-Bộ test hiện có **11 nhóm**: migration, thứ tự nộp bài, nháp, deadline + grace, đồng thời,
-giới hạn 200 câu, import, thống kê, quyền riêng tư nội dung và đăng ký công khai (dùng
-`WebApplicationFactory` trên database tạm).
+Bộ kiểm thử tích hợp nhận tên SQL Server đang chạy trên máy bạn. Ví dụ với SQL Express:
+
+```powershell
+dotnet run --project tests/Renshuu.IntegrationTests -- '.\SQLEXPRESS'
+```
+
+Có thể đổi đối số thành `localhost` hoặc `(localdb)\MSSQLLocalDB` tùy instance.
+Bộ kiểm thử dùng Windows Authentication và tạo database tạm có tên bắt đầu bằng
+`RenshuuRegression_`, vì vậy tài khoản Windows cần quyền tạo và xóa database trên
+instance đó. Mỗi nhóm thành công in một dòng `PASS`; chương trình dọn database tạm
+khi kết thúc. Nhóm kiểm thử đăng ký gửi yêu cầu HTTP bằng
+`WebApplicationFactory` mà không cần khởi động app trước.
 
 Kiểm thử luồng HTTP phải dùng database riêng và chưa có bài làm để không ảnh hưởng danh sách câu sai:
 
