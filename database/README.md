@@ -5,9 +5,14 @@ SQL Server/database của mình; **không giả định** dùng chung instance v
 
 | Tệp | Nội dung |
 | --- | --- |
-| `update-database.sql` | Script idempotent do `dotnet ef migrations script --idempotent` sinh ra. Chạy được nhiều lần, chỉ áp dụng migration còn thiếu. |
-| `verify-database.sql` | Script chỉ đọc, kiểm tra migration, bảng/cột/index/khóa ngoại và đếm dòng. |
+| `update-database.sql` | Script idempotent đã lưu trong repo, kết thúc ở `20261115155351_AddPrivateDocuments`. |
+| `verify-database.sql` | Script chỉ đọc dành cho schema ở mốc `AddPrivateDocuments`. |
 | `TASK-LOG.md` | Nhật ký thay đổi database theo từng task. |
+
+Migration mới nhất là `20261115163138_RemoveDocumentsAndAddPublicSubjects`. Khi triển khai
+mã hiện tại, ưu tiên cập nhật bằng EF Core ở mục 3. Nếu triển khai bằng SQL, hãy sinh lại
+script từ mã hiện tại theo mục 6. Migration này xóa bảng `Documents`; nếu database từng
+dùng chức năng tài liệu, hãy sao lưu trước khi áp dụng.
 
 ## 1. Xác định server/database hiệu lực
 
@@ -60,10 +65,10 @@ dotnet ef database update --project TracNghiemWeb.csproj `
   --connection "Server=<server>;Database=<database>;Trusted_Connection=True;TrustServerCertificate=True"
 ```
 
-Cách B — chạy SQL đã sinh sẵn (máy chỉ có `sqlcmd`, không cần SDK):
+Cách B — chạy script SQL đã sinh lại theo mục 6 (máy đích chỉ cần `sqlcmd`):
 
 ```powershell
-sqlcmd -S "<server>" -d "<database>" -E -b -I -i database\update-database.sql
+sqlcmd -S "<server>" -d "<database>" -E -b -I -i "$env:TEMP\Renshuu-update-current.sql"
 ```
 
 `-b` dừng ngay khi có lỗi; `-I` bật `QUOTED_IDENTIFIER`. Script chạy trong transaction
@@ -71,18 +76,20 @@ và ghi từng migration vào `__EFMigrationsHistory`, nên chạy lại là an 
 
 ## 4. Kiểm tra sau khi cập nhật
 
-```powershell
-sqlcmd -S "<server>" -d "<database>" -E -b -i database\verify-database.sql
+Chạy các truy vấn chỉ đọc sau trên database đích:
+
+```sql
+SELECT [MigrationId]
+FROM [dbo].[__EFMigrationsHistory]
+WHERE [MigrationId] = N'20261115163138_RemoveDocumentsAndAddPublicSubjects';
+
+SELECT COL_LENGTH(N'dbo.Subjects', N'IsPublic') AS IsPublicColumnBytes,
+       OBJECT_ID(N'dbo.Documents', N'U') AS DocumentsTableId;
 ```
 
-Kết quả mong đợi:
-
-- `CHECK OK` cho migration `20261114025237_AddIdentityAccountsAndOwnership` và
-  `20261115155351_AddPrivateDocuments`, 7 bảng Identity, bảng `Documents`,
-  cột `OwnerId`/`CreatedAt`, 4 khóa ngoại `OwnerId`.
-- Bảng đếm dòng khớp với bản sao lưu (trừ bảng mới được tạo).
-- Database trống: `CHECK INFO` về vai trò Admin là bình thường — lần chạy app
-  Development đầu tiên sẽ tạo vai trò và tài khoản quản trị theo cấu hình.
+Migration phải xuất hiện trong lịch sử, `IsPublicColumnBytes` phải có giá trị và
+`DocumentsTableId` phải là `NULL`. Script `verify-database.sql` vẫn kiểm tra bảng
+`Documents` ở mốc schema cũ.
 
 ## 5. Sau khi có schema: tạo tài khoản quản trị đầu tiên
 
@@ -120,10 +127,11 @@ trong mã nguồn; không commit user secrets hay connection string.
 | `20261110061027_AddSubjectFolders` | Thư mục môn học, gộp `JLPT-N3*`. |
 | `20261110092823_SaveAttemptDrafts` | Lưu nháp, deadline, chỉ mục nộp bài. |
 | `20261114025237_AddIdentityAccountsAndOwnership` | Identity (`AspNet*`), `OwnerId`/`CreatedAt`, khóa ngoại và index chủ sở hữu. |
-| `20261115155351_AddPrivateDocuments` | Bảng `Documents` cho tài liệu riêng, FK chủ sở hữu (`CASCADE`) và môn học (`SET NULL`). |
+| `20261115155351_AddPrivateDocuments` | Tạo bảng `Documents` cho tài liệu riêng. |
+| `20261115163138_RemoveDocumentsAndAddPublicSubjects` | Xóa bảng `Documents`, thêm `Subjects.IsPublic` và chuyển môn chưa có chủ sang công khai. |
 
 Sinh lại script sau mỗi lần đổi schema:
 
 ```powershell
-dotnet ef migrations script --idempotent --project TracNghiemWeb.csproj --output database/update-database.sql
+dotnet ef migrations script --idempotent --project TracNghiemWeb.csproj --output "$env:TEMP\Renshuu-update-current.sql"
 ```
